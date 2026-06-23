@@ -41,13 +41,6 @@
       background: radial-gradient(circle, rgba(67,56,202,0.18) 0%, transparent 70%);
       pointer-events: none;
     }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 14px; border-radius: 99px;
-      border: 1px solid rgba(99,102,241,0.4); background: rgba(99,102,241,0.08);
-      font-size: 13px; font-weight: 500; color: #A5B4FC; margin-bottom: 24px;
-    }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: #6366F1; display: inline-block; }
     .hero-logo { width: 96px; height: 96px; border-radius: 20px; object-fit: cover; margin-bottom: 24px; border: 2px solid rgba(255,255,255,0.08); }
     h1 { font-size: clamp(36px, 6vw, 64px); font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; max-width: 820px; }
     .coral { color: var(--coral); }
@@ -81,9 +74,7 @@
     .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
     .card p { font-size: 14px; color: var(--gray); line-height: 1.6; }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .user-card {
-      border-radius: 20px; padding: 40px; position: relative; overflow: hidden;
-    }
+    .user-card { border-radius: 20px; padding: 40px; position: relative; overflow: hidden; }
     .user-card.student { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border: 1px solid rgba(99,102,241,0.3); }
     .user-card.teacher { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); border: 1px solid rgba(5,150,105,0.3); }
     .user-card h3 { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
@@ -92,19 +83,13 @@
     .user-card ul li { font-size: 14px; color: rgba(255,255,255,0.8); padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 8px; }
     .user-card ul li:last-child { border-bottom: none; }
     .check { color: var(--teal); font-weight: 700; }
-    .btn-card {
-      display: inline-block; padding: 12px 24px; border-radius: 8px;
-      font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.2s;
-    }
+    .btn-card { display: inline-block; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
     .btn-card.indigo { background: var(--indigo); color: white; }
     .btn-card.indigo:hover { background: var(--indigo-light); }
     .btn-card.green { background: var(--teal); color: white; }
     .btn-card.green:hover { background: #10b981; }
     .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-    .price-card {
-      background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px; padding: 28px; text-align: center;
-    }
+    .price-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px; text-align: center; }
     .price-card.featured { border-color: var(--indigo); background: rgba(67,56,202,0.12); }
     .price-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--indigo); color: white; margin-bottom: 16px; }
     .price-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
@@ -118,11 +103,7 @@
     .btn-price.indigo:hover { background: var(--indigo-light); }
     .btn-price.outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
     .btn-price.outline:hover { border-color: rgba(255,255,255,0.5); }
-    footer {
-      border-top: 1px solid rgba(255,255,255,0.06);
-      padding: 40px 24px; text-align: center;
-      color: var(--gray); font-size: 14px;
-    }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 40px 24px; text-align: center; color: var(--gray); font-size: 14px; }
     footer strong { color: white; }
     @media (max-width: 640px) {
       nav { padding: 14px 20px; }
@@ -146,12 +127,11 @@
 </nav>
 
 <div class="hero">
-  <div class="hero-badge"><span class="dot"></span> Powered by Claude AI</div>
   <img class="hero-logo"
     src="https://raw.githubusercontent.com/Nathan96VN/edubot-vietnam/main/Dynamic%20Edubot%20Logo%20Featuring%20Books%20and%20Robot%20Head.png"
     alt="EduBot Vietnam" />
   <h1>Your <span class="coral">AI Partner</span> in Education —<br/>For <span class="purple">Students</span> & Teachers</h1>
-  <p class="hero-sub">Your AI Partner in Education — For Students & Teachers. Covering Math, Science & English for grades 1–12. Aligned with MOET & Cambridge.</p>
+  <p class="hero-sub">Covering Math, Science & English for grades 1–12. Aligned with MOET & Cambridge.</p>
   <div class="hero-ctas">
     <a href="#signup-student" class="btn-cta btn-student">🎓 I'm a Student</a>
     <a href="#signup-teacher" class="btn-cta btn-teacher">👩‍🏫 I'm a Teacher</a>
@@ -159,4 +139,149 @@
   <div class="hero-stats">
     <div class="stat"><div class="stat-num">12</div><div class="stat-label">Grade Levels</div></div>
     <div class="stat"><div class="stat-num">3</div><div class="stat-label">Core Subjects</div></div>
-    <div class="stat"><div class="stat-num">2</div><div
+    <div class="stat"><div class="stat-num">2</div><div class="stat-label">Curriculums</div></div>
+    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Always Available</div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<section>
+  <p class="section-label">What We Offer</p>
+  <h2>Everything Students & Teachers Need</h2>
+  <p class="section-sub">One platform built for both sides of the classroom.</p>
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-icon">🧠</div>
+      <h3>Socratic AI Tutor</h3>
+      <p>Never gives answers away. Guides students step-by-step to discover solutions themselves — building real understanding.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h3>Weak-Point Tracking</h3>
+      <p>Automatically identifies struggling topics and generates targeted flashcards and practice for each student.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📚</div>
+      <h3>MOET & Cambridge Aligned</h3>
+      <p>Curriculum-aware AI trained on official Vietnamese MOET and Cambridge IGCSE/A-Level syllabi.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">👩‍🏫</div>
+      <h3>Teacher Dashboard</h3>
+      <p>Track every student's progress, weak points, and activity. Generate lesson plans and exam questions in seconds.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎮</div>
+      <h3>Gamified Learning</h3>
+      <p>Interactive review games that make studying enjoyable. Students solve problems to advance levels.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌏</div>
+      <h3>Bilingual AI</h3>
+      <p>Responds naturally in Vietnamese or English — whichever language the student uses.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="for-who">
+  <p class="section-label">Who Is It For?</p>
+  <h2>Built for Both Sides of the Classroom</h2>
+  <p class="section-sub">Different experiences, same powerful AI underneath.</p>
+  <div class="two-col">
+    <div class="user-card student" id="signup-student">
+      <h3>🎓 For Students</h3>
+      <p>A personal AI tutor available 24/7. Learn at your own pace with guidance tailored to your grade and subject.</p>
+      <ul>
+        <li><span class="check">✓</span> Socratic step-by-step guidance</li>
+        <li><span class="check">✓</span> Chat history saved per subject</li>
+        <li><span class="check">✓</span> Weak-point flashcards auto-generated</li>
+        <li><span class="check">✓</span> Grades 1–12, Math, Science, English</li>
+        <li><span class="check">✓</span> MOET & Cambridge aligned</li>
+      </ul>
+      <a href="#pricing" class="btn-card indigo">Start Learning Free →</a>
+    </div>
+    <div class="user-card teacher" id="signup-teacher">
+      <h3>👩‍🏫 For Teachers & Tutors</h3>
+      <p>A powerful AI teaching assistant that helps you manage classrooms and create better learning materials faster.</p>
+      <ul>
+        <li><span class="check">✓</span> Create classrooms with invite codes</li>
+        <li><span class="check">✓</span> Track every student's progress</li>
+        <li><span class="check">✓</span> Generate lesson plans instantly</li>
+        <li><span class="check">✓</span> Create exam questions by topic</li>
+        <li><span class="check">✓</span> See weak points per student</li>
+      </ul>
+      <a href="#pricing" class="btn-card green">Start Teaching Free →</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section id="pricing">
+  <p class="section-label">Pricing</p>
+  <h2>Simple, Affordable Plans</h2>
+  <p class="section-sub">Start free. Upgrade when you're ready. Cancel anytime.</p>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <h3>Student Free</h3>
+      <div class="price">0 <span>VND</span></div>
+      <div class="price-desc">Forever free</div>
+      <ul>
+        <li><span class="check">✓</span> 5 AI questions per day</li>
+        <li><span class="check">✓</span> Math subject only</li>
+        <li><span class="check">✓</span> Basic chat history</li>
+      </ul>
+      <a href="#" class="btn-price outline">Get Started</a>
+    </div>
+    <div class="price-card featured">
+      <div class="price-badge">Most Popular</div>
+      <h3>Student Premium</h3>
+      <div class="price">49K <span>VND/tháng</span></div>
+      <div class="price-desc">~$2 USD per month</div>
+      <ul>
+        <li><span class="check">✓</span> Unlimited AI questions</li>
+        <li><span class="check">✓</span> All 3 subjects</li>
+        <li><span class="check">✓</span> Weak-point flashcards</li>
+        <li><span class="check">✓</span> Full chat history</li>
+        <li><span class="check">✓</span> MOET & Cambridge</li>
+      </ul>
+      <a href="#" class="btn-price indigo">Upgrade Now</a>
+    </div>
+    <div class="price-card">
+      <h3>Family Plan</h3>
+      <div class="price">99K <span>VND/tháng</span></div>
+      <div class="price-desc">~$4 USD per month</div>
+      <ul>
+        <li><span class="check">✓</span> 3 student accounts</li>
+        <li><span class="check">✓</span> All Premium features</li>
+        <li><span class="check">✓</span> All grades supported</li>
+      </ul>
+      <a href="#" class="btn-price outline">Get Family Plan</a>
+    </div>
+    <div class="price-card">
+      <h3>Teacher Pro</h3>
+      <div class="price">199K <span>VND/tháng</span></div>
+      <div class="price-desc">~$8 USD per month</div>
+      <ul>
+        <li><span class="check">✓</span> Unlimited classrooms</li>
+        <li><span class="check">✓</span> Student progress reports</li>
+        <li><span class="check">✓</span> AI lesson plan generator</li>
+        <li><span class="check">✓</span> Exam question builder</li>
+        <li><span class="check">✓</span> Email invite system</li>
+      </ul>
+      <a href="#" class="btn-price outline">Start Teaching</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <strong>EduBot Vietnam</strong> — Your AI Partner in Education<br/>
+  <span style="margin-top:8px;display:block;">Math · Science · English · Grades 1–12 · MOET & Cambridge</span>
+  <span style="margin-top:8px;display:block;font-size:12px;">© 2026 EduBot Vietnam.</span>
+</footer>
+
+</body>
+</html>
