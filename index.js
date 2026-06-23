@@ -98,8 +98,10 @@ app.post('/auth/login', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 app.post('/chat', authenticate, async (req, res) => {
   try {
-    const { message, subject, grade } = req.body;
+    const { message, subject, grade, lang, role: userRequestRole } = req.body;
     const userId = req.user.id;
+    const isTeacher = userRequestRole === 'teacher' || req.user.role === 'teacher' || req.user.role === 'admin';
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
 
     const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
@@ -143,15 +145,35 @@ app.post('/chat', authenticate, async (req, res) => {
     const messages = history.rows.reverse().map(r => ({ role: r.role, content: r.content }));
     messages.push({ role: 'user', content: message });
 
-    const systemPrompt = `You are EduBot, a friendly Socratic AI tutor for Vietnamese students grades 1-12.
+    const htmlFormatInstructions = `
+CRITICAL FORMATTING RULES:
+- Always respond in ${language}. Never switch languages under any circumstances.
+- Never use markdown symbols like ##, **, *, --, <<>>, or backticks.
+- Format ALL responses as clean HTML only.
+- Use <h2> for main section headings.
+- Use <h3> for sub-headings.
+- Use <p> for paragraphs.
+- Use <strong> for bold text.
+- Use <ul><li> for bullet lists.
+- Use <ol><li> for numbered lists.
+- Use <table><thead><tr><th> and <tbody><tr><td> for any tabular data.
+- Never output raw markdown. Only clean HTML tags.`;
+
+    const systemPrompt = isTeacher
+      ? `You are EduBot, a professional AI teaching assistant for Vietnamese teachers grades 1-12.
+You help teachers create lesson plans, exam questions, teaching activities, and classroom resources.
+Current subject: ${subject || 'General'}. Grade level: ${grade || 'unspecified'}.
+${htmlFormatInstructions}
+${curriculumContext}`
+      : `You are EduBot, a friendly Socratic AI tutor for Vietnamese students grades 1-12.
 Teaching style: Ask guiding questions rather than giving direct answers. Encourage thinking step by step.
 Current subject: ${subject || 'general'}. Student grade: ${grade || 'unknown'}.
-Language: Respond in the same language the student uses (Vietnamese or English).
+${htmlFormatInstructions}
 ${curriculumContext}`;
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
+      max_tokens: 2048,
       system: systemPrompt,
       messages,
     });
