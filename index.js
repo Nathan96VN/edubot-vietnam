@@ -93,6 +93,11 @@ function requireTeacher(req, res, next) {
   next();
 }
 
+function requireAdmin(req, res, next) {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  next();
+}
+
 function generateClassCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = 'EDU-';
@@ -101,7 +106,7 @@ function generateClassCode() {
 }
 
 function getSystemPrompt(grade, subject, role) {
-  if (role === 'teacher') {
+  if (role === 'teacher' || role === 'admin') {
     return `You are EduBot, a professional AI teaching assistant for Vietnamese educators.
 Subject: ${subject} | Grade: ${grade}
 
@@ -116,7 +121,6 @@ FORMATTING RULES — STRICTLY FOLLOW:
 - Use <ol> and <li> for numbered lists
 - Use <strong> for bold key terms
 - NEVER use #, ##, ###, *, **, --, ---, or any markdown syntax
-- NEVER write plain dashes as separators
 
 For LESSON PLANS always use this exact structure:
 <h2>LESSON PLAN</h2>
@@ -143,16 +147,14 @@ For LESSON PLANS always use this exact structure:
 
 For EXAM QUESTIONS use:
 <h2>EXAM QUESTIONS</h2>
-<ol>
-  <li><p>Question text</p></li>
-</ol>
+<ol><li><p>Question text</p></li></ol>
 <h3>Answer Key</h3>
 <table>
   <thead><tr><th>Question</th><th>Answer</th></tr></thead>
   <tbody>...</tbody>
 </table>
 
-Respond in the same language the teacher uses. Vietnamese gets Vietnamese, English gets English.`;
+Respond in the same language the teacher uses.`;
   }
 
   const gradeNum = parseInt(grade);
@@ -160,28 +162,25 @@ Respond in the same language the teacher uses. Vietnamese gets Vietnamese, Engli
   let style = '';
 
   if (gradeNum <= 5) {
-    tone = 'You are a warm, encouraging tutor for young Vietnamese students grades 1-5. Use simple words and fun examples from everyday life.';
+    tone = 'You are a warm, encouraging tutor for young Vietnamese students grades 1-5. Use simple words and fun examples.';
     style = 'Keep it very short and simple. Ask one question at a time. Use emojis occasionally.';
   } else if (gradeNum <= 9) {
     tone = 'You are a supportive tutor for Vietnamese middle school students grades 6-9. Be friendly but academic.';
     style = 'Break problems into clear numbered steps. Encourage the student to attempt each step before continuing.';
   } else {
     tone = 'You are a precise tutor for Vietnamese high school students grades 10-12 preparing for MOET and Cambridge exams.';
-    style = 'Be structured and exam-focused. Reference MOET formats and marking schemes when relevant.';
+    style = 'Be structured and exam-focused. Reference MOET formats when relevant.';
   }
 
   return `${tone}
 Subject: ${subject} | Grade: ${gradeNum}
-
-CRITICAL RULE - Socratic Method: Never give the direct answer. Guide the student step by step with questions.
-
+CRITICAL RULE - Socratic Method: Never give the direct answer. Guide the student step by step.
 FORMAT RULES — output clean HTML only:
 - Use <p> for paragraphs
 - Use <ol><li> for numbered steps
 - Use <ul><li> for bullet points
 - Use <strong> for key terms
 - NEVER use markdown (#, *, **, --, ---)
-
 Respond in the same language the student uses.`;
 }
 
@@ -192,12 +191,14 @@ app.post('/auth/register', async (req, res) => {
     const { email, password, name, role, grade, institution } = req.body;
     if (!email || !password || !name || !role) return res.status(400).json({ error: 'All fields are required' });
     if (role === 'student' && !grade) return res.status(400).json({ error: 'Grade is required for students' });
+    // Prevent registering as admin
+    const safeRole = role === 'admin' ? 'student' : role;
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
       `INSERT INTO users (email, password_hash, name, role, grade, institution)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, email, name, role, grade, institution, plan`,
-      [email, hash, name, role, grade || null, institution || null]
+      [email, hash, name, safeRole, grade || null, institution || null]
     );
     const user = result.rows[0];
     const token = jwt.sign(
@@ -252,39 +253,21 @@ app.post('/chat', authenticateToken, async (req, res) => {
         userData.daily_count = 0;
       }
       if (userData.daily_count >= 5) {
-        return res.status(429).json({
-          error: 'Daily limit reached',
-          message: 'Bạn đã dùng hết 5 câu hỏi miễn phí hôm nay. Nâng cấp lên Premium!',
-          upgrade: true
-        });
+        return res.status(429).json({ error: 'Daily limit reached', message: 'Bạn đã dùng hết 5 câu hỏi miễn phí hôm nay.', upgrade: true });
       }
     }
 
     const historyResult = await pool.query(
-      `SELECT role, content FROM chat_history
-       WHERE user_id = $1 AND subject = $2
-       ORDER BY created_at DESC LIMIT 20`,
+      `SELECT role, content FROM chat_history WHERE user_id = $1 AND subject = $2 ORDER BY created_at DESC LIMIT 20`,
       [userId, subject]
     );
     const history = historyResult.rows.reverse();
-    const messages = [
-      ...history.map(m => ({ role: m.role, content: m.content })),
-      { role: 'user', content: message }
-    ];
+    const messages = [...history.map(m => ({ role: m.role, content: m.content })), { role: 'user', content: message }];
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
-        system: getSystemPrompt(grade || 10, subject, role),
-        messages
-      })
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2048, system: getSystemPrompt(grade || 10, subject, role), messages })
     });
 
     const data = await aiRes.json();
@@ -295,20 +278,11 @@ app.post('/chat', authenticateToken, async (req, res) => {
 
     const reply = data.content[0].text;
 
-    await pool.query(
-      'INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)',
-      [userId, 'user', message, subject, grade || 10]
-    );
-    await pool.query(
-      'INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)',
-      [userId, 'assistant', reply, subject, grade || 10]
-    );
+    await pool.query('INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)', [userId, 'user', message, subject, grade || 10]);
+    await pool.query('INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)', [userId, 'assistant', reply, subject, grade || 10]);
 
     if (plan === 'free' && role === 'student') {
-      const countResult = await pool.query(
-        'UPDATE users SET daily_count = daily_count + 1 WHERE id = $1 RETURNING daily_count',
-        [userId]
-      );
+      const countResult = await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1 RETURNING daily_count', [userId]);
       const newCount = countResult.rows[0].daily_count;
       return res.json({ response: reply, remaining: 5 - newCount });
     }
@@ -325,10 +299,7 @@ app.get('/chat/history', authenticateToken, async (req, res) => {
     const { userId } = req.user;
     const { subject } = req.query;
     const result = await pool.query(
-      `SELECT role, content, subject, grade, created_at
-       FROM chat_history
-       WHERE user_id = $1 AND subject = $2
-       ORDER BY created_at ASC LIMIT 50`,
+      `SELECT role, content, subject, grade, created_at FROM chat_history WHERE user_id = $1 AND subject = $2 ORDER BY created_at ASC LIMIT 50`,
       [userId, subject]
     );
     res.json({ messages: result.rows });
@@ -339,16 +310,97 @@ app.get('/chat/history', authenticateToken, async (req, res) => {
 
 app.get('/user/profile', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, name, email, role, grade, institution, plan, daily_count, created_at FROM users WHERE id = $1',
-      [req.user.userId]
-    );
+    const result = await pool.query('SELECT id, name, email, role, grade, institution, plan, daily_count, created_at FROM users WHERE id = $1', [req.user.userId]);
     res.json({ user: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'Could not load profile' });
   }
 });
 
+// ── ADMIN ROUTES ─────────────────────────────────────────────
+app.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const stats = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM users WHERE role = 'student') as total_students,
+        (SELECT COUNT(*) FROM users WHERE role = 'teacher') as total_teachers,
+        (SELECT COUNT(*) FROM users WHERE plan = 'premium') as premium_users,
+        (SELECT COUNT(*) FROM chat_history WHERE created_at > NOW() - INTERVAL '24 hours') as messages_today,
+        (SELECT COUNT(*) FROM chat_history WHERE created_at > NOW() - INTERVAL '7 days') as messages_week,
+        (SELECT COUNT(*) FROM classrooms) as total_classrooms,
+        (SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '7 days') as new_users_week
+    `);
+    res.json({ stats: stats.rows[0] });
+  } catch (err) {
+    console.error('Admin stats error:', err);
+    res.status(500).json({ error: 'Could not load stats' });
+  }
+});
+
+app.get('/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { search, role, plan } = req.query;
+    let query = `SELECT id, name, email, role, grade, institution, plan, daily_count, created_at FROM users WHERE 1=1`;
+    const params = [];
+    if (search) { params.push('%' + search + '%'); query += ` AND (name ILIKE $${params.length} OR email ILIKE $${params.length})`; }
+    if (role) { params.push(role); query += ` AND role = $${params.length}`; }
+    if (plan) { params.push(plan); query += ` AND plan = $${params.length}`; }
+    query += ` ORDER BY created_at DESC LIMIT 100`;
+    const result = await pool.query(query, params);
+    res.json({ users: result.rows });
+  } catch (err) {
+    console.error('Admin users error:', err);
+    res.status(500).json({ error: 'Could not load users' });
+  }
+});
+
+app.patch('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { plan, role, banned } = req.body;
+    const updates = [];
+    const params = [req.params.id];
+    if (plan !== undefined) { params.push(plan); updates.push(`plan = $${params.length}`); }
+    if (role !== undefined) { params.push(role); updates.push(`role = $${params.length}`); }
+    if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
+    const result = await pool.query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $1 RETURNING id, name, email, role, plan`,
+      params
+    );
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    console.error('Admin update user error:', err);
+    res.status(500).json({ error: 'Could not update user' });
+  }
+});
+
+app.delete('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1 AND role != \'admin\'', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Admin delete user error:', err);
+    res.status(500).json({ error: 'Could not delete user' });
+  }
+});
+
+app.get('/admin/classrooms', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT c.*, u.name as teacher_name, u.email as teacher_email,
+             COUNT(cs.student_id) as student_count
+      FROM classrooms c
+      JOIN users u ON c.teacher_id = u.id
+      LEFT JOIN classroom_students cs ON c.id = cs.classroom_id
+      GROUP BY c.id, u.name, u.email
+      ORDER BY c.created_at DESC
+    `);
+    res.json({ classrooms: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load classrooms' });
+  }
+});
+
+// ── CLASSROOM ROUTES ──────────────────────────────────────────
 app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res) => {
   try {
     const { name, subject, grade } = req.body;
@@ -362,8 +414,7 @@ app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res
       attempts++;
     }
     const result = await pool.query(
-      `INSERT INTO classrooms (teacher_id, name, subject, grade, code)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      `INSERT INTO classrooms (teacher_id, name, subject, grade, code) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [req.user.userId, name, subject, grade, code]
     );
     res.json({ classroom: result.rows[0] });
@@ -378,29 +429,18 @@ app.get('/classroom/my', authenticateToken, async (req, res) => {
     const { userId, role } = req.user;
     if (role === 'teacher') {
       const result = await pool.query(
-        `SELECT c.*, COUNT(cs.student_id) as student_count
-         FROM classrooms c
-         LEFT JOIN classroom_students cs ON c.id = cs.classroom_id
-         WHERE c.teacher_id = $1
-         GROUP BY c.id
-         ORDER BY c.created_at DESC`,
+        `SELECT c.*, COUNT(cs.student_id) as student_count FROM classrooms c LEFT JOIN classroom_students cs ON c.id = cs.classroom_id WHERE c.teacher_id = $1 GROUP BY c.id ORDER BY c.created_at DESC`,
         [userId]
       );
       return res.json({ classrooms: result.rows });
     } else {
       const result = await pool.query(
-        `SELECT c.*, u.name as teacher_name
-         FROM classroom_students cs
-         JOIN classrooms c ON cs.classroom_id = c.id
-         JOIN users u ON c.teacher_id = u.id
-         WHERE cs.student_id = $1
-         ORDER BY cs.joined_at DESC`,
+        `SELECT c.*, u.name as teacher_name FROM classroom_students cs JOIN classrooms c ON cs.classroom_id = c.id JOIN users u ON c.teacher_id = u.id WHERE cs.student_id = $1 ORDER BY cs.joined_at DESC`,
         [userId]
       );
       return res.json({ classrooms: result.rows });
     }
   } catch (err) {
-    console.error('Load classrooms error:', err);
     res.status(500).json({ error: 'Could not load classrooms' });
   }
 });
@@ -412,14 +452,9 @@ app.post('/classroom/join', authenticateToken, async (req, res) => {
     const classResult = await pool.query('SELECT * FROM classrooms WHERE code = $1', [code.toUpperCase()]);
     if (classResult.rows.length === 0) return res.status(404).json({ error: 'Classroom not found. Check your code.' });
     const classroom = classResult.rows[0];
-    await pool.query(
-      `INSERT INTO classroom_students (classroom_id, student_id)
-       VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-      [classroom.id, req.user.userId]
-    );
+    await pool.query(`INSERT INTO classroom_students (classroom_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [classroom.id, req.user.userId]);
     res.json({ classroom, message: 'Successfully joined classroom!' });
   } catch (err) {
-    console.error('Join classroom error:', err);
     res.status(500).json({ error: 'Could not join classroom' });
   }
 });
@@ -427,16 +462,7 @@ app.post('/classroom/join', authenticateToken, async (req, res) => {
 app.get('/classroom/:id/students', authenticateToken, requireTeacher, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT u.id, u.name, u.email, u.grade, u.daily_count, u.last_reset,
-              cs.joined_at,
-              COUNT(ch.id) as total_messages,
-              MAX(ch.created_at) as last_active
-       FROM classroom_students cs
-       JOIN users u ON cs.student_id = u.id
-       LEFT JOIN chat_history ch ON u.id = ch.user_id
-       WHERE cs.classroom_id = $1
-       GROUP BY u.id, cs.joined_at
-       ORDER BY last_active DESC NULLS LAST`,
+      `SELECT u.id, u.name, u.email, u.grade, u.daily_count, cs.joined_at, COUNT(ch.id) as total_messages, MAX(ch.created_at) as last_active FROM classroom_students cs JOIN users u ON cs.student_id = u.id LEFT JOIN chat_history ch ON u.id = ch.user_id WHERE cs.classroom_id = $1 GROUP BY u.id, cs.joined_at ORDER BY last_active DESC NULLS LAST`,
       [req.params.id]
     );
     res.json({ students: result.rows });
@@ -447,12 +473,7 @@ app.get('/classroom/:id/students', authenticateToken, requireTeacher, async (req
 
 app.get('/student/:id/weakpoints', authenticateToken, requireTeacher, async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT subject, topic, count, last_flagged
-       FROM weak_points WHERE user_id = $1
-       ORDER BY count DESC`,
-      [req.params.id]
-    );
+    const result = await pool.query(`SELECT subject, topic, count, last_flagged FROM weak_points WHERE user_id = $1 ORDER BY count DESC`, [req.params.id]);
     res.json({ weakPoints: result.rows });
   } catch (err) {
     res.status(500).json({ error: 'Could not load weak points' });
