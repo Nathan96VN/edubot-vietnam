@@ -170,18 +170,6 @@ Respond in the same language the student uses.`;
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
-// ── TEMPORARY ADMIN ROUTE — DELETE AFTER USE ──────────────────
-app.get('/setup-admin-nathan2024', async (req, res) => {
-  try {
-    const result = await pool.query("UPDATE users SET role='admin' WHERE email='nathansteyn96@gmail.com' RETURNING id, email, role");
-    if (result.rowCount === 0) return res.json({ error: 'User not found. Make sure you are registered first.' });
-    res.json({ success: true, message: 'Nathan is now admin!', user: result.rows[0] });
-  } catch (err) {
-    res.json({ error: err.message });
-  }
-});
-// ── END TEMPORARY ROUTE ───────────────────────────────────────
-
 app.post('/auth/register', async (req, res) => {
   try {
     const { email, password, name, role, grade, institution } = req.body;
