@@ -7,6 +7,8 @@ const Anthropic = require('@anthropic-ai/sdk');
 const crypto = require('crypto');
 const querystring = require('querystring');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const OpenAI = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
 app.use(cors());
@@ -654,6 +656,45 @@ app.delete('/flashcards/:id', authenticate, async (req, res) => {
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete flashcard' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IMAGE GENERATION ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /image/generate
+// Body: { prompt, subject, grade }
+// Generates an educational image using DALL-E 3
+app.post('/image/generate', authenticate, async (req, res) => {
+  try {
+    const { prompt, subject, grade } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+
+    // Only premium users or teachers/admin can generate images
+    const userResult = await pool.query('SELECT plan, role FROM users WHERE id = $1', [req.user.id]);
+    const user = userResult.rows[0];
+    const canGenerate = user.plan !== 'free' || user.role === 'teacher' || user.role === 'admin';
+    if (!canGenerate) {
+      return res.status(403).json({ error: 'Image generation requires a Premium plan.', upgrade: true });
+    }
+
+    // Build a safe educational prompt
+    const safePrompt = `Educational illustration for grade ${grade || 'school'} students about ${subject || 'general science'}: ${prompt}. Clean, colorful, child-friendly educational diagram style. No text in image.`;
+
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: safePrompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'standard',
+    });
+
+    const imageUrl = response.data[0].url;
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('Image generation error:', err);
+    res.status(500).json({ error: 'Failed to generate image' });
   }
 });
 
