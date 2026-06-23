@@ -16,7 +16,6 @@ const pool = new Pool({
 });
 
 async function initDB() {
-  // Create tables
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,7 +30,6 @@ async function initDB() {
       last_reset DATE DEFAULT CURRENT_DATE,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
-
     CREATE TABLE IF NOT EXISTS chat_history (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -41,7 +39,6 @@ async function initDB() {
       grade INT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
-
     CREATE TABLE IF NOT EXISTS classrooms (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       teacher_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -51,7 +48,6 @@ async function initDB() {
       code TEXT UNIQUE NOT NULL,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
-
     CREATE TABLE IF NOT EXISTS classroom_students (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       classroom_id UUID REFERENCES classrooms(id) ON DELETE CASCADE,
@@ -59,7 +55,6 @@ async function initDB() {
       joined_at TIMESTAMPTZ DEFAULT NOW(),
       UNIQUE(classroom_id, student_id)
     );
-
     CREATE TABLE IF NOT EXISTS weak_points (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -68,13 +63,11 @@ async function initDB() {
       count INT DEFAULT 1,
       last_flagged TIMESTAMPTZ DEFAULT NOW()
     );
-
     CREATE INDEX IF NOT EXISTS idx_chat_user ON chat_history(user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_classroom_teacher ON classrooms(teacher_id);
     CREATE INDEX IF NOT EXISTS idx_classroom_students ON classroom_students(classroom_id);
   `);
 
-  // Migration — safely add new columns if they don't exist
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'student';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS institution TEXT;
@@ -117,14 +110,12 @@ function getSystemPrompt(grade, subject, role) {
   if (role === 'teacher') {
     return `You are EduBot, a professional AI teaching assistant for Vietnamese educators.
 Subject: ${subject} | Grade: ${grade}
-
 You help teachers with:
 1. Creating detailed lesson plans aligned with MOET and Cambridge curricula
 2. Generating exam questions at appropriate difficulty levels
 3. Suggesting teaching strategies for different learning styles
 4. Creating assessment rubrics and marking schemes
 5. Providing subject-specific pedagogical advice
-
 Format all responses professionally with clear sections, numbered lists, and practical examples.
 Be concise, actionable, and educator-focused.
 Respond in the same language the teacher uses.`;
@@ -146,19 +137,14 @@ Respond in the same language the teacher uses.`;
   }
 
   return `${tone}
-
 Subject: ${subject} | Grade: ${gradeNum}
-
 CRITICAL RULE - Socratic Method: Never give the direct answer. Instead:
 1. Acknowledge what the student is asking
 2. Identify the first step needed
 3. Ask a guiding question to lead them to discover the answer themselves
 4. Only confirm or reveal after the student has attempted it
-
 ${style}
-
 Respond in the same language the student uses. Vietnamese gets Vietnamese. English gets English.
-
 Format every response professionally:
 - Use clear sections with spacing
 - Number all steps in processes
@@ -229,6 +215,7 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
+// FIX 1: Send 'response' instead of 'reply', and handle teacher role properly
 app.post('/chat', authenticateToken, async (req, res) => {
   try {
     const { message, subject, grade } = req.body;
@@ -238,6 +225,7 @@ app.post('/chat', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Message and subject are required' });
     }
 
+    // Only limit students on free plan
     if (plan === 'free' && role === 'student') {
       const userResult = await pool.query(
         'SELECT daily_count, last_reset FROM users WHERE id = $1', [userId]
@@ -252,7 +240,7 @@ app.post('/chat', authenticateToken, async (req, res) => {
         userData.daily_count = 0;
       }
       if (userData.daily_count >= 5) {
-        return res.status(403).json({
+        return res.status(429).json({
           error: 'Daily limit reached',
           message: 'Bạn đã dùng hết 5 câu hỏi miễn phí hôm nay. Nâng cấp lên Premium để học không giới hạn!',
           upgrade: true
@@ -272,7 +260,7 @@ app.post('/chat', authenticateToken, async (req, res) => {
       { role: 'user', content: message }
     ];
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -282,36 +270,48 @@ app.post('/chat', authenticateToken, async (req, res) => {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1024,
-        system: getSystemPrompt(grade, subject, role),
+        system: getSystemPrompt(grade || 10, subject, role),
         messages
       })
     });
 
-    const data = await response.json();
+    const data = await aiRes.json();
+
+    if (!data.content || !data.content[0]) {
+      console.error('Anthropic error:', data);
+      return res.status(500).json({ error: 'AI service error. Please try again.' });
+    }
+
     const reply = data.content[0].text;
 
     await pool.query(
       'INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)',
-      [userId, 'user', message, subject, grade]
+      [userId, 'user', message, subject, grade || 10]
     );
     await pool.query(
       'INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)',
-      [userId, 'assistant', reply, subject, grade]
+      [userId, 'assistant', reply, subject, grade || 10]
     );
 
     if (plan === 'free' && role === 'student') {
-      await pool.query(
-        'UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]
+      const countResult = await pool.query(
+        'UPDATE users SET daily_count = daily_count + 1 WHERE id = $1 RETURNING daily_count',
+        [userId]
       );
+      const newCount = countResult.rows[0].daily_count;
+      // FIX 1: return 'response' not 'reply', and include remaining count
+      return res.json({ response: reply, remaining: 5 - newCount });
     }
 
-    res.json({ reply });
+    // FIX 1: return 'response' not 'reply'
+    res.json({ response: reply });
   } catch (err) {
     console.error('Chat error:', err);
     res.status(500).json({ error: 'Chat failed. Please try again.' });
   }
 });
 
+// FIX 2: chat history returns 'messages' not 'history'
 app.get('/chat/history', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
@@ -323,7 +323,7 @@ app.get('/chat/history', authenticateToken, async (req, res) => {
        ORDER BY created_at ASC LIMIT 50`,
       [userId, subject]
     );
-    res.json({ history: result.rows });
+    res.json({ messages: result.rows });
   } catch (err) {
     res.status(500).json({ error: 'Could not load history' });
   }
@@ -355,8 +355,7 @@ app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res
     }
     const result = await pool.query(
       `INSERT INTO classrooms (teacher_id, name, subject, grade, code)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [req.user.userId, name, subject, grade, code]
     );
     res.json({ classroom: result.rows[0] });
@@ -366,19 +365,37 @@ app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res
   }
 });
 
-app.get('/classroom/my', authenticateToken, requireTeacher, async (req, res) => {
+// FIX 3: /classroom/my works for BOTH teachers and students
+app.get('/classroom/my', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT c.*, COUNT(cs.student_id) as student_count
-       FROM classrooms c
-       LEFT JOIN classroom_students cs ON c.id = cs.classroom_id
-       WHERE c.teacher_id = $1
-       GROUP BY c.id
-       ORDER BY c.created_at DESC`,
-      [req.user.userId]
-    );
-    res.json({ classrooms: result.rows });
+    const { userId, role } = req.user;
+
+    if (role === 'teacher') {
+      const result = await pool.query(
+        `SELECT c.*, COUNT(cs.student_id) as student_count
+         FROM classrooms c
+         LEFT JOIN classroom_students cs ON c.id = cs.classroom_id
+         WHERE c.teacher_id = $1
+         GROUP BY c.id
+         ORDER BY c.created_at DESC`,
+        [userId]
+      );
+      return res.json({ classrooms: result.rows });
+    } else {
+      // Student: get classrooms they joined + teacher name
+      const result = await pool.query(
+        `SELECT c.*, u.name as teacher_name
+         FROM classroom_students cs
+         JOIN classrooms c ON cs.classroom_id = c.id
+         JOIN users u ON c.teacher_id = u.id
+         WHERE cs.student_id = $1
+         ORDER BY cs.joined_at DESC`,
+        [userId]
+      );
+      return res.json({ classrooms: result.rows });
+    }
   } catch (err) {
+    console.error('Load classrooms error:', err);
     res.status(500).json({ error: 'Could not load classrooms' });
   }
 });
