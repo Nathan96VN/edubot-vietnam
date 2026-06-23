@@ -575,6 +575,89 @@ app.get('/payment/status', authenticate, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FLASHCARD ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /flashcards/generate
+app.post('/flashcards/generate', authenticate, async (req, res) => {
+  try {
+    const { subject, grade, topic, count = 5, lang } = req.body;
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    const prompt = `Generate exactly ${count} flashcards for a grade ${grade} student studying ${subject}.
+Topic: ${topic || subject}.
+Language: ${language}.
+
+Return ONLY a valid JSON array with no other text, no markdown, no code blocks.
+Each item must have exactly these fields:
+- "question": the question or prompt on the front of the card
+- "answer": the clear answer on the back of the card
+- "hint": a short hint to help the student
+
+Example format:
+[{"question":"What is 2+2?","answer":"4","hint":"Count on your fingers"}]`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    let raw = response.content[0].text.trim();
+    raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    let cards;
+    try {
+      cards = JSON.parse(raw);
+    } catch (e) {
+      console.error('Failed to parse flashcards JSON:', raw);
+      return res.status(500).json({ error: 'Failed to generate flashcards' });
+    }
+
+    const saved = [];
+    for (const card of cards) {
+      const result = await pool.query(
+        `INSERT INTO flashcards (user_id, subject, grade, topic, question, answer, hint, lang, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW()) RETURNING *`,
+        [req.user.id, subject, grade, topic || subject, card.question, card.answer, card.hint || '', lang || 'vi']
+      );
+      saved.push(result.rows[0]);
+    }
+
+    res.json({ flashcards: saved });
+  } catch (err) {
+    console.error('Flashcard generate error:', err);
+    res.status(500).json({ error: 'Failed to generate flashcards' });
+  }
+});
+
+// GET /flashcards/my
+app.get('/flashcards/my', authenticate, async (req, res) => {
+  try {
+    const { subject, grade } = req.query;
+    let query = 'SELECT * FROM flashcards WHERE user_id = $1';
+    const params = [req.user.id];
+    if (subject) { params.push(subject); query += ` AND subject = $${params.length}`; }
+    if (grade)   { params.push(grade);   query += ` AND grade = $${params.length}`; }
+    query += ' ORDER BY created_at DESC LIMIT 100';
+    const result = await pool.query(query, params);
+    res.json({ flashcards: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load flashcards' });
+  }
+});
+
+// DELETE /flashcards/:id
+app.delete('/flashcards/:id', authenticate, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM flashcards WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete flashcard' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // START SERVER — creates payments table automatically on first boot
 // ─────────────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
@@ -590,6 +673,20 @@ async function startServer() {
       currency VARCHAR(10),
       txn_ref VARCHAR(255) UNIQUE,
       status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS flashcards (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      subject VARCHAR(50),
+      grade INTEGER,
+      topic VARCHAR(200),
+      question TEXT,
+      answer TEXT,
+      hint TEXT,
+      lang VARCHAR(5) DEFAULT 'vi',
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
