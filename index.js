@@ -561,7 +561,7 @@ async function startServer() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER REFERENCES users(id),
+      user_id UUID,
       plan VARCHAR(50),
       gateway VARCHAR(20),
       amount INTEGER,
