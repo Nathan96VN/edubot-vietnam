@@ -1,225 +1,75 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');
+const Anthropic = require('@anthropic-ai/sdk');
+const crypto = require('crypto');
+const querystring = require('querystring');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 app.use(express.static('public'));
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+// ─── DB + AI clients ─────────────────────────────────────────────────────────
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      name TEXT NOT NULL,
-      role TEXT DEFAULT 'student',
-      grade INT CHECK (grade BETWEEN 1 AND 12),
-      institution TEXT,
-      plan TEXT DEFAULT 'free',
-      daily_count INT DEFAULT 0,
-      last_reset DATE DEFAULT CURRENT_DATE,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS chat_history (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-      role TEXT CHECK (role IN ('user', 'assistant')),
-      content TEXT NOT NULL,
-      subject TEXT,
-      grade INT,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS classrooms (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      teacher_id UUID REFERENCES users(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      subject TEXT,
-      grade INT,
-      code TEXT UNIQUE NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS classroom_students (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      classroom_id UUID REFERENCES classrooms(id) ON DELETE CASCADE,
-      student_id UUID REFERENCES users(id) ON DELETE CASCADE,
-      joined_at TIMESTAMPTZ DEFAULT NOW(),
-      UNIQUE(classroom_id, student_id)
-    );
-    CREATE TABLE IF NOT EXISTS weak_points (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-      subject TEXT NOT NULL,
-      topic TEXT NOT NULL,
-      count INT DEFAULT 1,
-      last_flagged TIMESTAMPTZ DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS curriculum (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      subject TEXT NOT NULL,
-      grade INT NOT NULL,
-      stage INT NOT NULL,
-      strand TEXT NOT NULL,
-      substrand TEXT,
-      code TEXT,
-      objective TEXT NOT NULL,
-      curriculum_type TEXT DEFAULT 'cambridge',
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-    CREATE INDEX IF NOT EXISTS idx_chat_user ON chat_history(user_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_classroom_teacher ON classrooms(teacher_id);
-    CREATE INDEX IF NOT EXISTS idx_classroom_students ON classroom_students(classroom_id);
-    CREATE INDEX IF NOT EXISTS idx_curriculum_search ON curriculum(subject, grade, curriculum_type);
-  `);
-  await pool.query(`
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'student';
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS institution TEXT;
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free';
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_count INT DEFAULT 0;
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reset DATE DEFAULT CURRENT_DATE;
-  `);
-  console.log('Database tables ready');
-}
+// ─── Pricing config (VND for VNPay, USD cents for Stripe) ────────────────────
+const PLANS = {
+  student_premium: { vnd: 79000,  usd_cents: 399,  label: 'Student Premium', plan: 'premium' },
+  family:          { vnd: 149000, usd_cents: 699,  label: 'Family Plan',     plan: 'family'  },
+  teacher_pro:     { vnd: 249000, usd_cents: 1199, label: 'Teacher Pro',     plan: 'pro'     },
+};
 
-function authenticateToken(req, res, next) {
-  const auth = req.headers['authorization'];
-  const token = auth && auth.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Token required' });
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
-    req.user = user;
-    next();
-  });
-}
-
-function requireTeacher(req, res, next) {
-  if (req.user.role !== 'teacher') return res.status(403).json({ error: 'Teacher access required' });
-  next();
-}
-
-function requireAdmin(req, res, next) {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
-  next();
-}
-
-function generateClassCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'EDU-';
-  for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-  return code;
-}
-
-async function getCurriculumContext(subject, grade) {
+// ─── Auth middleware ──────────────────────────────────────────────────────────
+const authenticate = (req, res, next) => {
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ error: 'No token' });
   try {
-    const result = await pool.query(
-      `SELECT strand, substrand, code, objective 
-       FROM curriculum 
-       WHERE subject = $1 AND grade = $2 
-       ORDER BY strand, substrand
-       LIMIT 20`,
-      [subject, grade]
-    );
-    if (result.rows.length === 0) return '';
-    const objectives = result.rows.map(r =>
-      `[${r.code || ''}] ${r.strand}${r.substrand ? ' > ' + r.substrand : ''}: ${r.objective}`
-    ).join('\n');
-    return `\n\nCAMBRIDGE CURRICULUM CONTEXT (Grade ${grade} ${subject}):\n${objectives}\n\nUse these learning objectives to guide your teaching. Make sure your responses align with what students at this level are expected to know and learn.`;
-  } catch (err) {
-    console.error('Curriculum context error:', err);
-    return '';
+    req.user = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
   }
-}
+};
 
-function getSystemPrompt(grade, subject, role) {
-  if (role === 'teacher' || role === 'admin') {
-    return `You are EduBot, a professional AI teaching assistant for Vietnamese educators.
-Subject: ${subject} | Grade: ${grade}
+const adminOnly = (req, res, next) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  next();
+};
 
-You help teachers create professional educational documents. You MUST format all responses as clean HTML only — no markdown, no hashtags, no dashes, no asterisks.
-
-FORMATTING RULES — STRICTLY FOLLOW:
-- Use <h2> for main section titles
-- Use <h3> for subsection titles
-- Use <p> for paragraphs
-- Use <table>, <thead>, <tbody>, <tr>, <th>, <td> for ALL structured data
-- Use <ul> and <li> for bullet lists
-- Use <ol> and <li> for numbered lists
-- Use <strong> for bold key terms
-- NEVER use #, ##, ###, *, **, --, --- or any markdown syntax
-
-For LESSON PLANS always use this exact structure:
-<h2>LESSON PLAN</h2>
-<table>
-  <thead><tr><th>Section</th><th>Details</th></tr></thead>
-  <tbody>
-    <tr><td><strong>Subject</strong></td><td>...</td></tr>
-    <tr><td><strong>Grade</strong></td><td>...</td></tr>
-    <tr><td><strong>Duration</strong></td><td>...</td></tr>
-    <tr><td><strong>Topic</strong></td><td>...</td></tr>
-    <tr><td><strong>Objectives</strong></td><td>...</td></tr>
-    <tr><td><strong>Materials</strong></td><td>...</td></tr>
-  </tbody>
-</table>
-<h3>Lesson Sequence</h3>
-<table>
-  <thead><tr><th>Time</th><th>Phase</th><th>Teacher Activity</th><th>Student Activity</th><th>Materials</th></tr></thead>
-  <tbody><tr><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td></tr></tbody>
-</table>
-<h3>Assessment</h3>
-<p>...</p>
-
-Respond in the same language the teacher uses.`;
-  }
-
-  const gradeNum = parseInt(grade);
-  let tone = '';
-  let style = '';
-
-  if (gradeNum <= 5) {
-    tone = 'You are a warm, encouraging tutor for young Vietnamese students grades 1-5.';
-    style = 'Keep it very short and simple. Ask one question at a time. Use emojis occasionally.';
-  } else if (gradeNum <= 9) {
-    tone = 'You are a supportive tutor for Vietnamese middle school students grades 6-9.';
-    style = 'Break problems into clear numbered steps. Encourage the student to attempt each step.';
-  } else {
-    tone = 'You are a precise tutor for Vietnamese high school students grades 10-12.';
-    style = 'Be structured and exam-focused. Reference MOET formats when relevant.';
-  }
-
-  return `${tone}
-Subject: ${subject} | Grade: ${gradeNum}
-CRITICAL RULE - Socratic Method: Never give the direct answer. Guide step by step.
-FORMAT: output clean HTML only. Use <p>, <ol><li>, <ul><li>, <strong>. NEVER use markdown.
-Respond in the same language the student uses.`;
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
+// LANDING PAGE
+// ─────────────────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
 app.post('/auth/register', async (req, res) => {
   try {
-    const { email, password, name, role, grade, institution } = req.body;
-    if (!email || !password || !name || !role) return res.status(400).json({ error: 'All fields are required' });
-    if (role === 'student' && !grade) return res.status(400).json({ error: 'Grade is required for students' });
-    const safeRole = role === 'admin' ? 'student' : role;
+    const { email, password, name, role = 'student', grade, institution } = req.body;
+    if (!email || !password || !name) return res.status(400).json({ error: 'Missing fields' });
+
+    const exists = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (exists.rows.length > 0) return res.status(400).json({ error: 'Email already registered' });
+
     const hash = await bcrypt.hash(password, 10);
+    const assignedRole = email === 'nathansteyn96@gmail.com' ? 'admin' : role;
+
     const result = await pool.query(
-      `INSERT INTO users (email, password_hash, name, role, grade, institution) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, name, role, grade, institution, plan`,
-      [email, hash, name, safeRole, grade || null, institution || null]
+      `INSERT INTO users (email, password_hash, name, role, grade, institution, plan, daily_count, last_reset)
+       VALUES ($1, $2, $3, $4, $5, $6, 'free', 0, NOW()) RETURNING id, email, name, role, plan`,
+      [email, hash, name, assignedRole, grade || null, institution || null]
     );
+
     const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id, role: user.role, grade: user.grade, plan: user.plan }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user });
   } catch (err) {
-    if (err.code === '23505') return res.status(400).json({ error: 'Email already registered' });
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed' });
   }
@@ -228,237 +78,501 @@ app.post('/auth/register', async (req, res) => {
 app.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
+
     const user = result.rows[0];
-    if (!user || !await bcrypt.compare(password, user.password_hash)) return res.status(401).json({ error: 'Sai email hoặc mật khẩu' });
-    const token = jwt.sign({ userId: user.id, role: user.role, grade: user.grade, plan: user.plan }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, name: user.name, role: user.role, grade: user.grade, plan: user.plan } });
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, plan: user.plan, grade: user.grade } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
-app.post('/chat', authenticateToken, async (req, res) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/chat', authenticate, async (req, res) => {
   try {
     const { message, subject, grade } = req.body;
-    const { userId, plan, role } = req.user;
-    if (!message || !subject) return res.status(400).json({ error: 'Message and subject are required' });
+    const userId = req.user.id;
 
-    if (plan === 'free' && role === 'student') {
-      const userResult = await pool.query('SELECT daily_count, last_reset FROM users WHERE id = $1', [userId]);
-      const userData = userResult.rows[0];
-      const today = new Date().toISOString().split('T')[0];
-      if (userData.last_reset !== today) {
-        await pool.query('UPDATE users SET daily_count = 0, last_reset = $1 WHERE id = $2', [today, userId]);
-        userData.daily_count = 0;
-      }
-      if (userData.daily_count >= 5) {
-        return res.status(429).json({ error: 'Daily limit reached', message: 'Bạn đã dùng hết 5 câu hỏi miễn phí hôm nay.', upgrade: true });
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const user = userResult.rows[0];
+
+    // Reset daily count if needed
+    const lastReset = new Date(user.last_reset);
+    const now = new Date();
+    if (now.toDateString() !== lastReset.toDateString()) {
+      await pool.query('UPDATE users SET daily_count = 0, last_reset = NOW() WHERE id = $1', [userId]);
+      user.daily_count = 0;
+    }
+
+    // Enforce free tier limit
+    const isPaid = user.plan !== 'free' || user.role === 'teacher' || user.role === 'admin';
+    if (!isPaid && user.daily_count >= 5) {
+      return res.status(429).json({ error: 'Daily limit reached. Upgrade to continue!', upgrade: true });
+    }
+
+    // Fetch curriculum context (RAG)
+    let curriculumContext = '';
+    if (subject && grade) {
+      const curriculum = await pool.query(
+        `SELECT objective, strand, substrand FROM curriculum
+         WHERE LOWER(subject) = LOWER($1) AND grade = $2
+         LIMIT 10`,
+        [subject, parseInt(grade)]
+      );
+      if (curriculum.rows.length > 0) {
+        curriculumContext = '\n\nRelevant curriculum objectives:\n' +
+          curriculum.rows.map(r => `- [${r.strand}${r.substrand ? ' > ' + r.substrand : ''}] ${r.objective}`).join('\n');
       }
     }
 
-    const historyResult = await pool.query(
-      `SELECT role, content FROM chat_history WHERE user_id = $1 AND subject = $2 ORDER BY created_at DESC LIMIT 20`,
-      [userId, subject]
+    // Fetch recent history
+    const history = await pool.query(
+      `SELECT role, content FROM chat_history
+       WHERE user_id = $1 AND subject = $2
+       ORDER BY created_at DESC LIMIT 10`,
+      [userId, subject || 'general']
     );
-    const history = historyResult.rows.reverse();
-    const messages = [...history.map(m => ({ role: m.role, content: m.content })), { role: 'user', content: message }];
+    const messages = history.rows.reverse().map(r => ({ role: r.role, content: r.content }));
+    messages.push({ role: 'user', content: message });
 
-    // Get curriculum context for this subject and grade
-    const curriculumContext = await getCurriculumContext(subject, grade);
-    const systemPrompt = getSystemPrompt(grade || 10, subject, role) + curriculumContext;
+    const systemPrompt = `You are EduBot, a friendly Socratic AI tutor for Vietnamese students grades 1-12.
+Teaching style: Ask guiding questions rather than giving direct answers. Encourage thinking step by step.
+Current subject: ${subject || 'general'}. Student grade: ${grade || 'unknown'}.
+Language: Respond in the same language the student uses (Vietnamese or English).
+${curriculumContext}`;
 
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2048, system: systemPrompt, messages })
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages,
     });
 
-    const data = await aiRes.json();
-    if (!data.content || !data.content[0]) return res.status(500).json({ error: 'AI service error.' });
+    const reply = response.content[0].text;
 
-    const reply = data.content[0].text;
-    await pool.query('INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)', [userId, 'user', message, subject, grade || 10]);
-    await pool.query('INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)', [userId, 'assistant', reply, subject, grade || 10]);
+    // Save both messages
+    await pool.query(
+      `INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, 'user', $2, $3, $4)`,
+      [userId, message, subject || 'general', grade || null]
+    );
+    await pool.query(
+      `INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, 'assistant', $2, $3, $4)`,
+      [userId, reply, subject || 'general', grade || null]
+    );
 
-    if (plan === 'free' && role === 'student') {
-      const countResult = await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1 RETURNING daily_count', [userId]);
-      return res.json({ response: reply, remaining: 5 - countResult.rows[0].daily_count });
-    }
+    // Increment daily count
+    await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]);
 
-    res.json({ response: reply });
+    res.json({ reply, daily_count: user.daily_count + 1 });
   } catch (err) {
     console.error('Chat error:', err);
-    res.status(500).json({ error: 'Chat failed.' });
+    res.status(500).json({ error: 'Chat failed' });
   }
 });
 
-app.get('/chat/history', authenticateToken, async (req, res) => {
+app.get('/chat/history', authenticate, async (req, res) => {
   try {
-    const { userId } = req.user;
     const { subject } = req.query;
     const result = await pool.query(
-      `SELECT role, content, subject, grade, created_at FROM chat_history WHERE user_id = $1 AND subject = $2 ORDER BY created_at ASC LIMIT 50`,
-      [userId, subject]
+      `SELECT role, content, created_at FROM chat_history
+       WHERE user_id = $1 AND subject = $2
+       ORDER BY created_at ASC LIMIT 50`,
+      [req.user.id, subject || 'general']
     );
-    res.json({ messages: result.rows });
+    res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Could not load history' });
+    res.status(500).json({ error: 'Failed to load history' });
   }
 });
 
-app.get('/user/profile', authenticateToken, async (req, res) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// USER ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/user/profile', authenticate, async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, email, role, grade, institution, plan, daily_count, created_at FROM users WHERE id = $1', [req.user.userId]);
-    res.json({ user: result.rows[0] });
+    const result = await pool.query(
+      'SELECT id, email, name, role, grade, institution, plan, daily_count FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Could not load profile' });
+    res.status(500).json({ error: 'Failed to load profile' });
   }
 });
 
-app.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// CLASSROOM ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/classroom/create', authenticate, async (req, res) => {
   try {
-    const stats = await pool.query(`
-      SELECT
-        (SELECT COUNT(*) FROM users WHERE role = 'student') as total_students,
-        (SELECT COUNT(*) FROM users WHERE role = 'teacher') as total_teachers,
-        (SELECT COUNT(*) FROM users WHERE plan = 'premium') as premium_users,
-        (SELECT COUNT(*) FROM chat_history WHERE created_at > NOW() - INTERVAL '24 hours') as messages_today,
-        (SELECT COUNT(*) FROM chat_history WHERE created_at > NOW() - INTERVAL '7 days') as messages_week,
-        (SELECT COUNT(*) FROM classrooms) as total_classrooms,
-        (SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '7 days') as new_users_week,
-        (SELECT COUNT(*) FROM curriculum) as curriculum_entries
-    `);
-    res.json({ stats: stats.rows[0] });
-  } catch (err) {
-    res.status(500).json({ error: 'Could not load stats' });
-  }
-});
-
-app.get('/admin/users', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { search, role, plan } = req.query;
-    let query = `SELECT id, name, email, role, grade, institution, plan, daily_count, created_at FROM users WHERE 1=1`;
-    const params = [];
-    if (search) { params.push('%' + search + '%'); query += ` AND (name ILIKE $${params.length} OR email ILIKE $${params.length})`; }
-    if (role) { params.push(role); query += ` AND role = $${params.length}`; }
-    if (plan) { params.push(plan); query += ` AND plan = $${params.length}`; }
-    query += ` ORDER BY created_at DESC LIMIT 100`;
-    const result = await pool.query(query, params);
-    res.json({ users: result.rows });
-  } catch (err) {
-    res.status(500).json({ error: 'Could not load users' });
-  }
-});
-
-app.patch('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { plan, role } = req.body;
-    const updates = [];
-    const params = [req.params.id];
-    if (plan !== undefined) { params.push(plan); updates.push(`plan = $${params.length}`); }
-    if (role !== undefined) { params.push(role); updates.push(`role = $${params.length}`); }
-    if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
-    const result = await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $1 RETURNING id, name, email, role, plan`, params);
-    res.json({ user: result.rows[0] });
-  } catch (err) {
-    res.status(500).json({ error: 'Could not update user' });
-  }
-});
-
-app.delete('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    await pool.query("DELETE FROM users WHERE id = $1 AND role != 'admin'", [req.params.id]);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Could not delete user' });
-  }
-});
-
-app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res) => {
-  try {
-    const { name, subject, grade } = req.body;
-    if (!name) return res.status(400).json({ error: 'Classroom name required' });
-    let code = generateClassCode();
-    let attempts = 0;
-    while (attempts < 10) {
-      const existing = await pool.query('SELECT id FROM classrooms WHERE code = $1', [code]);
-      if (existing.rows.length === 0) break;
-      code = generateClassCode();
-      attempts++;
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Teachers only' });
     }
+    const { name, subject, grade } = req.body;
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     const result = await pool.query(
       `INSERT INTO classrooms (teacher_id, name, subject, grade, code) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [req.user.userId, name, subject, grade, code]
+      [req.user.id, name, subject, grade, code]
     );
-    res.json({ classroom: result.rows[0] });
+    res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Could not create classroom' });
+    res.status(500).json({ error: 'Failed to create classroom' });
   }
 });
 
-app.get('/classroom/my', authenticateToken, async (req, res) => {
+app.get('/classroom/my', authenticate, async (req, res) => {
   try {
-    const { userId, role } = req.user;
-    if (role === 'teacher') {
-      const result = await pool.query(
-        `SELECT c.*, COUNT(cs.student_id) as student_count FROM classrooms c LEFT JOIN classroom_students cs ON c.id = cs.classroom_id WHERE c.teacher_id = $1 GROUP BY c.id ORDER BY c.created_at DESC`,
-        [userId]
-      );
-      return res.json({ classrooms: result.rows });
+    let result;
+    if (req.user.role === 'teacher' || req.user.role === 'admin') {
+      result = await pool.query('SELECT * FROM classrooms WHERE teacher_id = $1', [req.user.id]);
     } else {
-      const result = await pool.query(
-        `SELECT c.*, u.name as teacher_name FROM classroom_students cs JOIN classrooms c ON cs.classroom_id = c.id JOIN users u ON c.teacher_id = u.id WHERE cs.student_id = $1 ORDER BY cs.joined_at DESC`,
-        [userId]
+      result = await pool.query(
+        `SELECT c.* FROM classrooms c
+         JOIN classroom_students cs ON cs.classroom_id = c.id
+         WHERE cs.student_id = $1`,
+        [req.user.id]
       );
-      return res.json({ classrooms: result.rows });
     }
+    res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Could not load classrooms' });
+    res.status(500).json({ error: 'Failed to load classrooms' });
   }
 });
 
-app.post('/classroom/join', authenticateToken, async (req, res) => {
+app.post('/classroom/join', authenticate, async (req, res) => {
   try {
     const { code } = req.body;
-    if (!code) return res.status(400).json({ error: 'Classroom code required' });
-    const classResult = await pool.query('SELECT * FROM classrooms WHERE code = $1', [code.toUpperCase()]);
-    if (classResult.rows.length === 0) return res.status(404).json({ error: 'Classroom not found.' });
-    const classroom = classResult.rows[0];
-    await pool.query(`INSERT INTO classroom_students (classroom_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [classroom.id, req.user.userId]);
-    res.json({ classroom, message: 'Successfully joined classroom!' });
+    const classroom = await pool.query('SELECT * FROM classrooms WHERE code = $1', [code]);
+    if (classroom.rows.length === 0) return res.status(404).json({ error: 'Classroom not found' });
+
+    const classroomId = classroom.rows[0].id;
+    await pool.query(
+      `INSERT INTO classroom_students (classroom_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [classroomId, req.user.id]
+    );
+    res.json({ message: 'Joined classroom', classroom: classroom.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: 'Could not join classroom' });
+    res.status(500).json({ error: 'Failed to join classroom' });
   }
 });
 
-app.get('/classroom/:id/students', authenticateToken, requireTeacher, async (req, res) => {
+app.get('/classroom/:id/students', authenticate, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT u.id, u.name, u.email, u.grade, u.daily_count, cs.joined_at, COUNT(ch.id) as total_messages, MAX(ch.created_at) as last_active FROM classroom_students cs JOIN users u ON cs.student_id = u.id LEFT JOIN chat_history ch ON u.id = ch.user_id WHERE cs.classroom_id = $1 GROUP BY u.id, cs.joined_at ORDER BY last_active DESC NULLS LAST`,
+      `SELECT u.id, u.name, u.email, u.grade FROM users u
+       JOIN classroom_students cs ON cs.student_id = u.id
+       WHERE cs.classroom_id = $1`,
       [req.params.id]
     );
-    res.json({ students: result.rows });
+    res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: 'Could not load students' });
+    res.status(500).json({ error: 'Failed to load students' });
   }
 });
 
-app.get('/student/:id/weakpoints', authenticateToken, requireTeacher, async (req, res) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/admin/stats', authenticate, adminOnly, async (req, res) => {
   try {
-    const result = await pool.query(`SELECT subject, topic, count, last_flagged FROM weak_points WHERE user_id = $1 ORDER BY count DESC`, [req.params.id]);
-    res.json({ weakPoints: result.rows });
+    const [users, chats, classrooms] = await Promise.all([
+      pool.query('SELECT COUNT(*) as total, role, plan FROM users GROUP BY role, plan'),
+      pool.query('SELECT COUNT(*) as total FROM chat_history WHERE role = $1', ['user']),
+      pool.query('SELECT COUNT(*) as total FROM classrooms'),
+    ]);
+    res.json({ users: users.rows, total_chats: chats.rows[0].total, total_classrooms: classrooms.rows[0].total });
   } catch (err) {
-    res.status(500).json({ error: 'Could not load weak points' });
+    res.status(500).json({ error: 'Failed to load stats' });
   }
 });
 
-initDB().then(() => {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`EduBot Vietnam running on port ${PORT}`));
-}).catch(err => {
-  console.error('Failed to initialize database:', err);
-  process.exit(1);
+app.get('/admin/users', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { search, role, plan } = req.query;
+    let query = 'SELECT id, email, name, role, grade, institution, plan, daily_count, created_at FROM users WHERE 1=1';
+    const params = [];
+    if (search) { params.push(`%${search}%`); query += ` AND (name ILIKE $${params.length} OR email ILIKE $${params.length})`; }
+    if (role)   { params.push(role);           query += ` AND role = $${params.length}`; }
+    if (plan)   { params.push(plan);           query += ` AND plan = $${params.length}`; }
+    query += ' ORDER BY created_at DESC LIMIT 100';
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load users' });
+  }
 });
+
+app.patch('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { plan, role } = req.body;
+    const result = await pool.query(
+      'UPDATE users SET plan = COALESCE($1, plan), role = COALESCE($2, role) WHERE id = $3 RETURNING *',
+      [plan, role, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+app.delete('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+    res.json({ message: 'User deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHASE 4 — PAYMENT ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Helper: upgrade user plan in DB ──────────────────────────────────────────
+async function upgradePlan(userId, planKey) {
+  const plan = PLANS[planKey];
+  if (!plan) throw new Error('Unknown plan: ' + planKey);
+  await pool.query('UPDATE users SET plan = $1 WHERE id = $2', [plan.plan, userId]);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VNPAY — Create payment URL
+// POST /payment/create-vnpay
+// Body: { planKey: 'student_premium' | 'family' | 'teacher_pro' }
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/payment/create-vnpay', authenticate, async (req, res) => {
+  try {
+    const { planKey } = req.body;
+    const plan = PLANS[planKey];
+    if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+
+    const tmnCode    = process.env.VNPAY_TMN_CODE;
+    const hashSecret = process.env.VNPAY_HASH_SECRET;
+    const returnUrl  = `${process.env.APP_URL || 'https://edubot-vietnam.onrender.com'}/payment/vnpay-return`;
+
+    const date = new Date();
+    const pad  = n => String(n).padStart(2, '0');
+    const createDate = `${date.getFullYear()}${pad(date.getMonth()+1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+    const txnRef = `${req.user.id}-${Date.now()}`;
+
+    const params = {
+      vnp_Version:   '2.1.0',
+      vnp_Command:   'pay',
+      vnp_TmnCode:   tmnCode,
+      vnp_Amount:    plan.vnd * 100,
+      vnp_CurrCode:  'VND',
+      vnp_TxnRef:    txnRef,
+      vnp_OrderInfo: `EduBot ${plan.label} - User ${req.user.id}`,
+      vnp_OrderType: 'other',
+      vnp_Locale:    'vn',
+      vnp_ReturnUrl: returnUrl,
+      vnp_IpAddr:    req.ip || '127.0.0.1',
+      vnp_CreateDate: createDate,
+    };
+
+    const sorted   = Object.keys(params).sort().reduce((acc, k) => { acc[k] = params[k]; return acc; }, {});
+    const signData = querystring.stringify(sorted);
+    const hmac     = crypto.createHmac('sha512', hashSecret).update(signData, 'utf8').digest('hex');
+    sorted.vnp_SecureHash = hmac;
+
+    await pool.query(
+      `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
+       VALUES ($1, $2, 'vnpay', $3, 'VND', $4, 'pending', NOW())`,
+      [req.user.id, planKey, plan.vnd, txnRef]
+    );
+
+    const paymentUrl = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?' + querystring.stringify(sorted);
+    res.json({ paymentUrl });
+  } catch (err) {
+    console.error('VNPay create error:', err);
+    res.status(500).json({ error: 'Failed to create VNPay payment' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VNPAY — Return URL (VNPay redirects user here after payment)
+// GET /payment/vnpay-return
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/payment/vnpay-return', async (req, res) => {
+  try {
+    const hashSecret   = process.env.VNPAY_HASH_SECRET;
+    const params       = { ...req.query };
+    const secureHash   = params.vnp_SecureHash;
+    const responseCode = params.vnp_ResponseCode;
+    const txnRef       = params.vnp_TxnRef;
+
+    delete params.vnp_SecureHash;
+    delete params.vnp_SecureHashType;
+
+    const sorted   = Object.keys(params).sort().reduce((acc, k) => { acc[k] = params[k]; return acc; }, {});
+    const signData = querystring.stringify(sorted);
+    const hmac     = crypto.createHmac('sha512', hashSecret).update(signData, 'utf8').digest('hex');
+
+    const bubbleUrl = process.env.BUBBLE_URL || 'https://nathansteyn96.bubbleapps.io';
+
+    if (hmac !== secureHash) {
+      console.error('VNPay: invalid signature for txnRef', txnRef);
+      return res.redirect(`${bubbleUrl}/version-test?payment=failed&reason=invalid_signature`);
+    }
+
+    if (responseCode === '00') {
+      const pending = await pool.query('SELECT * FROM payments WHERE txn_ref = $1', [txnRef]);
+      if (pending.rows.length > 0) {
+        const { user_id, plan } = pending.rows[0];
+        await upgradePlan(user_id, plan);
+        await pool.query('UPDATE payments SET status = $1 WHERE txn_ref = $2', ['success', txnRef]);
+      }
+      return res.redirect(`${bubbleUrl}/version-test?payment=success`);
+    } else {
+      await pool.query('UPDATE payments SET status = $1 WHERE txn_ref = $2', ['failed', txnRef]);
+      return res.redirect(`${bubbleUrl}/version-test?payment=failed&reason=declined`);
+    }
+  } catch (err) {
+    console.error('VNPay return error:', err);
+    const bubbleUrl = process.env.BUBBLE_URL || 'https://nathansteyn96.bubbleapps.io';
+    res.redirect(`${bubbleUrl}/version-test?payment=failed&reason=server_error`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STRIPE — Create Checkout Session
+// POST /payment/create-stripe-session
+// Body: { planKey: 'student_premium' | 'family' | 'teacher_pro' }
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/payment/create-stripe-session', authenticate, async (req, res) => {
+  try {
+    const { planKey } = req.body;
+    const plan = PLANS[planKey];
+    if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+
+    const bubbleUrl = process.env.BUBBLE_URL || 'https://nathansteyn96.bubbleapps.io';
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: `EduBot ${plan.label}` },
+          unit_amount: plan.usd_cents,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${bubbleUrl}/version-test?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:  `${bubbleUrl}/version-test?payment=cancelled`,
+      metadata: {
+        user_id:  String(req.user.id),
+        plan_key: planKey,
+      },
+    });
+
+    // Log pending payment — store session.id as txn_ref so verify route can look it up
+    await pool.query(
+      `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
+       VALUES ($1, $2, 'stripe', $3, 'USD', $4, 'pending', NOW())`,
+      [req.user.id, planKey, plan.usd_cents, session.id]
+    );
+
+    res.json({ sessionUrl: session.url });
+  } catch (err) {
+    console.error('Stripe session error:', err);
+    res.status(500).json({ error: 'Failed to create Stripe session' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STRIPE — Verify payment after redirect (no webhook needed)
+// POST /payment/verify-stripe
+// Body: { sessionId: 'cs_...' }
+// Bubble calls this after the user lands back with ?payment=success&session_id=cs_...
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/payment/verify-stripe', authenticate, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
+
+    // Ask Stripe directly whether this session was paid
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== 'paid') {
+      return res.status(402).json({ error: 'Payment not completed', status: session.payment_status });
+    }
+
+    // Make sure this session belongs to the logged-in user
+    const expectedUserId = String(req.user.id);
+    if (session.metadata.user_id !== expectedUserId) {
+      return res.status(403).json({ error: 'Session does not belong to this user' });
+    }
+
+    const planKey = session.metadata.plan_key;
+
+    // Only upgrade if not already done (idempotent)
+    const existing = await pool.query(
+      'SELECT status FROM payments WHERE txn_ref = $1',
+      [sessionId]
+    );
+
+    if (existing.rows.length === 0 || existing.rows[0].status !== 'success') {
+      await upgradePlan(req.user.id, planKey);
+      await pool.query(
+        `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
+         VALUES ($1, $2, 'stripe', $3, 'USD', $4, 'success', NOW())
+         ON CONFLICT (txn_ref) DO UPDATE SET status = 'success'`,
+        [req.user.id, planKey, PLANS[planKey].usd_cents, sessionId]
+      );
+    }
+
+    // Return updated plan to Bubble
+    const user = await pool.query('SELECT plan, role FROM users WHERE id = $1', [req.user.id]);
+    res.json({ success: true, plan: user.rows[0].plan });
+  } catch (err) {
+    console.error('Stripe verify error:', err);
+    res.status(500).json({ error: 'Failed to verify payment' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENT — Get current plan status
+// GET /payment/status
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/payment/status', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT plan, role FROM users WHERE id = $1', [req.user.id]);
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get payment status' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// START SERVER — creates payments table automatically on first boot
+// ─────────────────────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
+
+async function startServer() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id),
+      plan VARCHAR(50),
+      gateway VARCHAR(20),
+      amount INTEGER,
+      currency VARCHAR(10),
+      txn_ref VARCHAR(255) UNIQUE,
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  console.log('Payments table ready');
+  app.listen(PORT, () => console.log(`EduBot Vietnam running on port ${PORT}`));
+}
+
+startServer();
