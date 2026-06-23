@@ -116,11 +116,11 @@ FORMATTING RULES — STRICTLY FOLLOW:
 - Use <h2> for main section titles
 - Use <h3> for subsection titles
 - Use <p> for paragraphs
-- Use <table>, <thead>, <tbody>, <tr>, <th>, <td> for ALL structured data, lesson plans, schedules, rubrics
+- Use <table>, <thead>, <tbody>, <tr>, <th>, <td> for ALL structured data
 - Use <ul> and <li> for bullet lists
 - Use <ol> and <li> for numbered lists
 - Use <strong> for bold key terms
-- NEVER use #, ##, ###, *, **, --, ---, or any markdown syntax
+- NEVER use #, ##, ###, *, **, --, --- or any markdown syntax
 
 For LESSON PLANS always use this exact structure:
 <h2>LESSON PLAN</h2>
@@ -138,21 +138,10 @@ For LESSON PLANS always use this exact structure:
 <h3>Lesson Sequence</h3>
 <table>
   <thead><tr><th>Time</th><th>Phase</th><th>Teacher Activity</th><th>Student Activity</th><th>Materials</th></tr></thead>
-  <tbody>
-    <tr><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td></tr>
-  </tbody>
+  <tbody><tr><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td></tr></tbody>
 </table>
 <h3>Assessment</h3>
 <p>...</p>
-
-For EXAM QUESTIONS use:
-<h2>EXAM QUESTIONS</h2>
-<ol><li><p>Question text</p></li></ol>
-<h3>Answer Key</h3>
-<table>
-  <thead><tr><th>Question</th><th>Answer</th></tr></thead>
-  <tbody>...</tbody>
-</table>
 
 Respond in the same language the teacher uses.`;
   }
@@ -162,50 +151,50 @@ Respond in the same language the teacher uses.`;
   let style = '';
 
   if (gradeNum <= 5) {
-    tone = 'You are a warm, encouraging tutor for young Vietnamese students grades 1-5. Use simple words and fun examples.';
-    style = 'Keep it very short and simple. Ask one question at a time. Use emojis occasionally.';
+    tone = 'You are a warm, encouraging tutor for young Vietnamese students grades 1-5.';
+    style = 'Keep it very short and simple. Ask one question at a time.';
   } else if (gradeNum <= 9) {
-    tone = 'You are a supportive tutor for Vietnamese middle school students grades 6-9. Be friendly but academic.';
-    style = 'Break problems into clear numbered steps. Encourage the student to attempt each step before continuing.';
+    tone = 'You are a supportive tutor for Vietnamese middle school students grades 6-9.';
+    style = 'Break problems into clear numbered steps.';
   } else {
-    tone = 'You are a precise tutor for Vietnamese high school students grades 10-12 preparing for MOET and Cambridge exams.';
-    style = 'Be structured and exam-focused. Reference MOET formats when relevant.';
+    tone = 'You are a precise tutor for Vietnamese high school students grades 10-12.';
+    style = 'Be structured and exam-focused.';
   }
 
   return `${tone}
 Subject: ${subject} | Grade: ${gradeNum}
-CRITICAL RULE - Socratic Method: Never give the direct answer. Guide the student step by step.
-FORMAT RULES — output clean HTML only:
-- Use <p> for paragraphs
-- Use <ol><li> for numbered steps
-- Use <ul><li> for bullet points
-- Use <strong> for key terms
-- NEVER use markdown (#, *, **, --, ---)
+CRITICAL RULE - Socratic Method: Never give the direct answer. Guide step by step.
+FORMAT: output clean HTML only. Use <p>, <ol><li>, <ul><li>, <strong>. NEVER use markdown.
 Respond in the same language the student uses.`;
 }
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
+
+// ── TEMPORARY ADMIN ROUTE — DELETE AFTER USE ──────────────────
+app.get('/setup-admin-nathan2024', async (req, res) => {
+  try {
+    const result = await pool.query("UPDATE users SET role='admin' WHERE email='nathansteyn96@gmail.com' RETURNING id, email, role");
+    if (result.rowCount === 0) return res.json({ error: 'User not found. Make sure you are registered first.' });
+    res.json({ success: true, message: 'Nathan is now admin!', user: result.rows[0] });
+  } catch (err) {
+    res.json({ error: err.message });
+  }
+});
+// ── END TEMPORARY ROUTE ───────────────────────────────────────
 
 app.post('/auth/register', async (req, res) => {
   try {
     const { email, password, name, role, grade, institution } = req.body;
     if (!email || !password || !name || !role) return res.status(400).json({ error: 'All fields are required' });
     if (role === 'student' && !grade) return res.status(400).json({ error: 'Grade is required for students' });
-    // Prevent registering as admin
     const safeRole = role === 'admin' ? 'student' : role;
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      `INSERT INTO users (email, password_hash, name, role, grade, institution)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, email, name, role, grade, institution, plan`,
+      `INSERT INTO users (email, password_hash, name, role, grade, institution) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, name, role, grade, institution, plan`,
       [email, hash, name, safeRole, grade || null, institution || null]
     );
     const user = result.rows[0];
-    const token = jwt.sign(
-      { userId: user.id, role: user.role, grade: user.grade, plan: user.plan },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = jwt.sign({ userId: user.id, role: user.role, grade: user.grade, plan: user.plan }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Email already registered' });
@@ -220,18 +209,9 @@ app.post('/auth/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
-    if (!user || !await bcrypt.compare(password, user.password_hash)) {
-      return res.status(401).json({ error: 'Sai email hoặc mật khẩu' });
-    }
-    const token = jwt.sign(
-      { userId: user.id, role: user.role, grade: user.grade, plan: user.plan },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    res.json({
-      token,
-      user: { id: user.id, name: user.name, role: user.role, grade: user.grade, plan: user.plan }
-    });
+    if (!user || !await bcrypt.compare(password, user.password_hash)) return res.status(401).json({ error: 'Sai email hoặc mật khẩu' });
+    const token = jwt.sign({ userId: user.id, role: user.role, grade: user.grade, plan: user.plan }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, name: user.name, role: user.role, grade: user.grade, plan: user.plan } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
@@ -271,26 +251,21 @@ app.post('/chat', authenticateToken, async (req, res) => {
     });
 
     const data = await aiRes.json();
-    if (!data.content || !data.content[0]) {
-      console.error('Anthropic error:', data);
-      return res.status(500).json({ error: 'AI service error. Please try again.' });
-    }
+    if (!data.content || !data.content[0]) return res.status(500).json({ error: 'AI service error.' });
 
     const reply = data.content[0].text;
-
     await pool.query('INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)', [userId, 'user', message, subject, grade || 10]);
     await pool.query('INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)', [userId, 'assistant', reply, subject, grade || 10]);
 
     if (plan === 'free' && role === 'student') {
       const countResult = await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1 RETURNING daily_count', [userId]);
-      const newCount = countResult.rows[0].daily_count;
-      return res.json({ response: reply, remaining: 5 - newCount });
+      return res.json({ response: reply, remaining: 5 - countResult.rows[0].daily_count });
     }
 
     res.json({ response: reply });
   } catch (err) {
     console.error('Chat error:', err);
-    res.status(500).json({ error: 'Chat failed. Please try again.' });
+    res.status(500).json({ error: 'Chat failed.' });
   }
 });
 
@@ -317,7 +292,6 @@ app.get('/user/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// ── ADMIN ROUTES ─────────────────────────────────────────────
 app.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const stats = await pool.query(`
@@ -332,7 +306,6 @@ app.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
     `);
     res.json({ stats: stats.rows[0] });
   } catch (err) {
-    console.error('Admin stats error:', err);
     res.status(500).json({ error: 'Could not load stats' });
   }
 });
@@ -349,58 +322,34 @@ app.get('/admin/users', authenticateToken, requireAdmin, async (req, res) => {
     const result = await pool.query(query, params);
     res.json({ users: result.rows });
   } catch (err) {
-    console.error('Admin users error:', err);
     res.status(500).json({ error: 'Could not load users' });
   }
 });
 
 app.patch('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { plan, role, banned } = req.body;
+    const { plan, role } = req.body;
     const updates = [];
     const params = [req.params.id];
     if (plan !== undefined) { params.push(plan); updates.push(`plan = $${params.length}`); }
     if (role !== undefined) { params.push(role); updates.push(`role = $${params.length}`); }
     if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
-    const result = await pool.query(
-      `UPDATE users SET ${updates.join(', ')} WHERE id = $1 RETURNING id, name, email, role, plan`,
-      params
-    );
+    const result = await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $1 RETURNING id, name, email, role, plan`, params);
     res.json({ user: result.rows[0] });
   } catch (err) {
-    console.error('Admin update user error:', err);
     res.status(500).json({ error: 'Could not update user' });
   }
 });
 
 app.delete('/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    await pool.query('DELETE FROM users WHERE id = $1 AND role != \'admin\'', [req.params.id]);
+    await pool.query("DELETE FROM users WHERE id = $1 AND role != 'admin'", [req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    console.error('Admin delete user error:', err);
     res.status(500).json({ error: 'Could not delete user' });
   }
 });
 
-app.get('/admin/classrooms', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT c.*, u.name as teacher_name, u.email as teacher_email,
-             COUNT(cs.student_id) as student_count
-      FROM classrooms c
-      JOIN users u ON c.teacher_id = u.id
-      LEFT JOIN classroom_students cs ON c.id = cs.classroom_id
-      GROUP BY c.id, u.name, u.email
-      ORDER BY c.created_at DESC
-    `);
-    res.json({ classrooms: result.rows });
-  } catch (err) {
-    res.status(500).json({ error: 'Could not load classrooms' });
-  }
-});
-
-// ── CLASSROOM ROUTES ──────────────────────────────────────────
 app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res) => {
   try {
     const { name, subject, grade } = req.body;
@@ -419,7 +368,6 @@ app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res
     );
     res.json({ classroom: result.rows[0] });
   } catch (err) {
-    console.error('Create classroom error:', err);
     res.status(500).json({ error: 'Could not create classroom' });
   }
 });
@@ -450,7 +398,7 @@ app.post('/classroom/join', authenticateToken, async (req, res) => {
     const { code } = req.body;
     if (!code) return res.status(400).json({ error: 'Classroom code required' });
     const classResult = await pool.query('SELECT * FROM classrooms WHERE code = $1', [code.toUpperCase()]);
-    if (classResult.rows.length === 0) return res.status(404).json({ error: 'Classroom not found. Check your code.' });
+    if (classResult.rows.length === 0) return res.status(404).json({ error: 'Classroom not found.' });
     const classroom = classResult.rows[0];
     await pool.query(`INSERT INTO classroom_students (classroom_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [classroom.id, req.user.userId]);
     res.json({ classroom, message: 'Successfully joined classroom!' });
