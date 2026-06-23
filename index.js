@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use(express.static('public'));
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -92,11 +93,7 @@ Format every response professionally:
 }
 
 app.get('/', (req, res) => {
-  res.json({
-    status: 'EduBot Vietnam is live',
-    version: '2.0',
-    timestamp: new Date().toISOString()
-  });
+  res.sendFile(__dirname + '/public/index.html');
 });
 
 app.post('/auth/register', async (req, res) => {
@@ -165,7 +162,6 @@ app.post('/chat', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Message, subject and grade are required' });
     }
 
-    // Check free plan daily limit
     if (plan === 'free') {
       const userResult = await pool.query(
         'SELECT daily_count, last_reset FROM users WHERE id = $1', [userId]
@@ -190,7 +186,6 @@ app.post('/chat', authenticateToken, async (req, res) => {
       }
     }
 
-    // Load last 20 messages for context
     const historyResult = await pool.query(
       `SELECT role, content FROM chat_history 
        WHERE user_id = $1 AND subject = $2
@@ -204,7 +199,6 @@ app.post('/chat', authenticateToken, async (req, res) => {
       { role: 'user', content: message }
     ];
 
-    // Call Claude API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -223,7 +217,6 @@ app.post('/chat', authenticateToken, async (req, res) => {
     const data = await response.json();
     const reply = data.content[0].text;
 
-    // Save both messages to database
     await pool.query(
       'INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, $2, $3, $4, $5)',
       [userId, 'user', message, subject, grade]
@@ -233,7 +226,6 @@ app.post('/chat', authenticateToken, async (req, res) => {
       [userId, 'assistant', reply, subject, grade]
     );
 
-    // Increment daily count for free users
     if (plan === 'free') {
       await pool.query(
         'UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]
