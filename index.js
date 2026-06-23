@@ -63,9 +63,22 @@ async function initDB() {
       count INT DEFAULT 1,
       last_flagged TIMESTAMPTZ DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS curriculum (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      subject TEXT NOT NULL,
+      grade INT NOT NULL,
+      stage INT NOT NULL,
+      strand TEXT NOT NULL,
+      substrand TEXT,
+      code TEXT,
+      objective TEXT NOT NULL,
+      curriculum_type TEXT DEFAULT 'cambridge',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
     CREATE INDEX IF NOT EXISTS idx_chat_user ON chat_history(user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_classroom_teacher ON classrooms(teacher_id);
     CREATE INDEX IF NOT EXISTS idx_classroom_students ON classroom_students(classroom_id);
+    CREATE INDEX IF NOT EXISTS idx_curriculum_search ON curriculum(subject, grade, curriculum_type);
   `);
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'student';
@@ -103,6 +116,27 @@ function generateClassCode() {
   let code = 'EDU-';
   for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
   return code;
+}
+
+async function getCurriculumContext(subject, grade) {
+  try {
+    const result = await pool.query(
+      `SELECT strand, substrand, code, objective 
+       FROM curriculum 
+       WHERE subject = $1 AND grade = $2 
+       ORDER BY strand, substrand
+       LIMIT 20`,
+      [subject, grade]
+    );
+    if (result.rows.length === 0) return '';
+    const objectives = result.rows.map(r =>
+      `[${r.code || ''}] ${r.strand}${r.substrand ? ' > ' + r.substrand : ''}: ${r.objective}`
+    ).join('\n');
+    return `\n\nCAMBRIDGE CURRICULUM CONTEXT (Grade ${grade} ${subject}):\n${objectives}\n\nUse these learning objectives to guide your teaching. Make sure your responses align with what students at this level are expected to know and learn.`;
+  } catch (err) {
+    console.error('Curriculum context error:', err);
+    return '';
+  }
 }
 
 function getSystemPrompt(grade, subject, role) {
@@ -152,13 +186,13 @@ Respond in the same language the teacher uses.`;
 
   if (gradeNum <= 5) {
     tone = 'You are a warm, encouraging tutor for young Vietnamese students grades 1-5.';
-    style = 'Keep it very short and simple. Ask one question at a time.';
+    style = 'Keep it very short and simple. Ask one question at a time. Use emojis occasionally.';
   } else if (gradeNum <= 9) {
     tone = 'You are a supportive tutor for Vietnamese middle school students grades 6-9.';
-    style = 'Break problems into clear numbered steps.';
+    style = 'Break problems into clear numbered steps. Encourage the student to attempt each step.';
   } else {
     tone = 'You are a precise tutor for Vietnamese high school students grades 10-12.';
-    style = 'Be structured and exam-focused.';
+    style = 'Be structured and exam-focused. Reference MOET formats when relevant.';
   }
 
   return `${tone}
@@ -232,10 +266,14 @@ app.post('/chat', authenticateToken, async (req, res) => {
     const history = historyResult.rows.reverse();
     const messages = [...history.map(m => ({ role: m.role, content: m.content })), { role: 'user', content: message }];
 
+    // Get curriculum context for this subject and grade
+    const curriculumContext = await getCurriculumContext(subject, grade);
+    const systemPrompt = getSystemPrompt(grade || 10, subject, role) + curriculumContext;
+
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2048, system: getSystemPrompt(grade || 10, subject, role), messages })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2048, system: systemPrompt, messages })
     });
 
     const data = await aiRes.json();
@@ -290,7 +328,8 @@ app.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
         (SELECT COUNT(*) FROM chat_history WHERE created_at > NOW() - INTERVAL '24 hours') as messages_today,
         (SELECT COUNT(*) FROM chat_history WHERE created_at > NOW() - INTERVAL '7 days') as messages_week,
         (SELECT COUNT(*) FROM classrooms) as total_classrooms,
-        (SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '7 days') as new_users_week
+        (SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '7 days') as new_users_week,
+        (SELECT COUNT(*) FROM curriculum) as curriculum_entries
     `);
     res.json({ stats: stats.rows[0] });
   } catch (err) {
