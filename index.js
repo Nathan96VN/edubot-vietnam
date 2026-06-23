@@ -16,13 +16,14 @@ const pool = new Pool({
 });
 
 async function initDB() {
+  // Create tables
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       name TEXT NOT NULL,
-      role TEXT DEFAULT 'student' CHECK (role IN ('student', 'teacher')),
+      role TEXT DEFAULT 'student',
       grade INT CHECK (grade BETWEEN 1 AND 12),
       institution TEXT,
       plan TEXT DEFAULT 'free',
@@ -68,13 +69,20 @@ async function initDB() {
       last_flagged TIMESTAMPTZ DEFAULT NOW()
     );
 
-    CREATE INDEX IF NOT EXISTS idx_chat_user
-      ON chat_history(user_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_classroom_teacher
-      ON classrooms(teacher_id);
-    CREATE INDEX IF NOT EXISTS idx_classroom_students
-      ON classroom_students(classroom_id);
+    CREATE INDEX IF NOT EXISTS idx_chat_user ON chat_history(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_classroom_teacher ON classrooms(teacher_id);
+    CREATE INDEX IF NOT EXISTS idx_classroom_students ON classroom_students(classroom_id);
   `);
+
+  // Migration — safely add new columns if they don't exist
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'student';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS institution TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_count INT DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reset DATE DEFAULT CURRENT_DATE;
+  `);
+
   console.log('Database tables ready');
 }
 
@@ -159,13 +167,10 @@ Format every response professionally:
 - Keep responses focused, not too long`;
 }
 
-// ─── ROUTES ───────────────────────────────────────────
-
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
-// Register
 app.post('/auth/register', async (req, res) => {
   try {
     const { email, password, name, role, grade, institution } = req.body;
@@ -198,7 +203,6 @@ app.post('/auth/register', async (req, res) => {
   }
 });
 
-// Login
 app.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -225,7 +229,6 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-// Chat
 app.post('/chat', authenticateToken, async (req, res) => {
   try {
     const { message, subject, grade } = req.body;
@@ -309,7 +312,6 @@ app.post('/chat', authenticateToken, async (req, res) => {
   }
 });
 
-// Chat history
 app.get('/chat/history', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
@@ -327,7 +329,6 @@ app.get('/chat/history', authenticateToken, async (req, res) => {
   }
 });
 
-// User profile
 app.get('/user/profile', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
@@ -340,7 +341,6 @@ app.get('/user/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// Create classroom (teacher only)
 app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res) => {
   try {
     const { name, subject, grade } = req.body;
@@ -366,7 +366,6 @@ app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res
   }
 });
 
-// Get teacher's classrooms
 app.get('/classroom/my', authenticateToken, requireTeacher, async (req, res) => {
   try {
     const result = await pool.query(
@@ -384,7 +383,6 @@ app.get('/classroom/my', authenticateToken, requireTeacher, async (req, res) => 
   }
 });
 
-// Join classroom by code (student)
 app.post('/classroom/join', authenticateToken, async (req, res) => {
   try {
     const { code } = req.body;
@@ -408,7 +406,6 @@ app.post('/classroom/join', authenticateToken, async (req, res) => {
   }
 });
 
-// Get students in classroom (teacher only)
 app.get('/classroom/:id/students', authenticateToken, requireTeacher, async (req, res) => {
   try {
     const result = await pool.query(
@@ -430,7 +427,6 @@ app.get('/classroom/:id/students', authenticateToken, requireTeacher, async (req
   }
 });
 
-// Get student weak points (teacher only)
 app.get('/student/:id/weakpoints', authenticateToken, requireTeacher, async (req, res) => {
   try {
     const result = await pool.query(
