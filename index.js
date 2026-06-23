@@ -67,7 +67,6 @@ async function initDB() {
     CREATE INDEX IF NOT EXISTS idx_classroom_teacher ON classrooms(teacher_id);
     CREATE INDEX IF NOT EXISTS idx_classroom_students ON classroom_students(classroom_id);
   `);
-
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'student';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS institution TEXT;
@@ -75,7 +74,6 @@ async function initDB() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_count INT DEFAULT 0;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reset DATE DEFAULT CURRENT_DATE;
   `);
-
   console.log('Database tables ready');
 }
 
@@ -91,18 +89,14 @@ function authenticateToken(req, res, next) {
 }
 
 function requireTeacher(req, res, next) {
-  if (req.user.role !== 'teacher') {
-    return res.status(403).json({ error: 'Teacher access required' });
-  }
+  if (req.user.role !== 'teacher') return res.status(403).json({ error: 'Teacher access required' });
   next();
 }
 
 function generateClassCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = 'EDU-';
-  for (let i = 0; i < 4; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
   return code;
 }
 
@@ -110,15 +104,55 @@ function getSystemPrompt(grade, subject, role) {
   if (role === 'teacher') {
     return `You are EduBot, a professional AI teaching assistant for Vietnamese educators.
 Subject: ${subject} | Grade: ${grade}
-You help teachers with:
-1. Creating detailed lesson plans aligned with MOET and Cambridge curricula
-2. Generating exam questions at appropriate difficulty levels
-3. Suggesting teaching strategies for different learning styles
-4. Creating assessment rubrics and marking schemes
-5. Providing subject-specific pedagogical advice
-Format all responses professionally with clear sections, numbered lists, and practical examples.
-Be concise, actionable, and educator-focused.
-Respond in the same language the teacher uses.`;
+
+You help teachers create professional educational documents. You MUST format all responses as clean HTML only — no markdown, no hashtags, no dashes, no asterisks.
+
+FORMATTING RULES — STRICTLY FOLLOW:
+- Use <h2> for main section titles
+- Use <h3> for subsection titles
+- Use <p> for paragraphs
+- Use <table>, <thead>, <tbody>, <tr>, <th>, <td> for ALL structured data, lesson plans, schedules, rubrics
+- Use <ul> and <li> for bullet lists
+- Use <ol> and <li> for numbered lists
+- Use <strong> for bold key terms
+- NEVER use #, ##, ###, *, **, --, ---, or any markdown syntax
+- NEVER write plain dashes as separators
+
+For LESSON PLANS always use this exact structure:
+<h2>LESSON PLAN</h2>
+<table>
+  <thead><tr><th>Section</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Subject</strong></td><td>...</td></tr>
+    <tr><td><strong>Grade</strong></td><td>...</td></tr>
+    <tr><td><strong>Duration</strong></td><td>...</td></tr>
+    <tr><td><strong>Topic</strong></td><td>...</td></tr>
+    <tr><td><strong>Objectives</strong></td><td>...</td></tr>
+    <tr><td><strong>Materials</strong></td><td>...</td></tr>
+  </tbody>
+</table>
+<h3>Lesson Sequence</h3>
+<table>
+  <thead><tr><th>Time</th><th>Phase</th><th>Teacher Activity</th><th>Student Activity</th><th>Materials</th></tr></thead>
+  <tbody>
+    <tr><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td></tr>
+  </tbody>
+</table>
+<h3>Assessment</h3>
+<p>...</p>
+
+For EXAM QUESTIONS use:
+<h2>EXAM QUESTIONS</h2>
+<ol>
+  <li><p>Question text</p></li>
+</ol>
+<h3>Answer Key</h3>
+<table>
+  <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+  <tbody>...</tbody>
+</table>
+
+Respond in the same language the teacher uses. Vietnamese gets Vietnamese, English gets English.`;
   }
 
   const gradeNum = parseInt(grade);
@@ -126,46 +160,38 @@ Respond in the same language the teacher uses.`;
   let style = '';
 
   if (gradeNum <= 5) {
-    tone = 'You are a warm, encouraging, and patient tutor for young Vietnamese students in grades 1-5. Use very simple words, short sentences, and fun real-life examples from everyday Vietnamese life. Always celebrate effort with phrases like "Rất giỏi!" or "Tuyệt vời!".';
-    style = 'Keep explanations very short and simple. Ask only one question at a time. Use occasional emojis to make learning enjoyable.';
+    tone = 'You are a warm, encouraging tutor for young Vietnamese students grades 1-5. Use simple words and fun examples from everyday life.';
+    style = 'Keep it very short and simple. Ask one question at a time. Use emojis occasionally.';
   } else if (gradeNum <= 9) {
-    tone = 'You are a supportive and clear tutor for Vietnamese middle school students in grades 6-9. Be friendly but academic. Use relatable examples from Vietnamese daily life and culture.';
-    style = 'Break problems into clear numbered steps. Encourage the student to attempt each step before you continue. Mix Vietnamese and English naturally when helpful.';
+    tone = 'You are a supportive tutor for Vietnamese middle school students grades 6-9. Be friendly but academic.';
+    style = 'Break problems into clear numbered steps. Encourage the student to attempt each step before continuing.';
   } else {
-    tone = 'You are a professional and precise tutor for Vietnamese high school students in grades 10-12 preparing for MOET graduation exams and Cambridge assessments. Be structured, exam-focused, and academically rigorous.';
-    style = 'Use formal academic language. Structure all responses with clear sections and numbered steps. Reference MOET exam formats and marking schemes when relevant.';
+    tone = 'You are a precise tutor for Vietnamese high school students grades 10-12 preparing for MOET and Cambridge exams.';
+    style = 'Be structured and exam-focused. Reference MOET formats and marking schemes when relevant.';
   }
 
   return `${tone}
 Subject: ${subject} | Grade: ${gradeNum}
-CRITICAL RULE - Socratic Method: Never give the direct answer. Instead:
-1. Acknowledge what the student is asking
-2. Identify the first step needed
-3. Ask a guiding question to lead them to discover the answer themselves
-4. Only confirm or reveal after the student has attempted it
-${style}
-Respond in the same language the student uses. Vietnamese gets Vietnamese. English gets English.
-Format every response professionally:
-- Use clear sections with spacing
-- Number all steps in processes
-- Use bullet points for lists
-- Use *bold* for key terms
-- Keep responses focused, not too long`;
+
+CRITICAL RULE - Socratic Method: Never give the direct answer. Guide the student step by step with questions.
+
+FORMAT RULES — output clean HTML only:
+- Use <p> for paragraphs
+- Use <ol><li> for numbered steps
+- Use <ul><li> for bullet points
+- Use <strong> for key terms
+- NEVER use markdown (#, *, **, --, ---)
+
+Respond in the same language the student uses.`;
 }
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
-});
+app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
 app.post('/auth/register', async (req, res) => {
   try {
     const { email, password, name, role, grade, institution } = req.body;
-    if (!email || !password || !name || !role) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
-    if (role === 'student' && !grade) {
-      return res.status(400).json({ error: 'Grade is required for students' });
-    }
+    if (!email || !password || !name || !role) return res.status(400).json({ error: 'All fields are required' });
+    if (role === 'student' && !grade) return res.status(400).json({ error: 'Grade is required for students' });
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
       `INSERT INTO users (email, password_hash, name, role, grade, institution)
@@ -181,9 +207,7 @@ app.post('/auth/register', async (req, res) => {
     );
     res.json({ token, user });
   } catch (err) {
-    if (err.code === '23505') {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
+    if (err.code === '23505') return res.status(400).json({ error: 'Email already registered' });
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed' });
   }
@@ -192,9 +216,7 @@ app.post('/auth/register', async (req, res) => {
 app.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
-    }
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
     if (!user || !await bcrypt.compare(password, user.password_hash)) {
@@ -215,34 +237,24 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-// FIX 1: Send 'response' instead of 'reply', and handle teacher role properly
 app.post('/chat', authenticateToken, async (req, res) => {
   try {
     const { message, subject, grade } = req.body;
     const { userId, plan, role } = req.user;
+    if (!message || !subject) return res.status(400).json({ error: 'Message and subject are required' });
 
-    if (!message || !subject) {
-      return res.status(400).json({ error: 'Message and subject are required' });
-    }
-
-    // Only limit students on free plan
     if (plan === 'free' && role === 'student') {
-      const userResult = await pool.query(
-        'SELECT daily_count, last_reset FROM users WHERE id = $1', [userId]
-      );
+      const userResult = await pool.query('SELECT daily_count, last_reset FROM users WHERE id = $1', [userId]);
       const userData = userResult.rows[0];
       const today = new Date().toISOString().split('T')[0];
       if (userData.last_reset !== today) {
-        await pool.query(
-          'UPDATE users SET daily_count = 0, last_reset = $1 WHERE id = $2',
-          [today, userId]
-        );
+        await pool.query('UPDATE users SET daily_count = 0, last_reset = $1 WHERE id = $2', [today, userId]);
         userData.daily_count = 0;
       }
       if (userData.daily_count >= 5) {
         return res.status(429).json({
           error: 'Daily limit reached',
-          message: 'Bạn đã dùng hết 5 câu hỏi miễn phí hôm nay. Nâng cấp lên Premium để học không giới hạn!',
+          message: 'Bạn đã dùng hết 5 câu hỏi miễn phí hôm nay. Nâng cấp lên Premium!',
           upgrade: true
         });
       }
@@ -269,14 +281,13 @@ app.post('/chat', authenticateToken, async (req, res) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
+        max_tokens: 2048,
         system: getSystemPrompt(grade || 10, subject, role),
         messages
       })
     });
 
     const data = await aiRes.json();
-
     if (!data.content || !data.content[0]) {
       console.error('Anthropic error:', data);
       return res.status(500).json({ error: 'AI service error. Please try again.' });
@@ -299,11 +310,9 @@ app.post('/chat', authenticateToken, async (req, res) => {
         [userId]
       );
       const newCount = countResult.rows[0].daily_count;
-      // FIX 1: return 'response' not 'reply', and include remaining count
       return res.json({ response: reply, remaining: 5 - newCount });
     }
 
-    // FIX 1: return 'response' not 'reply'
     res.json({ response: reply });
   } catch (err) {
     console.error('Chat error:', err);
@@ -311,7 +320,6 @@ app.post('/chat', authenticateToken, async (req, res) => {
   }
 });
 
-// FIX 2: chat history returns 'messages' not 'history'
 app.get('/chat/history', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
@@ -365,11 +373,9 @@ app.post('/classroom/create', authenticateToken, requireTeacher, async (req, res
   }
 });
 
-// FIX 3: /classroom/my works for BOTH teachers and students
 app.get('/classroom/my', authenticateToken, async (req, res) => {
   try {
     const { userId, role } = req.user;
-
     if (role === 'teacher') {
       const result = await pool.query(
         `SELECT c.*, COUNT(cs.student_id) as student_count
@@ -382,7 +388,6 @@ app.get('/classroom/my', authenticateToken, async (req, res) => {
       );
       return res.json({ classrooms: result.rows });
     } else {
-      // Student: get classrooms they joined + teacher name
       const result = await pool.query(
         `SELECT c.*, u.name as teacher_name
          FROM classroom_students cs
@@ -404,12 +409,8 @@ app.post('/classroom/join', authenticateToken, async (req, res) => {
   try {
     const { code } = req.body;
     if (!code) return res.status(400).json({ error: 'Classroom code required' });
-    const classResult = await pool.query(
-      'SELECT * FROM classrooms WHERE code = $1', [code.toUpperCase()]
-    );
-    if (classResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Classroom not found. Check your code.' });
-    }
+    const classResult = await pool.query('SELECT * FROM classrooms WHERE code = $1', [code.toUpperCase()]);
+    if (classResult.rows.length === 0) return res.status(404).json({ error: 'Classroom not found. Check your code.' });
     const classroom = classResult.rows[0];
     await pool.query(
       `INSERT INTO classroom_students (classroom_id, student_id)
@@ -460,9 +461,7 @@ app.get('/student/:id/weakpoints', authenticateToken, requireTeacher, async (req
 
 initDB().then(() => {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`EduBot Vietnam running on port ${PORT}`);
-  });
+  app.listen(PORT, () => console.log(`EduBot Vietnam running on port ${PORT}`));
 }).catch(err => {
   console.error('Failed to initialize database:', err);
   process.exit(1);
