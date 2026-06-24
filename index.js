@@ -689,9 +689,12 @@ app.post('/image/generate', authenticate, async (req, res) => {
       n: 1,
       size: '1024x1024',
       quality: 'medium',
+      response_format: 'b64_json',
     });
 
-    const imageUrl = response.data[0].url;
+    // gpt-image-1 returns base64, dall-e-3 returns url
+    const imgData = response.data[0];
+    const imageUrl = imgData.url || `data:image/png;base64,${imgData.b64_json}`;
     res.json({ imageUrl });
   } catch (err) {
     console.error('Image generation error:', err?.message || err);
