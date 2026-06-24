@@ -140,7 +140,7 @@ app.post('/chat', authenticate, async (req, res) => {
     if (!isPaid && user.daily_count >= 5) {
       return res.status(429).json({ error: 'Daily limit reached. Upgrade to continue!', upgrade: true });
     }
-    if (isPaid && (user.credits || 0) < CREDIT_COSTS.question) {
+    if (isPaid && user.role !== 'admin' && (user.credits || 0) < CREDIT_COSTS.question) {
       return res.status(402).json({ error: 'Not enough credits. Top up to continue!', upgrade: true });
     }
 
@@ -710,7 +710,7 @@ app.post('/image/generate', authenticate, async (req, res) => {
     if (!canGenerate) {
       return res.status(403).json({ error: 'Image generation requires Student Plus or Teacher Pro plan.', upgrade: true });
     }
-    if ((user.credits || 0) < CREDIT_COSTS.ai_image) {
+    if (user.role !== 'admin' && (user.credits || 0) < CREDIT_COSTS.ai_image) {
       return res.status(402).json({ error: 'Not enough credits for image generation.', upgrade: true });
     }
 
