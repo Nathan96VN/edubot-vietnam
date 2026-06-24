@@ -27,6 +27,24 @@ const PLANS = {
   teacher_pro:   { vnd: 299000, usd_cents: 1299, label: 'Teacher Pro',   plan: 'teacher_pro' },
 };
 
+// ─── Credit costs per action ──────────────────────────────────────────────────
+const CREDIT_COSTS = {
+  question: 1,
+  advanced_question: 2,
+  quiz: 5,
+  exam: 10,
+  ai_image: 5,
+  flashcards: 2,
+};
+
+// ─── Credits per plan on signup/upgrade ──────────────────────────────────────
+const PLAN_CREDITS = {
+  basic: 100,
+  plus: 250,
+  teacher: 400,
+  teacher_pro: 600,
+};
+
 // ─── Auth middleware ──────────────────────────────────────────────────────────
 const authenticate = (req, res, next) => {
   const header = req.headers.authorization;
@@ -64,8 +82,8 @@ app.post('/auth/register', async (req, res) => {
     const assignedRole = email === 'nathansteyn96@gmail.com' ? 'admin' : role;
 
     const result = await pool.query(
-      `INSERT INTO users (email, password_hash, name, role, grade, institution, plan, daily_count, last_reset)
-       VALUES ($1, $2, $3, $4, $5, $6, 'free', 0, NOW()) RETURNING id, email, name, role, plan`,
+      `INSERT INTO users (email, password_hash, name, role, grade, institution, plan, daily_count, last_reset, credits)
+       VALUES ($1, $2, $3, $4, $5, $6, 'free', 0, NOW(), 5) RETURNING id, email, name, role, plan, credits`,
       [email, hash, name, assignedRole, grade || null, institution || null]
     );
 
@@ -89,7 +107,7 @@ app.post('/auth/login', async (req, res) => {
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, plan: user.plan, grade: user.grade } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, plan: user.plan, grade: user.grade, credits: user.credits || 0 } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
@@ -117,10 +135,13 @@ app.post('/chat', authenticate, async (req, res) => {
       user.daily_count = 0;
     }
 
-    // Enforce free tier limit
+    // Enforce free tier limit (5 questions/day) OR credit check for paid users
     const isPaid = ['basic','plus','teacher','teacher_pro'].includes(user.plan) || user.role === 'teacher' || user.role === 'admin';
     if (!isPaid && user.daily_count >= 5) {
       return res.status(429).json({ error: 'Daily limit reached. Upgrade to continue!', upgrade: true });
+    }
+    if (isPaid && (user.credits || 0) < CREDIT_COSTS.question) {
+      return res.status(402).json({ error: 'Not enough credits. Top up to continue!', upgrade: true });
     }
 
     // Fetch curriculum context (RAG)
@@ -133,7 +154,7 @@ app.post('/chat', authenticate, async (req, res) => {
         [subject, parseInt(grade)]
       );
       if (curriculum.rows.length > 0) {
-        curriculumContext = '\n\nRelevant curriculum objectives:\n' +
+        curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly — never say you only have certain curriculum content):\n' +
           curriculum.rows.map(r => `- [${r.strand}${r.substrand ? ' > ' + r.substrand : ''}] ${r.objective}`).join('\n');
       }
     }
@@ -165,11 +186,12 @@ CRITICAL FORMATTING RULES:
     const systemPrompt = isTeacher
       ? `You are EduBot, a professional AI teaching assistant for Vietnamese teachers grades 1-12.
 You help teachers create lesson plans, exam questions, teaching activities, and classroom resources.
+Always give full, detailed, professional responses. Never hold back content.
 Current subject: ${subject || 'General'}. Grade level: ${grade || 'unspecified'}.
 ${htmlFormatInstructions}
 ${curriculumContext}`
-      : `You are EduBot, a friendly Socratic AI tutor for Vietnamese students grades 1-12.
-Teaching style: Ask guiding questions rather than giving direct answers. Encourage thinking step by step.
+      : `You are EduBot, a friendly AI tutor for Vietnamese students grades 1-12.
+Always give complete, clear, step-by-step explanations. Never withhold the answer — guide students through the full solution.
 Current subject: ${subject || 'general'}. Student grade: ${grade || 'unknown'}.
 ${htmlFormatInstructions}
 ${curriculumContext}`;
@@ -193,10 +215,19 @@ ${curriculumContext}`;
       [userId, reply, subject || 'general', grade || null]
     );
 
-    // Increment daily count
-    await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]);
+    // Deduct credit for paid users, increment daily count for free users
+    let creditsRemaining = user.credits || 0;
+    if (isPaid) {
+      const updated = await pool.query(
+        'UPDATE users SET credits = credits - $1 WHERE id = $2 RETURNING credits',
+        [CREDIT_COSTS.question, userId]
+      );
+      creditsRemaining = updated.rows[0].credits;
+    } else {
+      await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]);
+    }
 
-    res.json({ reply, daily_count: user.daily_count + 1 });
+    res.json({ reply, daily_count: user.daily_count + 1, credits: creditsRemaining });
   } catch (err) {
     console.error('Chat error:', err);
     res.status(500).json({ error: 'Chat failed' });
@@ -224,12 +255,51 @@ app.get('/chat/history', authenticate, async (req, res) => {
 app.get('/user/profile', authenticate, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, email, name, role, grade, institution, plan, daily_count FROM users WHERE id = $1',
+      'SELECT id, email, name, role, grade, institution, plan, daily_count, credits FROM users WHERE id = $1',
       [req.user.id]
     );
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Failed to load profile' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREDITS ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/credits/balance', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
+    res.json({ credits: result.rows[0].credits || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get credits' });
+  }
+});
+
+app.post('/credits/deduct', authenticate, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const result = await pool.query(
+      'UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1 RETURNING credits',
+      [amount, req.user.id]
+    );
+    if (result.rows.length === 0) return res.status(402).json({ error: 'Not enough credits' });
+    res.json({ credits: result.rows[0].credits });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to deduct credits' });
+  }
+});
+
+app.post('/credits/add', authenticate, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const result = await pool.query(
+      'UPDATE users SET credits = credits + $1 WHERE id = $2 RETURNING credits',
+      [amount, req.user.id]
+    );
+    res.json({ credits: result.rows[0].credits });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add credits' });
   }
 });
 
@@ -242,12 +312,12 @@ app.post('/classroom/create', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Teachers only' });
     }
     const { name, subject, grade } = req.body;
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const code = 'EDU-' + Math.random().toString(36).substring(2, 6).toUpperCase();
     const result = await pool.query(
       `INSERT INTO classrooms (teacher_id, name, subject, grade, code) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [req.user.id, name, subject, grade, code]
     );
-    res.json(result.rows[0]);
+    res.json({ classroom: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create classroom' });
   }
@@ -257,16 +327,21 @@ app.get('/classroom/my', authenticate, async (req, res) => {
   try {
     let result;
     if (req.user.role === 'teacher' || req.user.role === 'admin') {
-      result = await pool.query('SELECT * FROM classrooms WHERE teacher_id = $1', [req.user.id]);
+      result = await pool.query(
+        `SELECT c.*, (SELECT COUNT(*) FROM classroom_students cs WHERE cs.classroom_id = c.id) as student_count
+         FROM classrooms c WHERE teacher_id = $1`,
+        [req.user.id]
+      );
     } else {
       result = await pool.query(
-        `SELECT c.* FROM classrooms c
+        `SELECT c.*, u.name as teacher_name FROM classrooms c
          JOIN classroom_students cs ON cs.classroom_id = c.id
+         JOIN users u ON u.id = c.teacher_id
          WHERE cs.student_id = $1`,
         [req.user.id]
       );
     }
-    res.json(result.rows);
+    res.json({ classrooms: result.rows });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load classrooms' });
   }
@@ -322,7 +397,7 @@ app.get('/admin/stats', authenticate, adminOnly, async (req, res) => {
 app.get('/admin/users', authenticate, adminOnly, async (req, res) => {
   try {
     const { search, role, plan } = req.query;
-    let query = 'SELECT id, email, name, role, grade, institution, plan, daily_count, created_at FROM users WHERE 1=1';
+    let query = 'SELECT id, email, name, role, grade, institution, plan, daily_count, credits, created_at FROM users WHERE 1=1';
     const params = [];
     if (search) { params.push(`%${search}%`); query += ` AND (name ILIKE $${params.length} OR email ILIKE $${params.length})`; }
     if (role)   { params.push(role);           query += ` AND role = $${params.length}`; }
@@ -358,21 +433,15 @@ app.delete('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PHASE 4 — PAYMENT ROUTES
+// PAYMENT ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
-
-// ── Helper: upgrade user plan in DB ──────────────────────────────────────────
 async function upgradePlan(userId, planKey) {
   const plan = PLANS[planKey];
   if (!plan) throw new Error('Unknown plan: ' + planKey);
-  await pool.query('UPDATE users SET plan = $1 WHERE id = $2', [plan.plan, userId]);
+  const credits = PLAN_CREDITS[plan.plan] || 0;
+  await pool.query('UPDATE users SET plan = $1, credits = credits + $2 WHERE id = $3', [plan.plan, credits, userId]);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VNPAY — Create payment URL
-// POST /payment/create-vnpay
-// Body: { planKey: 'student_premium' | 'family' | 'teacher_pro' }
-// ─────────────────────────────────────────────────────────────────────────────
 app.post('/payment/create-vnpay', authenticate, async (req, res) => {
   try {
     const { planKey } = req.body;
@@ -422,10 +491,6 @@ app.post('/payment/create-vnpay', authenticate, async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VNPAY — Return URL (VNPay redirects user here after payment)
-// GET /payment/vnpay-return
-// ─────────────────────────────────────────────────────────────────────────────
 app.get('/payment/vnpay-return', async (req, res) => {
   try {
     const hashSecret   = process.env.VNPAY_HASH_SECRET;
@@ -444,7 +509,6 @@ app.get('/payment/vnpay-return', async (req, res) => {
     const bubbleUrl = process.env.BUBBLE_URL || 'https://nathansteyn96.bubbleapps.io';
 
     if (hmac !== secureHash) {
-      console.error('VNPay: invalid signature for txnRef', txnRef);
       return res.redirect(`${bubbleUrl}/version-test?payment=failed&reason=invalid_signature`);
     }
 
@@ -467,11 +531,6 @@ app.get('/payment/vnpay-return', async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STRIPE — Create Checkout Session
-// POST /payment/create-stripe-session
-// Body: { planKey: 'student_premium' | 'family' | 'teacher_pro' }
-// ─────────────────────────────────────────────────────────────────────────────
 app.post('/payment/create-stripe-session', authenticate, async (req, res) => {
   try {
     const { planKey } = req.body;
@@ -499,7 +558,6 @@ app.post('/payment/create-stripe-session', authenticate, async (req, res) => {
       },
     });
 
-    // Log pending payment — store session.id as txn_ref so verify route can look it up
     await pool.query(
       `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
        VALUES ($1, $2, 'stripe', $3, 'USD', $4, 'pending', NOW())`,
@@ -513,25 +571,17 @@ app.post('/payment/create-stripe-session', authenticate, async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STRIPE — Verify payment after redirect (no webhook needed)
-// POST /payment/verify-stripe
-// Body: { sessionId: 'cs_...' }
-// Bubble calls this after the user lands back with ?payment=success&session_id=cs_...
-// ─────────────────────────────────────────────────────────────────────────────
 app.post('/payment/verify-stripe', authenticate, async (req, res) => {
   try {
     const { sessionId } = req.body;
     if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
 
-    // Ask Stripe directly whether this session was paid
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== 'paid') {
       return res.status(402).json({ error: 'Payment not completed', status: session.payment_status });
     }
 
-    // Make sure this session belongs to the logged-in user
     const expectedUserId = String(req.user.id);
     if (session.metadata.user_id !== expectedUserId) {
       return res.status(403).json({ error: 'Session does not belong to this user' });
@@ -539,11 +589,7 @@ app.post('/payment/verify-stripe', authenticate, async (req, res) => {
 
     const planKey = session.metadata.plan_key;
 
-    // Only upgrade if not already done (idempotent)
-    const existing = await pool.query(
-      'SELECT status FROM payments WHERE txn_ref = $1',
-      [sessionId]
-    );
+    const existing = await pool.query('SELECT status FROM payments WHERE txn_ref = $1', [sessionId]);
 
     if (existing.rows.length === 0 || existing.rows[0].status !== 'success') {
       await upgradePlan(req.user.id, planKey);
@@ -555,22 +601,17 @@ app.post('/payment/verify-stripe', authenticate, async (req, res) => {
       );
     }
 
-    // Return updated plan to Bubble
-    const user = await pool.query('SELECT plan, role FROM users WHERE id = $1', [req.user.id]);
-    res.json({ success: true, plan: user.rows[0].plan });
+    const user = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
+    res.json({ success: true, plan: user.rows[0].plan, credits: user.rows[0].credits });
   } catch (err) {
     console.error('Stripe verify error:', err);
     res.status(500).json({ error: 'Failed to verify payment' });
   }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PAYMENT — Get current plan status
-// GET /payment/status
-// ─────────────────────────────────────────────────────────────────────────────
 app.get('/payment/status', authenticate, async (req, res) => {
   try {
-    const result = await pool.query('SELECT plan, role FROM users WHERE id = $1', [req.user.id]);
+    const result = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Failed to get payment status' });
@@ -580,8 +621,6 @@ app.get('/payment/status', authenticate, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // FLASHCARD ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
-
-// POST /flashcards/generate
 app.post('/flashcards/generate', authenticate, async (req, res) => {
   try {
     const { subject, grade, topic, count = 5, lang } = req.body;
@@ -613,7 +652,6 @@ Example format:
     try {
       cards = JSON.parse(raw);
     } catch (e) {
-      console.error('Failed to parse flashcards JSON:', raw);
       return res.status(500).json({ error: 'Failed to generate flashcards' });
     }
 
@@ -634,7 +672,6 @@ Example format:
   }
 });
 
-// GET /flashcards/my
 app.get('/flashcards/my', authenticate, async (req, res) => {
   try {
     const { subject, grade } = req.query;
@@ -650,7 +687,6 @@ app.get('/flashcards/my', authenticate, async (req, res) => {
   }
 });
 
-// DELETE /flashcards/:id
 app.delete('/flashcards/:id', authenticate, async (req, res) => {
   try {
     await pool.query('DELETE FROM flashcards WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
@@ -663,24 +699,21 @@ app.delete('/flashcards/:id', authenticate, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // IMAGE GENERATION ROUTE
 // ─────────────────────────────────────────────────────────────────────────────
-
-// POST /image/generate
-// Body: { prompt, subject, grade }
-// Generates an educational image using DALL-E 3
 app.post('/image/generate', authenticate, async (req, res) => {
   try {
     const { prompt, subject, grade } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
-    // Only premium users or teachers/admin can generate images
-    const userResult = await pool.query('SELECT plan, role FROM users WHERE id = $1', [req.user.id]);
+    const userResult = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
     const user = userResult.rows[0];
     const canGenerate = ['plus','teacher_pro'].includes(user.plan) || user.role === 'admin';
     if (!canGenerate) {
       return res.status(403).json({ error: 'Image generation requires Student Plus or Teacher Pro plan.', upgrade: true });
     }
+    if ((user.credits || 0) < CREDIT_COSTS.ai_image) {
+      return res.status(402).json({ error: 'Not enough credits for image generation.', upgrade: true });
+    }
 
-    // Build a safe educational prompt
     const safePrompt = `Educational illustration for grade ${grade || 'school'} students about ${subject || 'general science'}: ${prompt}. Clean, colorful, child-friendly educational diagram style. No text in image.`;
 
     const response = await openai.images.generate({
@@ -692,24 +725,23 @@ app.post('/image/generate', authenticate, async (req, res) => {
     });
 
     const imgData = response.data[0];
-    const imageUrl = imgData.url 
-      ? imgData.url 
+    const imageUrl = imgData.url
+      ? imgData.url
       : `data:image/png;base64,${imgData.b64_json}`;
+
+    // Deduct credits
+    await pool.query('UPDATE users SET credits = credits - $1 WHERE id = $2', [CREDIT_COSTS.ai_image, req.user.id]);
+
     res.json({ imageUrl });
   } catch (err) {
     console.error('Image generation error:', err?.message || err);
-    const msg = err?.message || 'Failed to generate image';
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: err?.message || 'Failed to generate image' });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GRAPH GENERATION ROUTE
 // ─────────────────────────────────────────────────────────────────────────────
-
-// POST /graph/generate
-// Body: { topic, subject, grade, lang }
-// Uses Claude to generate Chart.js compatible data
 app.post('/graph/generate', authenticate, async (req, res) => {
   try {
     const { topic, subject, grade, lang } = req.body;
@@ -718,7 +750,6 @@ app.post('/graph/generate', authenticate, async (req, res) => {
     const gradeNum = parseInt(grade) || 1;
     const language = lang === 'en' ? 'English' : 'Vietnamese';
 
-    // Only for grade 4+
     if (gradeNum < 4) {
       return res.status(400).json({ error: 'Graphs are available for Grade 4 and above.' });
     }
@@ -739,8 +770,8 @@ The JSON must have exactly this structure:
     "datasets": [{
       "label": "Dataset name in ${language}",
       "data": [number1, number2, ...],
-      "backgroundColor": ["#4338CA", "#E85D30", "#059669", "#F59E0B", "#EF4444"],
-      "borderColor": "#4338CA",
+      "backgroundColor": ["#00B4D8", "#E85D30", "#059669", "#F59E0B", "#EF4444"],
+      "borderColor": "#00B4D8",
       "borderWidth": 2,
       "fill": false
     }]
@@ -749,13 +780,7 @@ The JSON must have exactly this structure:
     "xLabel": "X axis label in ${language}",
     "yLabel": "Y axis label in ${language}"
   }
-}
-
-Rules:
-- For line graphs (functions): use at least 10 data points
-- For bar/pie charts: use 4-8 categories
-- Make data educationally accurate for Grade ${gradeNum} ${subject}
-- Labels must be in ${language}`;
+}`;
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -770,7 +795,6 @@ Rules:
     try {
       chartData = JSON.parse(raw);
     } catch (e) {
-      console.error('Failed to parse chart JSON:', raw);
       return res.status(500).json({ error: 'Failed to generate chart data' });
     }
 
@@ -782,11 +806,12 @@ Rules:
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// START SERVER — creates payments table automatically on first boot
+// START SERVER
 // ─────────────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
       id SERIAL PRIMARY KEY,
@@ -814,7 +839,7 @@ async function startServer() {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
-  console.log('Payments table ready');
+  console.log('Database ready');
   app.listen(PORT, () => console.log(`EduBot Vietnam running on port ${PORT}`));
 }
 
