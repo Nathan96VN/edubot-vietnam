@@ -804,7 +804,47 @@ The JSON must have exactly this structure:
     res.status(500).json({ error: 'Failed to generate graph' });
   }
 });
+// ─── PROMO CODES ──────────────────────────────────────────────────────────────
+app.post('/promo/create', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { credits, max_uses = 1 } = req.body;
+    const code = 'EDUBOT-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const result = await pool.query(
+      `INSERT INTO promo_codes (code, credits, max_uses, created_by) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [code, credits, max_uses, req.user.id]
+    );
+    res.json({ promo: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create promo code' });
+  }
+});
 
+app.get('/promo/list', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM promo_codes ORDER BY created_at DESC');
+    res.json({ promos: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load promo codes' });
+  }
+});
+
+app.post('/promo/redeem', authenticate, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const promo = await pool.query('SELECT * FROM promo_codes WHERE code = $1', [code]);
+    if (promo.rows.length === 0) return res.status(404).json({ error: 'Invalid promo code' });
+    const p = promo.rows[0];
+    if (p.uses >= p.max_uses) return res.status(400).json({ error: 'Promo code already used' });
+    await pool.query('UPDATE promo_codes SET uses = uses + 1 WHERE id = $1', [p.id]);
+    const result = await pool.query(
+      'UPDATE users SET credits = credits + $1 WHERE id = $2 RETURNING credits',
+      [p.credits, req.user.id]
+    );
+    res.json({ success: true, credits: result.rows[0].credits, added: p.credits });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to redeem promo code' });
+  }
+});
 // ─────────────────────────────────────────────────────────────────────────────
 // START SERVER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -812,6 +852,17 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS promo_codes (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(50) UNIQUE,
+      credits INTEGER NOT NULL,
+      max_uses INTEGER DEFAULT 1,
+      uses INTEGER DEFAULT 0,
+      created_by UUID,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
       id SERIAL PRIMARY KEY,
