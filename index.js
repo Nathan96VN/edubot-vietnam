@@ -704,6 +704,84 @@ app.post('/image/generate', authenticate, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GRAPH GENERATION ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /graph/generate
+// Body: { topic, subject, grade, lang }
+// Uses Claude to generate Chart.js compatible data
+app.post('/graph/generate', authenticate, async (req, res) => {
+  try {
+    const { topic, subject, grade, lang } = req.body;
+    if (!topic) return res.status(400).json({ error: 'Missing topic' });
+
+    const gradeNum = parseInt(grade) || 1;
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    // Only for grade 4+
+    if (gradeNum < 4) {
+      return res.status(400).json({ error: 'Graphs are available for Grade 4 and above.' });
+    }
+
+    const prompt = `You are an educational data visualization assistant.
+Generate a Chart.js compatible chart for a Grade ${gradeNum} ${subject} student.
+Topic: ${topic}
+Language for labels: ${language}
+
+Return ONLY a valid JSON object with no other text, no markdown, no code blocks.
+The JSON must have exactly this structure:
+{
+  "type": "line" or "bar" or "pie" or "scatter",
+  "title": "Chart title in ${language}",
+  "description": "One sentence explaining what this chart shows, in ${language}",
+  "data": {
+    "labels": ["label1", "label2", ...],
+    "datasets": [{
+      "label": "Dataset name in ${language}",
+      "data": [number1, number2, ...],
+      "backgroundColor": ["#4338CA", "#E85D30", "#059669", "#F59E0B", "#EF4444"],
+      "borderColor": "#4338CA",
+      "borderWidth": 2,
+      "fill": false
+    }]
+  },
+  "options": {
+    "xLabel": "X axis label in ${language}",
+    "yLabel": "Y axis label in ${language}"
+  }
+}
+
+Rules:
+- For line graphs (functions): use at least 10 data points
+- For bar/pie charts: use 4-8 categories
+- Make data educationally accurate for Grade ${gradeNum} ${subject}
+- Labels must be in ${language}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    let raw = response.content[0].text.trim();
+    raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    let chartData;
+    try {
+      chartData = JSON.parse(raw);
+    } catch (e) {
+      console.error('Failed to parse chart JSON:', raw);
+      return res.status(500).json({ error: 'Failed to generate chart data' });
+    }
+
+    res.json({ chart: chartData });
+  } catch (err) {
+    console.error('Graph generation error:', err);
+    res.status(500).json({ error: 'Failed to generate graph' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // START SERVER — creates payments table automatically on first boot
 // ─────────────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
