@@ -688,7 +688,7 @@ app.post('/image/generate', authenticate, async (req, res) => {
       prompt: safePrompt,
       n: 1,
       size: '1024x1024',
-      quality: 'standard',
+      quality: 'medium',
     });
 
     const imageUrl = response.data[0].url;
