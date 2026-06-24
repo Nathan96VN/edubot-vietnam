@@ -21,10 +21,10 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ─── Pricing config (VND for VNPay, USD cents for Stripe) ────────────────────
 const PLANS = {
-  student_basic: { vnd: 49000,  usd_cents: 199,  label: 'Student Basic', plan: 'basic'       },
-  student_plus:  { vnd: 99000,  usd_cents: 399,  label: 'Student Plus',  plan: 'plus'        },
-  teacher:       { vnd: 199000, usd_cents: 899,  label: 'Teacher',       plan: 'teacher'     },
-  teacher_pro:   { vnd: 249000, usd_cents: 1199, label: 'Teacher Pro',   plan: 'teacher_pro' },
+  student_basic: { vnd: 79000,  usd_cents: 320,  label: 'Student Basic', plan: 'basic'       },
+  student_plus:  { vnd: 149000, usd_cents: 599,  label: 'Student Plus',  plan: 'plus'        },
+  teacher:       { vnd: 249000, usd_cents: 999,  label: 'Teacher',       plan: 'teacher'     },
+  teacher_pro:   { vnd: 299000, usd_cents: 1299, label: 'Teacher Pro',   plan: 'teacher_pro' },
 };
 
 // ─── Auth middleware ──────────────────────────────────────────────────────────
