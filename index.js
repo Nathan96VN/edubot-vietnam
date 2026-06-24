@@ -684,11 +684,10 @@ app.post('/image/generate', authenticate, async (req, res) => {
     const safePrompt = `Educational illustration for grade ${grade || 'school'} students about ${subject || 'general science'}: ${prompt}. Clean, colorful, child-friendly educational diagram style. No text in image.`;
 
     const response = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'dall-e-2',
       prompt: safePrompt,
       n: 1,
-      size: '1024x1024',
-      quality: 'standard',
+      size: '512x512',
     });
 
     const imageUrl = response.data[0].url;
