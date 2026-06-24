@@ -694,8 +694,9 @@ app.post('/image/generate', authenticate, async (req, res) => {
     const imageUrl = response.data[0].url;
     res.json({ imageUrl });
   } catch (err) {
-    console.error('Image generation error:', err);
-    res.status(500).json({ error: 'Failed to generate image' });
+    console.error('Image generation error:', err?.message || err);
+    const msg = err?.message || 'Failed to generate image';
+    res.status(500).json({ error: msg });
   }
 });
 
