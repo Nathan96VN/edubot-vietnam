@@ -8,27 +8,27 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy: #0F0E2A; --navy2: #1A1840; --indigo: #4338CA;
-      --indigo-light: #6366F1; --coral: #E85D30; --teal: #059669;
-      --white: #FFFFFF; --gray: #94A3B8; --card-bg: #161530;
+      --navy: #0D1B2E; --navy2: #112240; --indigo: #00B4D8;
+      --indigo-light: #00D4FF; --coral: #00B4D8; --teal: #059669;
+      --white: #FFFFFF; --gray: #94A3B8; --card-bg: #0A1628;
     }
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background: var(--navy); color: var(--white); line-height: 1.6; overflow-x: hidden; }
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 40px; background: rgba(15,14,42,0.95);
-      backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 16px 40px; background: rgba(13,27,46,0.97);
+      backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,180,216,0.12);
     }
     .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .nav-logo img { height: 36px; width: 36px; border-radius: 8px; object-fit: cover; }
+    .nav-logo img { height: 36px; width: auto; border-radius: 8px; object-fit: cover; }
     .nav-logo span { font-size: 18px; font-weight: 700; color: var(--white); }
-    .nav-logo em { color: var(--coral); font-style: normal; }
+    .nav-logo em { color: var(--indigo); font-style: normal; }
     .nav-links { display: flex; align-items: center; gap: 8px; }
     .btn-nav { padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; display: inline-block; }
-    .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: var(--white); }
-    .btn-ghost:hover { border-color: rgba(255,255,255,0.5); }
-    .btn-primary { background: var(--indigo); border: 1px solid var(--indigo); color: var(--white); }
+    .btn-ghost { background: transparent; border: 1px solid rgba(0,180,216,0.25); color: var(--white); }
+    .btn-ghost:hover { border-color: var(--indigo); color: var(--indigo); }
+    .btn-primary { background: var(--indigo); border: 1px solid var(--indigo); color: #0D1B2E; font-weight: 700; }
     .btn-primary:hover { background: var(--indigo-light); }
     .hero {
       min-height: 100vh; display: flex; flex-direction: column;
@@ -38,13 +38,13 @@
     .hero::before {
       content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
       width: 700px; height: 700px;
-      background: radial-gradient(circle, rgba(67,56,202,0.18) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(0,180,216,0.12) 0%, transparent 70%);
       pointer-events: none;
     }
-    .hero-logo { width: 96px; height: 96px; border-radius: 20px; object-fit: cover; margin-bottom: 24px; border: 2px solid rgba(255,255,255,0.08); }
+    .hero-logo { width: 120px; height: 120px; border-radius: 24px; object-fit: cover; margin-bottom: 24px; border: 2px solid rgba(0,180,216,0.2); box-shadow: 0 0 40px rgba(0,180,216,0.15); }
     h1 { font-size: clamp(36px, 6vw, 64px); font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; max-width: 820px; }
-    .coral { color: var(--coral); }
-    .purple { color: #818CF8; }
+    .coral { color: var(--indigo); }
+    .purple { color: #00D4FF; }
     .hero-sub { font-size: clamp(16px, 2vw, 19px); color: var(--gray); max-width: 540px; margin-bottom: 44px; }
     .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 60px; }
     .btn-cta {
@@ -52,59 +52,61 @@
       padding: 15px 30px; border-radius: 10px; font-size: 16px; font-weight: 600;
       text-decoration: none; transition: all 0.2s; cursor: pointer; border: none;
     }
-    .btn-student { background: var(--indigo); color: var(--white); }
-    .btn-student:hover { background: var(--indigo-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(67,56,202,0.4); }
-    .btn-teacher { background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.2); color: var(--white); }
-    .btn-teacher:hover { border-color: rgba(255,255,255,0.5); transform: translateY(-2px); }
+    .btn-student { background: var(--indigo); color: #0D1B2E; font-weight: 700; }
+    .btn-student:hover { background: var(--indigo-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,180,216,0.35); }
+    .btn-teacher { background: rgba(255,255,255,0.06); border: 1.5px solid rgba(0,180,216,0.3); color: var(--white); }
+    .btn-teacher:hover { border-color: var(--indigo); transform: translateY(-2px); }
     .hero-stats { display: flex; gap: 48px; flex-wrap: wrap; justify-content: center; }
-    .stat-num { font-size: 30px; font-weight: 800; }
+    .stat-num { font-size: 30px; font-weight: 800; color: var(--indigo); }
     .stat-label { font-size: 13px; color: var(--gray); margin-top: 2px; }
-    .divider { width: 100%; height: 1px; background: rgba(255,255,255,0.06); }
+    .divider { width: 100%; height: 1px; background: rgba(0,180,216,0.08); }
     section { padding: 80px 24px; max-width: 1100px; margin: 0 auto; }
-    .section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #818CF8; margin-bottom: 12px; text-align: center; }
+    .section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--indigo); margin-bottom: 12px; text-align: center; }
     h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 700; letter-spacing: -0.5px; margin-bottom: 14px; text-align: center; }
     .section-sub { color: var(--gray); font-size: 16px; max-width: 500px; margin: 0 auto 48px; text-align: center; }
     .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
     .card {
-      background: var(--card-bg); border: 1px solid rgba(255,255,255,0.06);
+      background: var(--card-bg); border: 1px solid rgba(0,180,216,0.08);
       border-radius: 16px; padding: 28px; transition: all 0.2s;
     }
-    .card:hover { border-color: rgba(99,102,241,0.35); transform: translateY(-3px); }
+    .card:hover { border-color: rgba(0,180,216,0.35); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,180,216,0.08); }
     .card-icon { font-size: 28px; margin-bottom: 14px; }
     .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
     .card p { font-size: 14px; color: var(--gray); line-height: 1.6; }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .user-card { border-radius: 20px; padding: 40px; position: relative; overflow: hidden; }
-    .user-card.student { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border: 1px solid rgba(99,102,241,0.3); }
+    .user-card.student { background: linear-gradient(135deg, #0a2a3a 0%, #0e3a50 100%); border: 1px solid rgba(0,180,216,0.25); }
     .user-card.teacher { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); border: 1px solid rgba(5,150,105,0.3); }
     .user-card h3 { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
     .user-card p { font-size: 15px; color: rgba(255,255,255,0.75); margin-bottom: 24px; line-height: 1.6; }
     .user-card ul { list-style: none; margin-bottom: 32px; }
     .user-card ul li { font-size: 14px; color: rgba(255,255,255,0.8); padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 8px; }
     .user-card ul li:last-child { border-bottom: none; }
-    .check { color: var(--teal); font-weight: 700; }
+    .check { color: var(--indigo); font-weight: 700; }
+    .user-card.teacher .check { color: var(--teal); }
     .btn-card { display: inline-block; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
-    .btn-card.indigo { background: var(--indigo); color: white; }
+    .btn-card.indigo { background: var(--indigo); color: #0D1B2E; font-weight: 700; }
     .btn-card.indigo:hover { background: var(--indigo-light); }
     .btn-card.green { background: var(--teal); color: white; }
     .btn-card.green:hover { background: #10b981; }
     .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-    .price-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px; text-align: center; }
-    .price-card.featured { border-color: var(--indigo); background: rgba(67,56,202,0.12); }
-    .price-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--indigo); color: white; margin-bottom: 16px; }
+    .price-card { background: var(--card-bg); border: 1px solid rgba(0,180,216,0.1); border-radius: 16px; padding: 28px; text-align: center; }
+    .price-card.featured { border-color: var(--indigo); background: rgba(0,180,216,0.08); }
+    .price-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--indigo); color: #0D1B2E; margin-bottom: 16px; }
     .price-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-    .price { font-size: 36px; font-weight: 800; margin: 16px 0 4px; }
+    .price { font-size: 36px; font-weight: 800; margin: 16px 0 4px; color: var(--indigo); }
     .price span { font-size: 16px; font-weight: 400; color: var(--gray); }
     .price-desc { font-size: 13px; color: var(--gray); margin-bottom: 20px; }
     .price-card ul { list-style: none; text-align: left; margin-bottom: 24px; }
     .price-card ul li { font-size: 13px; color: rgba(255,255,255,0.75); padding: 5px 0; display: flex; align-items: center; gap: 6px; }
+    .price-card ul li .check { color: var(--indigo); }
     .btn-price { display: block; padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; text-align: center; transition: all 0.2s; }
-    .btn-price.indigo { background: var(--indigo); color: white; }
+    .btn-price.indigo { background: var(--indigo); color: #0D1B2E; font-weight: 700; }
     .btn-price.indigo:hover { background: var(--indigo-light); }
-    .btn-price.outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
-    .btn-price.outline:hover { border-color: rgba(255,255,255,0.5); }
-    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 40px 24px; text-align: center; color: var(--gray); font-size: 14px; }
-    footer strong { color: white; }
+    .btn-price.outline { background: transparent; border: 1px solid rgba(0,180,216,0.25); color: white; }
+    .btn-price.outline:hover { border-color: var(--indigo); color: var(--indigo); }
+    footer { border-top: 1px solid rgba(0,180,216,0.08); padding: 40px 24px; text-align: center; color: var(--gray); font-size: 14px; }
+    footer strong { color: var(--indigo); }
     @media (max-width: 640px) {
       nav { padding: 14px 20px; }
       .two-col { grid-template-columns: 1fr; }
@@ -116,7 +118,7 @@
 
 <nav>
   <a class="nav-logo" href="#">
-    <img src="https://raw.githubusercontent.com/Nathan96VN/edubot-vietnam/main/Dynamic%20Edubot%20Logo%20Featuring%20Books%20and%20Robot%20Head.png" alt="EduBot Logo" />
+    <img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" alt="EduBot Logo" />
     <span>Edu<em>Bot</em></span>
   </a>
   <div class="nav-links">
@@ -128,7 +130,7 @@
 
 <div class="hero">
   <img class="hero-logo"
-    src="https://raw.githubusercontent.com/Nathan96VN/edubot-vietnam/main/Dynamic%20Edubot%20Logo%20Featuring%20Books%20and%20Robot%20Head.png"
+    src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png"
     alt="EduBot Vietnam" />
   <h1>Your <span class="coral">AI Partner</span> in Education —<br/>For <span class="purple">Students</span> & Teachers</h1>
   <p class="hero-sub">Covering Math, Science & English for grades 1–12. Aligned with MOET & Cambridge.</p>
