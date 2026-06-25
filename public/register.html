@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EduBot — Đăng ký</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0D1B2E;--card:#112240;--primary:#00B4D8;--accent:#00D4FF;--teacher:#059669;--text:#E2E8F0;--muted:#94A3B8;--border:#1A3A5C;--success:#10B981;--error:#EF4444}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+    .bg-glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 70% 20%,rgba(0,180,216,0.12),transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(124,58,237,0.1),transparent 50%)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:100%;max-width:440px;position:relative;z-index:1}
+    .logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:24px;text-decoration:none}
+    .logo img{height:36px}
+    .logo-txt{font-size:22px;font-weight:900;color:var(--text)}
+    .logo-txt em{color:var(--primary);font-style:normal}
+    h1{font-size:22px;font-weight:800;text-align:center;margin-bottom:6px}
+    .sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:28px}
+    .role-toggle{display:flex;background:rgba(0,180,216,0.06);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:24px;gap:4px}
+    .role-btn{flex:1;padding:10px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+    .role-btn.active{background:var(--primary);color:#0D1B2E}
+    .role-btn.active.teacher{background:var(--teacher)}
+    .field{margin-bottom:16px}
+    .field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+    .field input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(0,180,216,0.04);color:var(--text);font-size:14px;font-family:inherit;transition:border-color .2s;outline:none}
+    .field input:focus{border-color:var(--primary)}
+    .field input::placeholder{color:var(--muted)}
+    .btn-submit{width:100%;padding:14px;border-radius:12px;background:var(--primary);border:none;color:#0D1B2E;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:8px}
+    .btn-submit:hover{background:var(--accent);transform:translateY(-1px)}
+    .btn-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+    .btn-submit.teacher{background:var(--teacher)}
+    .divider{text-align:center;color:var(--muted);font-size:13px;margin:20px 0;position:relative}
+    .divider::before,.divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border)}
+    .divider::before{left:0}.divider::after{right:0}
+    .link-row{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
+    .link-row a{color:var(--primary);text-decoration:none;font-weight:600}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#112240;border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;max-width:340px;text-align:center}
+    .toast.show{opacity:1}
+    .toast.ok{border-color:var(--success);color:var(--success)}
+    .toast.err{border-color:var(--error);color:var(--error)}
+    .lang-toggle{position:absolute;top:16px;right:16px;display:flex;background:rgba(0,180,216,0.08);border:1px solid rgba(0,180,216,0.2);border-radius:20px;overflow:hidden}
+    .lt-btn{padding:4px 10px;font-size:11px;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer}
+    .lt-btn.on{background:var(--primary);color:#0D1B2E}
+    @media(max-width:480px){.card{padding:28px 20px}}
+  </style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="card">
+  <div class="lang-toggle">
+    <button class="lt-btn on" id="lt-vi" onclick="setLang('vi')">🇻🇳 VI</button>
+    <button class="lt-btn" id="lt-en" onclick="setLang('en')">🇬🇧 EN</button>
+  </div>
+  <a class="logo" href="/">
+    <img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" alt="EduBot"/>
+    <span class="logo-txt">Edu<em>Bot</em></span>
+  </a>
+  <h1 id="title">Tạo tài khoản</h1>
+  <p class="sub" id="sub">Bắt đầu hành trình học tập AI của bạn</p>
+  <div class="role-toggle">
+    <button class="role-btn active" id="btn-student" onclick="setRole('student')">🎓 <span id="lbl-student">Học sinh</span></button>
+    <button class="role-btn" id="btn-teacher" onclick="setRole('teacher')">👩‍🏫 <span id="lbl-teacher">Giáo viên</span></button>
+  </div>
+  <div class="field"><label id="lbl-name">Họ và tên</label><input type="text" id="inp-name" placeholder="Nguyễn Văn A" autocomplete="name"/></div>
+  <div class="field"><label id="lbl-email">Email</label><input type="email" id="inp-email" placeholder="email@example.com" autocomplete="email"/></div>
+  <div class="field"><label id="lbl-pass">Mật khẩu</label><input type="password" id="inp-pass" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password"/></div>
+  <button class="btn-submit" id="btn-submit" onclick="doRegister()">✨ <span id="lbl-submit">Đăng ký miễn phí</span></button>
+  <div class="divider" id="lbl-or">hoặc</div>
+  <div class="link-row" id="login-row">Đã có tài khoản? <a href="/login" id="lbl-login">Đăng nhập</a></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var lang='vi', role='student';
+
+// Check URL for role hint
+var urlRole=new URLSearchParams(window.location.search).get('role');
+if(urlRole==='teacher') setRole('teacher');
+
+var T={
+  vi:{title:'Tạo tài khoản',sub:'Bắt đầu hành trình học tập AI của bạn','lbl-student':'Học sinh','lbl-teacher':'Giáo viên','lbl-name':'Họ và tên','lbl-email':'Email','lbl-pass':'Mật khẩu','lbl-submit':'Đăng ký miễn phí','lbl-or':'hoặc','login-row-txt':'Đã có tài khoản?','lbl-login':'Đăng nhập','err-fields':'Vui lòng điền đầy đủ thông tin','err-short':'Mật khẩu tối thiểu 6 ký tự','err-fail':'Đăng ký thất bại, vui lòng thử lại','ok-reg':'Đăng ký thành công! Đang chuyển hướng...'},
+  en:{title:'Create account',sub:'Start your AI learning journey','lbl-student':'Student','lbl-teacher':'Teacher','lbl-name':'Full name','lbl-email':'Email','lbl-pass':'Password','lbl-submit':'Sign up free','lbl-or':'or','login-row-txt':'Already have an account?','lbl-login':'Sign in','err-fields':'Please fill in all fields','err-short':'Password must be at least 6 characters','err-fail':'Registration failed, please try again','ok-reg':'Account created! Redirecting...'}
+};
+
+function setLang(l){
+  lang=l;
+  document.getElementById('lt-vi').className='lt-btn'+(l==='vi'?' on':'');
+  document.getElementById('lt-en').className='lt-btn'+(l==='en'?' on':'');
+  var t=T[l];
+  ['title','sub','lbl-student','lbl-teacher','lbl-name','lbl-email','lbl-pass','lbl-submit','lbl-or','lbl-login'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.textContent=t[id];
+  });
+  document.getElementById('login-row').innerHTML=t['login-row-txt']+' <a href="/login" id="lbl-login">'+t['lbl-login']+'</a>';
+  document.getElementById('inp-name').placeholder=l==='vi'?'Nguyễn Văn A':'John Smith';
+  document.getElementById('inp-pass').placeholder=l==='vi'?'Tối thiểu 6 ký tự':'At least 6 characters';
+}
+
+function setRole(r){
+  role=r;
+  document.getElementById('btn-student').className='role-btn'+(r==='student'?' active':'');
+  document.getElementById('btn-teacher').className='role-btn'+(r==='teacher'?' active teacher':'');
+  document.getElementById('btn-submit').className='btn-submit'+(r==='teacher'?' teacher':'');
+}
+
+function toast(msg,type){
+  var el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast show '+(type||'');
+  setTimeout(function(){el.className='toast';},3200);
+}
+
+async function doRegister(){
+  var name=document.getElementById('inp-name').value.trim();
+  var email=document.getElementById('inp-email').value.trim();
+  var pass=document.getElementById('inp-pass').value;
+  var t=T[lang];
+  if(!name||!email||!pass){toast(t['err-fields'],'err');return;}
+  if(pass.length<6){toast(t['err-short'],'err');return;}
+  var btn=document.getElementById('btn-submit');
+  btn.disabled=true;
+  try{
+    var res=await fetch('/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password:pass,role})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||t['err-fail']);
+    localStorage.setItem('eb_tok',data.token);
+    localStorage.setItem('eb_name',data.user.name);
+    localStorage.setItem('eb_role',data.user.role);
+    localStorage.setItem('eb_new','1');
+    toast(t['ok-reg'],'ok');
+    setTimeout(function(){window.location.href='/pricing?role='+role+'&new=1';},1200);
+  }catch(e){
+    toast(e.message||T[lang]['err-fail'],'err');
+    btn.disabled=false;
+  }
+}
+
+// Init lang from saved or browser
+var saved=localStorage.getItem('eb_lp_lang');
+if(saved)setLang(saved);
+else{var bl=navigator.language||'vi';setLang(bl.toLowerCase().startsWith('vi')?'vi':'en');}
+</script>
+</body>
+</html>
