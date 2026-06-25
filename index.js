@@ -9,6 +9,7 @@ const querystring = require('querystring');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let pdfParse; try { pdfParse = require("pdf-parse"); } catch(e) { console.log("pdf-parse not installed"); }
 
 const app = express();
 app.use(cors());
@@ -562,119 +563,129 @@ Respond ONLY in JSON with no other text:
   }
 });
 
-// Import curriculum from PDF — sends PDF to Claude for full extraction
+// Import curriculum from PDF — extracts text first, then processes in chunks
 app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
   try {
     const { fileData, fileName, subject, grade, type, lang } = req.body;
     if (!fileData) return res.status(400).json({ error: 'No file data received' });
 
-    const docSource = { type: 'base64', media_type: 'application/pdf', data: fileData };
+    // Step 1: Extract raw text from PDF using pdf-parse (no AI, no token cost)
+    let pdfText = '';
+    try {
+      const pdfBuffer = Buffer.from(fileData, 'base64');
+      if (!pdfParse) pdfParse = require('pdf-parse');
+      const pdfData = await pdfParse(pdfBuffer);
+      pdfText = pdfData.text || '';
+      console.log(`PDF text extracted: ${pdfText.length} chars from "${fileName}"`);
+    } catch(pdfErr) {
+      console.error('pdf-parse failed:', pdfErr.message);
+      return res.status(400).json({ error: 'Could not read PDF. Make sure it is a text-based PDF (not a scanned image).' });
+    }
 
-    // Helper: safely parse JSON array from Claude response
+    if (!pdfText || pdfText.length < 100) {
+      return res.status(400).json({ error: 'PDF appears to be empty or image-based. Please use a text-based PDF.' });
+    }
+
+    // Step 2: Split text into chunks of ~4000 chars (well under token limits)
+    const CHUNK_SIZE = 4000;
+    const chunks = [];
+    for (let i = 0; i < pdfText.length; i += CHUNK_SIZE) {
+      chunks.push(pdfText.slice(i, i + CHUNK_SIZE));
+    }
+    console.log(`Split into ${chunks.length} chunks for processing`);
+
+    // Step 3: Process each chunk with Claude, with 2s delay between calls to avoid rate limits
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
     function parseItems(text) {
       const cleaned = text.replace(/```json|```/g, '').trim();
-      // Try direct parse first
       try { const r = JSON.parse(cleaned); if (Array.isArray(r)) return r; } catch(e) {}
-      // Try extracting first [...] block
       const match = cleaned.match(/\[[\s\S]*\]/);
       if (match) { try { const r = JSON.parse(match[0]); if (Array.isArray(r)) return r; } catch(e) {} }
       return [];
     }
 
-    // Helper: single extraction pass asking for a specific part
-    async function extractPass(instruction) {
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 8000,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'document', source: docSource },
-            { type: 'text', text: instruction }
-          ]
-        }]
-      });
-      return response.content[0].text;
-    }
-
-    // PASS 1: Get the chapter/strand structure
-    const structureText = await extractPass(
-      `List ALL chapter titles, unit titles, and main topic headings from this curriculum PDF.
-Return ONLY a JSON array of strings, no other text:
-["Chapter 1: ...", "Unit 2: ...", "Topic: ..."]`
-    );
-    const strands = parseItems(structureText).filter(s => typeof s === 'string');
-    console.log(`Curriculum import: found ${strands.length} strands from "${fileName}"`);
-
     let allItems = [];
+    // Process in batches of 3 chunks at a time, with delay between batches
+    const BATCH = 3;
+    for (let i = 0; i < chunks.length; i += BATCH) {
+      const batchChunks = chunks.slice(i, i + BATCH);
+      const combinedText = batchChunks.join('\n');
 
-    if (strands.length > 0) {
-      // PASS 2: Extract objectives per strand in batches of 5
-      const batchSize = 5;
-      for (let i = 0; i < strands.length; i += batchSize) {
-        const batch = strands.slice(i, i + batchSize);
-        const batchText = await extractPass(
-          `From this curriculum PDF, extract ALL learning objectives, topics, and concepts for these sections:
-${batch.map((s, idx) => `${idx + 1}. ${s}`).join('\n')}
+      try {
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
+          messages: [{
+            role: 'user',
+            content: `You are extracting curriculum content from a ${subject} textbook/framework.
 
-Return ONLY a JSON array, no other text:
-[{"strand":"section name","substrand":"sub-topic if any","objective":"specific learning objective or concept"}]
+Extract ALL learning objectives, topics, concepts, and skills from this text section:
 
-Include every learning point, skill, concept, and outcome mentioned for these sections.`
-        );
-        const batchItems = parseItems(batchText);
-        allItems = allItems.concat(batchItems);
-        console.log(`Batch ${Math.ceil(i/batchSize)+1}: extracted ${batchItems.length} items`);
+---
+${combinedText}
+---
+
+Return ONLY a JSON array, absolutely no other text:
+[{"strand":"chapter or topic name","substrand":"sub-topic if any, or empty string","objective":"specific learning objective or concept"}]
+
+If no clear educational content is found, return: []`
+          }]
+        });
+
+        const items = parseItems(response.content[0].text);
+        allItems = allItems.concat(items);
+        console.log(`Chunk batch ${Math.ceil(i/BATCH)+1}/${Math.ceil(chunks.length/BATCH)}: ${items.length} items`);
+      } catch(chunkErr) {
+        console.warn(`Chunk batch ${Math.ceil(i/BATCH)+1} failed:`, chunkErr.message);
+        // If rate limited, wait longer and retry once
+        if (chunkErr.message && chunkErr.message.includes('rate_limit')) {
+          console.log('Rate limited — waiting 15s before retry...');
+          await sleep(15000);
+          try {
+            const retry = await anthropic.messages.create({
+              model: 'claude-sonnet-4-6',
+              max_tokens: 2000,
+              messages: [{ role: 'user', content: `Extract learning objectives from this curriculum text as JSON array [{"strand":"...","substrand":"...","objective":"..."}]. Text: ${combinedText.slice(0, 2000)}` }]
+            });
+            const retryItems = parseItems(retry.content[0].text);
+            allItems = allItems.concat(retryItems);
+          } catch(retryErr) { console.warn('Retry also failed, skipping chunk'); }
+        }
       }
+
+      // Delay between batches to stay under rate limits
+      if (i + BATCH < chunks.length) await sleep(2000);
     }
 
-    // PASS 3 (fallback or supplement): General extraction pass
-    const generalText = await extractPass(
-      `Extract ALL learning objectives, skills, concepts, and outcomes from this curriculum PDF that may not be covered under chapter headings — including introduction sections, appendices, glossary terms, assessment criteria, and cross-cutting themes.
-
-Return ONLY a JSON array, no other text:
-[{"strand":"section/topic name","substrand":"sub-topic if any","objective":"specific learning objective or concept"}]
-
-Be thorough. Extract every distinct educational point.`
-    );
-    const generalItems = parseItems(generalText);
-    allItems = allItems.concat(generalItems);
-
-    // Deduplicate by objective text
+    // Step 4: Deduplicate
     const seen = new Set();
     const uniqueItems = allItems.filter(item => {
-      if (!item || !item.objective) return false;
-      const key = (item.objective || '').trim().toLowerCase().slice(0, 100);
-      if (seen.has(key)) return false;
+      if (!item || !item.objective || typeof item.objective !== 'string') return false;
+      const key = item.objective.trim().toLowerCase().slice(0, 120);
+      if (!key || seen.has(key)) return false;
       seen.add(key);
       return true;
     });
 
+    console.log(`Total unique items: ${uniqueItems.length} from ${allItems.length} raw`);
+
     if (!uniqueItems.length) {
-      return res.status(400).json({ error: 'Could not extract curriculum content. The PDF may be scanned/image-based or password protected.' });
+      return res.status(400).json({ error: 'No curriculum content could be extracted. Please check the PDF contains readable text.' });
     }
 
-    // Insert all into DB
+    // Step 5: Insert into DB
     let imported = 0;
     for (const item of uniqueItems) {
       await pool.query(
         `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          subject,
-          parseInt(grade) || 0,
-          item.strand || '',
-          item.substrand || '',
-          item.objective || '',
-          type || 'general',
-          lang || 'vi',
-          fileName
-        ]
+        [subject, parseInt(grade) || 0, item.strand || '', item.substrand || '', item.objective, type || 'general', lang || 'vi', fileName]
       );
       imported++;
     }
 
-    console.log(`Curriculum import complete: ${imported} items from "${fileName}"`);
+    console.log(`✅ Import complete: ${imported} items from "${fileName}"`);
     res.json({ imported, message: `Successfully imported ${imported} curriculum items from "${fileName}"` });
   } catch (err) {
     console.error('Curriculum import error:', err);
