@@ -1409,11 +1409,18 @@ async function loadCurrList(){
     var items=data.items||[];
     var el=document.getElementById('curr-list');
     if(!items.length){el.innerHTML='<div class="ebox">No curriculum imported yet.</div>';return;}
-    el.innerHTML=items.map(function(c){return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(c.subject)+' — Grade '+(c.grade||'All')+'</div><div class="tcm">'+esc(c.curriculum_type)+' · '+c.count+' items</div></div><button class="tcvb" onclick="deleteCurr(''+esc(c.subject)+'','+c.grade+')">🗑️ Delete</button></div></div>';}).join('');
+    el.innerHTML=items.map(function(c){
+      var subj=esc(c.subject);
+      var typ=esc(c.curriculum_type);
+      return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+subj+' — Grade '+(c.grade||'All')+'</div><div class="tcm">'+typ+' · '+c.count+' items</div></div><button class="tcvb" onclick="deleteCurr(this)">🗑️ Delete</button></div></div>';
+    }).join('');
+    items.forEach(function(c,i){var btns=el.querySelectorAll('.tcvb');if(btns[i])btns[i].setAttribute('data-s',c.subject);if(btns[i])btns[i].setAttribute('data-g',c.grade);});
   }catch(e){document.getElementById('curr-list').innerHTML='<div class="ebox">Failed to load</div>';}
 }
 
-async function deleteCurr(subject,grade){
+async function deleteCurr(btn){
+  var subject=btn.getAttribute('data-s');
+  var grade=btn.getAttribute('data-g');
   if(!confirm('Delete '+subject+' Grade '+grade+'?'))return;
   try{
     await fetch(API+'/admin/curriculum/delete',{method:'DELETE',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({subject,grade})});
