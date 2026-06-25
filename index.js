@@ -1117,64 +1117,29 @@ app.get('/admin/payments', authenticate, adminOnly, async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0`);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS payments (
-      id SERIAL PRIMARY KEY,
-      user_id UUID,
-      plan VARCHAR(50),
-      gateway VARCHAR(20),
-      amount INTEGER,
-      currency VARCHAR(10),
-      txn_ref VARCHAR(255) UNIQUE,
-      status VARCHAR(20) DEFAULT 'pending',
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS flashcards (
-      id SERIAL PRIMARY KEY,
-      user_id UUID,
-      subject VARCHAR(50),
-      grade INTEGER,
-      topic VARCHAR(200),
-      question TEXT,
-      answer TEXT,
-      hint TEXT,
-      lang VARCHAR(5) DEFAULT 'vi',
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS curriculum (
-      id SERIAL PRIMARY KEY,
-      subject VARCHAR(100),
-      grade INTEGER,
-      strand VARCHAR(200),
-      substrand VARCHAR(200),
-      objective TEXT,
-      content TEXT,
-      curriculum_type VARCHAR(50) DEFAULT 'general',
-      lang VARCHAR(10) DEFAULT 'vi',
-      source_file VARCHAR(255),
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
-  await pool.query(`
-    ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'credits'
-  `);
-  await pool.query(`
-    ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS plan VARCHAR(50)
-  `);
-  await pool.query(`
-    ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP
-  `);
-  await pool.query('CREATE TABLE IF NOT EXISTS curriculum (id SERIAL PRIMARY KEY, subject VARCHAR(100), grade INTEGER, strand VARCHAR(200), substrand VARCHAR(200), objective TEXT, curriculum_type VARCHAR(50) DEFAULT \'general\', lang VARCHAR(10) DEFAULT \'vi\', source_file VARCHAR(255), created_at TIMESTAMP DEFAULT NOW())');
-  await pool.query('ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT \'credits\'');
-  await pool.query('ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS plan VARCHAR(50)');
-  await pool.query('ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP');
+  try {
+    // Run all DB setup in parallel for faster boot
+    await Promise.all([
+      pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0'),
+      pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT \'free\''),
+      pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_count INTEGER DEFAULT 0'),
+      pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reset TIMESTAMP'),
+    ]);
+    await pool.query(`CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, user_id UUID, plan VARCHAR(50), gateway VARCHAR(20), amount INTEGER, currency VARCHAR(10), txn_ref VARCHAR(255) UNIQUE, status VARCHAR(20) DEFAULT 'pending', created_at TIMESTAMP DEFAULT NOW())`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS flashcards (id SERIAL PRIMARY KEY, user_id UUID, subject VARCHAR(50), grade INTEGER, topic VARCHAR(200), question TEXT, answer TEXT, hint TEXT, lang VARCHAR(5) DEFAULT 'vi', created_at TIMESTAMP DEFAULT NOW())`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS promo_codes (id SERIAL PRIMARY KEY, code VARCHAR(20) UNIQUE, credits INTEGER DEFAULT 0, max_uses INTEGER DEFAULT 1, uses INTEGER DEFAULT 0, type VARCHAR(20) DEFAULT 'credits', plan VARCHAR(50), expires_at TIMESTAMP, created_at TIMESTAMP DEFAULT NOW())`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS curriculum (id SERIAL PRIMARY KEY, subject VARCHAR(100), grade INTEGER, strand VARCHAR(200), substrand VARCHAR(200), objective TEXT, curriculum_type VARCHAR(50) DEFAULT 'general', lang VARCHAR(10) DEFAULT 'vi', source_file VARCHAR(255), created_at TIMESTAMP DEFAULT NOW())`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS chat_history (id SERIAL PRIMARY KEY, user_id UUID, role VARCHAR(20), content TEXT, subject VARCHAR(50), grade INTEGER, created_at TIMESTAMP DEFAULT NOW())`);
+    // Safe ALTER TABLE additions
+    const alters = [
+      'ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT \'credits\'',
+      'ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS plan VARCHAR(50)',
+      'ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP',
+    ];
+    await Promise.all(alters.map(q => pool.query(q)));
+  } catch(e) { console.error('DB setup error:', e.message); }
   console.log('Database ready');
-  app.listen(PORT, () => console.log(`EduBot Vietnam running on port ${PORT}`));
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
 startServer();
