@@ -135,6 +135,7 @@ app.post('/chat/document', authenticate, async (req, res) => {
     const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
 
+    // Admin bypasses all credit checks
     if (user.role !== 'admin') {
       if (user.plan === 'free') {
         if (user.daily_count >= 5) {
@@ -199,11 +200,13 @@ app.post('/chat', authenticate, async (req, res) => {
       user.daily_count = 0;
     }
 
-    const isPaid = ['basic', 'plus', 'teacher', 'teacher_pro'].includes(user.plan) || user.role === 'teacher' || user.role === 'admin';
-    if (!isPaid && user.daily_count >= 5) {
+    // Admin bypasses ALL credit checks and limits
+    const isAdmin = user.role === 'admin';
+    const isPaid = ['basic', 'plus', 'teacher', 'teacher_pro'].includes(user.plan) || user.role === 'teacher';
+    if (!isAdmin && !isPaid && user.daily_count >= 5) {
       return res.status(429).json({ error: 'Daily limit reached. Upgrade to continue!', upgrade: true });
     }
-    if (isPaid && (user.credits || 0) < CREDIT_COSTS.question) {
+    if (!isAdmin && isPaid && (user.credits || 0) < CREDIT_COSTS.question) {
       return res.status(402).json({ error: 'Not enough credits. Top up to continue!', upgrade: true });
     }
 
@@ -301,7 +304,10 @@ ${curriculumContext}`;
     );
 
     let creditsRemaining = user.credits || 0;
-    if (isPaid) {
+    if (isAdmin) {
+      // Admin never loses credits — just return current balance
+      creditsRemaining = user.credits || 0;
+    } else if (isPaid) {
       const updated = await pool.query(
         'UPDATE users SET credits = credits - $1 WHERE id = $2 RETURNING credits',
         [CREDIT_COSTS.question, userId]
