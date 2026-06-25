@@ -68,6 +68,15 @@ const adminOnly = (req, res, next) => {
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ONBOARDING PAGES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/register', (req, res) => res.sendFile(__dirname + '/public/register.html'));
+app.get('/login', (req, res) => res.sendFile(__dirname + '/public/login.html'));
+app.get('/pricing', (req, res) => res.sendFile(__dirname + '/public/pricing.html'));
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // AUTH ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
 app.post('/auth/register', async (req, res) => {
