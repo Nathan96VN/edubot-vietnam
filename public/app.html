@@ -307,29 +307,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       <div class="fc-grid" id="fcgrid"></div>
     </div>
   </div>
-</div>
-</div>
-
-<!-- AUTH MODAL -->
-<div id="overlay">
-  <div id="modal">
-    <button id="mcls">✕</button>
-    <div class="mlogo" style="text-align:center;margin-bottom:8px"><img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" style="height:40px;width:auto;vertical-align:middle"> <span style="font-size:18px;font-weight:800;color:#E2E8F0;">Edu<span style="color:#00B4D8;">Bot</span></span></div>
-    <div id="msub">Nền tảng học tập AI cho học sinh lớp 1–12</div>
-    <div class="rtog"><button class="rb on" id="rst">🎒 Học sinh</button><button class="rb ton" id="rte">👩‍🏫 Giáo viên</button></div>
-    <div class="atabs"><button class="at on" id="at0">Đăng nhập</button><button class="at" id="at1">Đăng ký</button></div>
-    <div id="regf" class="hide">
-      <div class="af"><label id="rln">Họ và tên</label><input type="text" id="rname" placeholder="Nguyễn Văn A"/></div>
-      <div class="af" id="grf"><label id="rlg">Lớp</label><select id="rgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
-      <div class="af hide" id="inf"><label id="rli">Trường / Tổ chức</label><input type="text" id="rinst" placeholder="Trường THPT Nguyễn Trãi"/></div>
-    </div>
-    <div class="af"><label>Email</label><input type="email" id="aemail" placeholder="email@example.com"/></div>
-    <div class="af"><label id="lpw">Mật khẩu</label><input type="password" id="apw" placeholder="••••••••"/></div>
-    <button id="asubmit">Đăng nhập</button>
-    <div id="aerr"></div>
-  </div>
-</div>
-
 
   <!-- GAMES PANEL -->
   <div class="panel" id="p4">
@@ -436,8 +413,31 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       </div>
     </div>
   </div>
+</div>
 
-  <!-- UPGRADE MODAL -->
+<!-- AUTH MODAL -->
+<div id="overlay">
+  <div id="modal">
+    <button id="mcls">✕</button>
+    <div class="mlogo" style="text-align:center;margin-bottom:8px"><img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" style="height:40px;width:auto;vertical-align:middle"> <span style="font-size:18px;font-weight:800;color:#E2E8F0;">Edu<span style="color:#00B4D8;">Bot</span></span></div>
+    <div id="msub">Nền tảng học tập AI cho học sinh lớp 1–12</div>
+    <div class="rtog"><button class="rb on" id="rst">🎒 Học sinh</button><button class="rb ton" id="rte">👩‍🏫 Giáo viên</button></div>
+    <div class="atabs"><button class="at on" id="at0">Đăng nhập</button><button class="at" id="at1">Đăng ký</button></div>
+    <div id="regf" class="hide">
+      <div class="af"><label id="rln">Họ và tên</label><input type="text" id="rname" placeholder="Nguyễn Văn A"/></div>
+      <div class="af" id="grf"><label id="rlg">Lớp</label><select id="rgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
+      <div class="af hide" id="inf"><label id="rli">Trường / Tổ chức</label><input type="text" id="rinst" placeholder="Trường THPT Nguyễn Trãi"/></div>
+    </div>
+    <div class="af"><label>Email</label><input type="email" id="aemail" placeholder="email@example.com"/></div>
+    <div class="af"><label id="lpw">Mật khẩu</label><input type="password" id="apw" placeholder="••••••••"/></div>
+    <button id="asubmit">Đăng nhập</button>
+    <div id="aerr"></div>
+  </div>
+</div>
+
+
+
+<!-- UPGRADE MODAL -->
 <div id="upgoverlay">
   <div id="upgmodal">
     <button id="upgcls" onclick="closeUpgrade()">✕</button>
@@ -522,8 +522,10 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   </div>
 </div>
 
+
 <div id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
 <script>
 var _v='5.26';
 var API='https://edubot-vietnam.onrender.com';
