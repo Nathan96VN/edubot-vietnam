@@ -166,8 +166,8 @@ app.post('/chat/document', authenticate, async (req, res) => {
 
     const isTeacher = userRole === 'teacher' || user.role === 'teacher' || user.role === 'admin';
     const systemPrompt = isTeacher
-      ? \`You are EduBot, an expert AI teaching assistant. Analyze the provided document and respond in \${language}. Be professional, thorough, and create high-quality educational materials.\`
-      : \`You are EduBot, a friendly AI tutor. Analyze the provided document and help the student in \${language}. Be clear, encouraging, and educational.\`;
+      ? `You are EduBot, an expert AI teaching assistant. Analyze the provided document and respond in ${language}. Be professional, thorough, and create high-quality educational materials.`
+      : `You are EduBot, a friendly AI tutor. Analyze the provided document and help the student in ${language}. Be clear, encouraging, and educational.`;
 
     const response = await anthropic.messages.create({
       model: 'claude-opus-4-5',
