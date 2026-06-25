@@ -254,6 +254,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <button class="stb on" id="stb0">🏫 Lớp học</button>
         <button class="stb" id="stb1">🤖 Trợ lý AI</button>
         <button class="stb" id="stb2" style="display:none">🎟️ Promo</button>
+        <button class="stb" id="stb3" style="display:none">📚 Curriculum</button>
       </div>
       <!-- SP0: Classrooms -->
       <div class="sp on" id="sp0">
@@ -277,16 +278,103 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       </div>
       <!-- SP2: Promo Codes (admin only) -->
       <div class="sp" id="sp2">
-        <div class="crcard">
-          <div class="stitle">🎟️ Generate Promo Code</div>
-          <div class="frow">
-            <div class="fg"><label>Credits</label><input type="number" id="promo-credits" placeholder="e.g. 100" min="1"/></div>
-            <div class="fg"><label>Max Uses</label><input type="number" id="promo-uses" placeholder="1" min="1" value="1"/></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+          <!-- Credits Promo -->
+          <div class="crcard">
+            <div class="stitle">⚡ Credits Promo</div>
+            <div class="frow">
+              <div class="fg"><label>Credits Amount</label><input type="number" id="promo-credits" placeholder="e.g. 100" min="1"/></div>
+              <div class="fg"><label>Max Uses</label><input type="number" id="promo-uses" placeholder="1" min="1" value="1"/></div>
+            </div>
+            <button id="bpromo" onclick="createPromo('credits')" style="background:var(--warn);border:none;color:#0D1B2E;padding:9px 18px;border-radius:var(--rs);font-weight:700;cursor:pointer">⚡ Generate Credits Code</button>
           </div>
-          <button id="bpromo" onclick="createPromo()">🎟️ Generate Code</button>
+          <!-- Plan Promo -->
+          <div class="crcard">
+            <div class="stitle">📦 Plan Upgrade Promo</div>
+            <div class="frow">
+              <div class="fg"><label>Plan</label>
+                <select id="promo-plan" style="padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none;width:100%">
+                  <option value="basic">Student Basic</option>
+                  <option value="plus">Student Plus</option>
+                  <option value="teacher">Teacher</option>
+                  <option value="teacher_pro">Teacher Pro</option>
+                </select>
+              </div>
+              <div class="fg"><label>Max Uses</label><input type="number" id="promo-plan-uses" placeholder="1" min="1" value="1"/></div>
+            </div>
+            <button onclick="createPromo('plan')" style="background:var(--teacher);border:none;color:#fff;padding:9px 18px;border-radius:var(--rs);font-weight:700;cursor:pointer">📦 Generate Plan Code</button>
+          </div>
         </div>
-        <div class="stitle">📋 Existing Codes</div>
+        <div class="stitle">📋 All Promo Codes</div>
         <div id="promolist"><div class="ebox">No promo codes yet.</div></div>
+      </div>
+      <!-- SP3: Curriculum Upload (admin only) -->
+      <div class="sp" id="sp3">
+        <div class="crcard">
+          <div class="stitle">📄 Upload Curriculum PDF</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Upload a textbook or curriculum PDF. AI will scan it, identify grades and subjects, and give you a summary before importing.</div>
+          <div id="curr-upload-zone" style="border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .25s;position:relative;margin-bottom:14px" onclick="document.getElementById('curr-file-inp').click()">
+            <input type="file" id="curr-file-inp" accept=".pdf" style="display:none" onchange="scanCurrFile(this.files[0])"/>
+            <div style="font-size:36px;margin-bottom:8px">📄</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px" id="curr-upload-txt">Click to select PDF</div>
+            <div style="font-size:12px;color:var(--muted)">Max 150MB · PDF only</div>
+          </div>
+          <!-- Scan result -->
+          <div id="curr-scan-result" style="display:none">
+            <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+              <div style="font-size:13px;font-weight:700;color:var(--success);margin-bottom:10px">✅ Scan complete! Review before importing:</div>
+              <div id="curr-scan-summary" style="font-size:13px;line-height:1.8;margin-bottom:12px"></div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+                <div style="flex:1;min-width:120px">
+                  <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px">SUBJECT</div>
+                  <select id="curr-imp-subject" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none">
+                    <option value="Math">Math / Toán</option>
+                    <option value="Science">Science / Khoa học</option>
+                    <option value="English">English / Tiếng Anh</option>
+                    <option value="Vietnamese">Vietnamese / Tiếng Việt</option>
+                    <option value="Physics">Physics / Vật lý</option>
+                    <option value="Chemistry">Chemistry / Hóa học</option>
+                    <option value="Biology">Biology / Sinh học</option>
+                    <option value="History">History / Lịch sử</option>
+                    <option value="Geography">Geography / Địa lý</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:100px">
+                  <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px">GRADE</div>
+                  <select id="curr-imp-grade" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none">
+                    <option value="0">All Grades</option>
+                    <option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option>
+                    <option value="4">Grade 4</option><option value="5">Grade 5</option><option value="6">Grade 6</option>
+                    <option value="7">Grade 7</option><option value="8">Grade 8</option><option value="9">Grade 9</option>
+                    <option value="10">Grade 10</option><option value="11">Grade 11</option><option value="12">Grade 12</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:120px">
+                  <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px">TYPE</div>
+                  <select id="curr-imp-type" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none">
+                    <option value="national">Vietnam National</option>
+                    <option value="cambridge">Cambridge</option>
+                    <option value="ib">IB</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div id="curr-import-progress" style="display:none;margin-bottom:10px">
+                <div style="font-size:12px;color:var(--muted);margin-bottom:4px" id="curr-import-status">Importing...</div>
+                <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+                  <div id="curr-import-bar" style="height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:3px;transition:width .3s;width:0%"></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <button id="btn-curr-import" onclick="importCurr()" style="padding:10px 20px;border-radius:var(--rs);background:var(--primary);border:none;color:#0D1B2E;font-size:13px;font-weight:700;cursor:pointer">✅ Import into System</button>
+                <button onclick="cancelCurrScan()" style="padding:10px 16px;border-radius:var(--rs);border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer">✕ Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stitle" style="margin-top:4px">📋 Imported Curriculum</div>
+        <div id="curr-list"><div class="ebox">Loading...</div></div>
       </div>
     </div>
   </div>
@@ -712,6 +800,7 @@ window.onload=function(){
   document.getElementById('stb0').onclick=function(){showSub(0);};
   document.getElementById('stb1').onclick=function(){showSub(1);};
   document.getElementById('stb2').onclick=function(){showSub(2);loadPromos();};
+  document.getElementById('stb3').onclick=function(){showSub(3);loadCurrList();};
   document.getElementById('bsend').onclick=doSend;
   document.getElementById('bimg').onclick=doImage;
   document.getElementById('bgraph').onclick=doGraph;
@@ -740,7 +829,10 @@ async function doAuth(){
   var email=document.getElementById('aemail').value.trim();
   var pw=document.getElementById('apw').value;
   var err=document.getElementById('aerr');var btn=document.getElementById('asubmit');
+  var emailReg=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if(!email||!pw){err.textContent=L('eep');return;}
+  if(!emailReg.test(email)){err.textContent=lang==='vi'?'Email không hợp lệ! VD: ten@gmail.com':'Invalid email! e.g. name@gmail.com';return;}
+  if(pw.length<6){err.textContent=lang==='vi'?'Mật khẩu tối thiểu 6 ký tự!':'Password must be at least 6 characters!';return;}
   btn.disabled=true;btn.innerHTML='<span class="sp2"></span>';err.textContent='';
   try{
     var body,ep;
@@ -771,7 +863,7 @@ function showApp(){
     document.getElementById('tab3').classList.remove('hide');
     document.getElementById('tab4').classList.remove('hide');document.getElementById('tab3').style.display='';
     showTab(2);loadTClasses();
-    if(urole==='admin'){document.getElementById('stb2').style.display='inline-block';}
+    if(urole==='admin'){document.getElementById('stb2').style.display='inline-block';document.getElementById('stb3').style.display='inline-block';}
   } else {
     document.getElementById('tab2').classList.add('hide');document.getElementById('tab2').style.display='none';
     document.getElementById('tab0').classList.remove('hide');
@@ -892,8 +984,8 @@ function endGame(type){
 function doLogout(){['eb_tok','eb_name','eb_role'].forEach(function(k){localStorage.removeItem(k);});location.reload();}
 function showTab(n){[0,1,2,3,4].forEach(function(i){var t=document.getElementById('tab'+i);var p=document.getElementById('p'+i);if(t)t.className='tb'+(i===2?' ton':'')+(i===n?' on':'');if(p)p.className='panel'+(i===n?' on':'');});}
 function showSub(n){
-  ['stb0','stb1','stb2'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='stb'+(i===n?' on':'');});
-  ['sp0','sp1','sp2'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='sp'+(i===n?' on':'');});
+  ['stb0','stb1','stb2','stb3'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='stb'+(i===n?' on':'');});
+  ['sp0','sp1','sp2','sp3'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='sp'+(i===n?' on':'');});
 }
 
 async function loadHistory(){
@@ -1220,21 +1312,113 @@ async function buyCreditPack(amount,gateway){
   toast('Credit packs coming soon! 🚀','ok');
 }
 
-async function createPromo(){
-  var credits=parseInt(document.getElementById('promo-credits').value);
-  var maxUses=parseInt(document.getElementById('promo-uses').value)||1;
-  if(!credits||credits<1){toast('Enter a valid credit amount','err');return;}
-  var btn=document.getElementById('bpromo');btn.disabled=true;btn.innerHTML='<span class="sp2"></span>';
+async function createPromo(type){
+  var body={};
+  if(type==='credits'){
+    var credits=parseInt(document.getElementById('promo-credits').value);
+    var maxUses=parseInt(document.getElementById('promo-uses').value)||1;
+    if(!credits||credits<1){toast('Enter a valid credit amount','err');return;}
+    body={credits,max_uses:maxUses,type:'credits'};
+  } else {
+    var plan=document.getElementById('promo-plan').value;
+    var maxUses=parseInt(document.getElementById('promo-plan-uses').value)||1;
+    body={plan,max_uses:maxUses,type:'plan'};
+  }
   try{
-    var res=await fetch(API+'/promo/create',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({credits:credits,max_uses:maxUses})});
+    var res=await fetch(API+'/promo/create',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify(body)});
     var data=await res.json();
     if(!res.ok)throw new Error(data.error||'Error');
     toast('Code created: '+data.promo.code,'ok');
-    document.getElementById('promo-credits').value='';
-    document.getElementById('promo-uses').value='1';
+    if(type==='credits'){document.getElementById('promo-credits').value='';document.getElementById('promo-uses').value='1';}
+    else{document.getElementById('promo-plan-uses').value='1';}
     loadPromos();
   }catch(e){toast(e.message,'err');}
-  finally{btn.disabled=false;btn.textContent='🎟️ Generate Code';}
+}
+
+var currFileData2=null,currFileName2='';
+
+async function scanCurrFile(file){
+  if(!file)return;
+  if(file.size>150*1024*1024){toast('Max 150MB','err');return;}
+  currFileName2=file.name;
+  document.getElementById('curr-upload-txt').textContent='📄 '+file.name;
+  document.getElementById('curr-scan-result').style.display='none';
+  document.getElementById('curr-scan-summary').innerHTML='<span class="sp2"></span> AI is scanning the PDF...';
+  document.getElementById('curr-scan-result').style.display='block';
+  
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    currFileData2=e.target.result.split(',')[1];
+    try{
+      var res=await fetch(API+'/admin/curriculum/detect',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({fileName:file.name,fileData:currFileData2,fileSize:file.size})});
+      var data=await res.json();
+      // Auto-fill
+      var ss=document.getElementById('curr-imp-subject');
+      for(var i=0;i<ss.options.length;i++){if(ss.options[i].value.toLowerCase()===( data.subject||'').toLowerCase()){ss.selectedIndex=i;break;}}
+      if(data.grade)document.getElementById('curr-imp-grade').value=data.grade;
+      document.getElementById('curr-scan-summary').innerHTML=
+        '<strong>📖 Subject detected:</strong> '+esc(data.subject||'Unknown')+'<br>'+
+        '<strong>🎓 Grade detected:</strong> '+(data.grade?'Grade '+data.grade:'Multiple grades')+'<br>'+
+        '<strong>📝 Overview:</strong> '+esc(data.preview||'Curriculum content ready to import')+'<br>'+
+        '<strong>📦 Estimated items:</strong> ~'+data.estimated_chunks+' learning objectives';
+      toast('✅ Scan complete! Review and confirm.','ok');
+    }catch(err){
+      document.getElementById('curr-scan-summary').textContent='Could not auto-detect. Please select manually.';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function importCurr(){
+  if(!currFileData2){toast('No file selected','err');return;}
+  var subject=document.getElementById('curr-imp-subject').value;
+  var grade=parseInt(document.getElementById('curr-imp-grade').value);
+  var type=document.getElementById('curr-imp-type').value;
+  var btn=document.getElementById('btn-curr-import');
+  btn.disabled=true;btn.innerHTML='<span class="sp2"></span> Importing...';
+  document.getElementById('curr-import-progress').style.display='block';
+  var fill=document.getElementById('curr-import-bar');
+  var status=document.getElementById('curr-import-status');
+  var pct=0;
+  var iv=setInterval(function(){pct=Math.min(pct+3,90);fill.style.width=pct+'%';if(pct<30)status.textContent='Extracting content...';else if(pct<60)status.textContent='Processing objectives...';else status.textContent='Saving to database...';},300);
+  try{
+    var res=await fetch(API+'/admin/curriculum/import',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({fileData:currFileData2,fileName:currFileName2,subject,grade,type,lang:'vi'})});
+    var data=await res.json();
+    clearInterval(iv);fill.style.width='100%';status.textContent='✅ Done!';
+    if(!res.ok)throw new Error(data.error||'Failed');
+    toast('✅ '+data.imported+' items imported into system!','ok');
+    setTimeout(function(){cancelCurrScan();loadCurrList();},1500);
+  }catch(e){
+    clearInterval(iv);toast('❌ '+e.message,'err');
+    btn.disabled=false;btn.textContent='✅ Import into System';
+    document.getElementById('curr-import-progress').style.display='none';
+  }
+}
+
+function cancelCurrScan(){
+  currFileData2=null;currFileName2='';
+  document.getElementById('curr-scan-result').style.display='none';
+  document.getElementById('curr-upload-txt').textContent='Click to select PDF';
+  document.getElementById('curr-file-inp').value='';
+}
+
+async function loadCurrList(){
+  try{
+    var res=await fetch(API+'/admin/curriculum/list',{headers:ah()});
+    var data=await res.json();
+    var items=data.items||[];
+    var el=document.getElementById('curr-list');
+    if(!items.length){el.innerHTML='<div class="ebox">No curriculum imported yet.</div>';return;}
+    el.innerHTML=items.map(function(c){return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(c.subject)+' — Grade '+(c.grade||'All')+'</div><div class="tcm">'+esc(c.curriculum_type)+' · '+c.count+' items</div></div><button class="tcvb" onclick="deleteCurr(''+esc(c.subject)+'','+c.grade+')">🗑️ Delete</button></div></div>';}).join('');
+  }catch(e){document.getElementById('curr-list').innerHTML='<div class="ebox">Failed to load</div>';}
+}
+
+async function deleteCurr(subject,grade){
+  if(!confirm('Delete '+subject+' Grade '+grade+'?'))return;
+  try{
+    await fetch(API+'/admin/curriculum/delete',{method:'DELETE',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({subject,grade})});
+    toast('✅ Deleted','ok');loadCurrList();
+  }catch(e){toast('❌ Failed','err');}
 }
 
 async function loadPromos(){
