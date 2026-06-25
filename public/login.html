@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EduBot — Đăng nhập</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0D1B2E;--card:#112240;--primary:#00B4D8;--accent:#00D4FF;--text:#E2E8F0;--muted:#94A3B8;--border:#1A3A5C;--success:#10B981;--error:#EF4444}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+    .bg-glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 70% 20%,rgba(0,180,216,0.12),transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(124,58,237,0.1),transparent 50%)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:100%;max-width:400px;position:relative;z-index:1}
+    .logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:24px;text-decoration:none}
+    .logo img{height:36px}
+    .logo-txt{font-size:22px;font-weight:900;color:var(--text)}
+    .logo-txt em{color:var(--primary);font-style:normal}
+    h1{font-size:20px;font-weight:800;text-align:center;margin-bottom:6px}
+    .sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:28px}
+    .field{margin-bottom:16px}
+    .field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+    .field input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(0,180,216,0.04);color:var(--text);font-size:14px;font-family:inherit;transition:border-color .2s;outline:none}
+    .field input:focus{border-color:var(--primary)}
+    .field input::placeholder{color:var(--muted)}
+    .btn{width:100%;padding:14px;border-radius:12px;background:var(--primary);border:none;color:#0D1B2E;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:8px}
+    .btn:hover{background:var(--accent)}
+    .btn:disabled{opacity:0.6;cursor:not-allowed}
+    .link-row{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
+    .link-row a{color:var(--primary);text-decoration:none;font-weight:600}
+    .lang-wrap{display:flex;justify-content:center;margin-bottom:20px;background:rgba(0,180,216,0.08);border:1px solid rgba(0,180,216,0.2);border-radius:20px;overflow:hidden;width:fit-content;margin-left:auto;margin-right:auto}
+    .lb{padding:5px 12px;font-size:12px;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer}
+    .lb.on{background:var(--primary);color:#0D1B2E}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+    .toast.show{opacity:1}
+    .toast.err{border-color:var(--error);color:var(--error)}
+    .toast.ok{border-color:var(--success);color:var(--success)}
+  </style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="card">
+  <div class="lang-wrap">
+    <button class="lb on" id="lvi" onclick="setLang('vi')">🇻🇳 VI</button>
+    <button class="lb" id="len" onclick="setLang('en')">🇬🇧 EN</button>
+  </div>
+  <a class="logo" href="/">
+    <img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" alt="EduBot"/>
+    <span class="logo-txt">Edu<em>Bot</em></span>
+  </a>
+  <h1 id="title">Đăng nhập</h1>
+  <p class="sub" id="sub">Chào mừng trở lại!</p>
+  <div class="field"><label id="lbl-email">Email</label><input type="email" id="inp-email" placeholder="email@example.com" autocomplete="email"/></div>
+  <div class="field"><label id="lbl-pass">Mật khẩu</label><input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"/></div>
+  <button class="btn" id="btn-login" onclick="doLogin()">→ <span id="lbl-btn">Đăng nhập</span></button>
+  <div class="link-row" id="reg-row">Chưa có tài khoản? <a href="/register" id="lbl-reg">Đăng ký miễn phí</a></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var lang='vi';
+var API='https://edubot-vietnam.onrender.com';
+// If already logged in go to app
+if(localStorage.getItem('eb_tok')){window.location.href='/app';}
+
+var T={
+  vi:{title:'Đăng nhập',sub:'Chào mừng trở lại!','lbl-email':'Email','lbl-pass':'Mật khẩu','lbl-btn':'Đăng nhập','lbl-reg':'Đăng ký miễn phí','reg-row':'Chưa có tài khoản?','err-fields':'Vui lòng điền đầy đủ!','err-fail':'Email hoặc mật khẩu không đúng','ok':'Đăng nhập thành công!'},
+  en:{title:'Sign In',sub:'Welcome back!','lbl-email':'Email','lbl-pass':'Password','lbl-btn':'Sign In','lbl-reg':'Sign up free','reg-row':'Don\'t have an account?','err-fields':'Please fill in all fields!','err-fail':'Invalid email or password','ok':'Signed in successfully!'}
+};
+
+function setLang(l){
+  lang=l;localStorage.setItem('eb_lp_lang',l);
+  document.getElementById('lvi').className='lb'+(l==='vi'?' on':'');
+  document.getElementById('len').className='lb'+(l==='en'?' on':'');
+  var t=T[l];
+  ['title','sub','lbl-email','lbl-pass','lbl-btn','lbl-reg'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=t[id];});
+  document.getElementById('reg-row').innerHTML=t['reg-row']+' <a href="/register" id="lbl-reg">'+t['lbl-reg']+'</a>';
+  document.getElementById('inp-email').placeholder='email@example.com';
+  document.getElementById('inp-pass').placeholder='••••••••';
+}
+
+function toast(msg,type){var el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+(type||'');setTimeout(function(){el.className='toast';},3000);}
+
+async function doLogin(){
+  var email=document.getElementById('inp-email').value.trim();
+  var pass=document.getElementById('inp-pass').value;
+  if(!email||!pass){toast(T[lang]['err-fields'],'err');return;}
+  var btn=document.getElementById('btn-login');btn.disabled=true;
+  try{
+    var res=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||T[lang]['err-fail']);
+    localStorage.setItem('eb_tok',data.token);
+    localStorage.setItem('eb_name',data.user.name);
+    localStorage.setItem('eb_role',data.user.role);
+    toast(T[lang]['ok'],'ok');
+    setTimeout(function(){window.location.href='/app';},800);
+  }catch(e){toast(e.message||T[lang]['err-fail'],'err');btn.disabled=false;}
+}
+
+// Enter key
+document.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+// Init lang
+var saved=localStorage.getItem('eb_lp_lang')||'vi';
+setLang(saved);
+</script>
+</body>
+</html>
