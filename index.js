@@ -207,16 +207,40 @@ app.post('/chat', authenticate, async (req, res) => {
       return res.status(402).json({ error: 'Not enough credits. Top up to continue!', upgrade: true });
     }
 
-    // RAG: fetch curriculum context
+    // RAG: fetch curriculum context — smart lookup by grade OR stage depending on curriculum type
     let curriculumContext = '';
     if (subject && grade) {
+      const gradeNum = parseInt(String(grade).replace(/[^0-9]/g,''),10) || 0;
+
+      // Query matches:
+      // 1. Vietnam MOET: grade column matches (e.g. Lớp 6 → grade=6)
+      // 2. Cambridge: stage column matches (e.g. Stage 6 → stage="Stage 6" or grade=6)
+      // 3. Any curriculum where grade=0 (All Grades) — always include
       const curriculum = await pool.query(
-        `SELECT objective, strand, substrand FROM curriculum
-         WHERE LOWER(subject) = LOWER($1) AND grade = $2 LIMIT 10`,
-        [subject, parseInt(grade)]
+        `SELECT objective, strand, substrand, curriculum_type, stage FROM curriculum
+         WHERE LOWER(subject) = LOWER($1)
+         AND (
+           grade = $2
+           OR grade = 0
+           OR stage ILIKE $3
+           OR stage ILIKE $4
+         )
+         ORDER BY
+           CASE WHEN grade = $2 THEN 0
+                WHEN stage ILIKE $3 THEN 1
+                WHEN stage ILIKE $4 THEN 2
+                ELSE 3 END
+         LIMIT 12`,
+        [
+          subject,
+          gradeNum,
+          `Stage ${gradeNum}`,      // Cambridge: "Stage 6"
+          `%${gradeNum}%`           // fallback: anything containing the number
+        ]
       );
+
       if (curriculum.rows.length > 0) {
-        curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly):\n' +
+        curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly — never say you only have certain curriculum content):\n' +
           curriculum.rows.map(r => `- [${r.strand}${r.substrand ? ' > ' + r.substrand : ''}] ${r.objective}`).join('\n');
       }
     }
@@ -568,6 +592,8 @@ Respond ONLY in JSON with no other text:
 app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
   try {
     const { fileData, fileName, subject, grade, type, lang } = req.body;
+    // Bulletproof grade parser — rejects ANY non-numeric value
+    const safeGrade = (v) => { const n = parseInt(String(v).replace(/[^0-9]/g, ""), 10); return (isNaN(n) || n < 0 || n > 12) ? 0 : n; };
     if (!fileData) return res.status(400).json({ error: 'No file data received' });
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -713,7 +739,7 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
     for (const item of uniqueItems) {
       await pool.query(
         `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file, stage) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [subject, parseInt(grade)||0, item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, item.strand||'']
+        [subject, safeGrade(grade), item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, type==='cambridge'?`Stage ${safeGrade(grade)}`:type==='national'?`Lớp ${safeGrade(grade)}`:`${safeGrade(grade)}`]
       );
       imported++;
     }
@@ -749,7 +775,7 @@ app.delete('/admin/curriculum/delete', authenticate, adminOnly, async (req, res)
     const { subject, grade } = req.body;
     const result = await pool.query(
       'DELETE FROM curriculum WHERE subject = $1 AND grade = $2',
-      [subject, parseInt(grade)]
+      [subject, parseInt(String(grade).replace(/[^0-9]/g,""),10)||0]
     );
     res.json({ deleted: result.rowCount });
   } catch (err) {
