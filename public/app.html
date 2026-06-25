@@ -1118,31 +1118,28 @@ function getRandomAccentColor(){
   return colors[Math.floor(Math.random()*colors.length)];
 }
 
-function buildExportHTML(contentId){
+function function buildExportHTML(contentId){
   var el=document.getElementById(contentId);if(!el)return null;
-  var accent=getRandomAccentColor();
   var clone=el.cloneNode(true);
   var title='EDUBOT DOCUMENT';
   var h2=clone.querySelector('h2');if(h2){title=h2.textContent.toUpperCase();h2.remove();}
   var css=[
-    'body{font-family:"Times New Roman",serif;font-size:12pt;margin:2.5cm;color:#111;line-height:1.6;background:#fff}',
-    '.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:16px;border-bottom:3px solid '+accent+'}',
-    '.doc-brand{font-size:13pt;font-weight:bold;color:'+accent+';letter-spacing:1px}',
-    '.doc-title{font-size:18pt;font-weight:bold;color:'+accent+';text-transform:uppercase;margin:24px 0 32px;text-align:center;letter-spacing:1px}',
-    'h2{font-size:13pt;font-weight:bold;color:'+accent+';margin:20px 0 8px;padding-left:10px;border-left:4px solid '+accent+'}',
-    'h3{font-size:12pt;font-weight:bold;color:'+accent+';margin:14px 0 6px}',
-    'p{margin:6px 0;line-height:1.8;text-align:justify}',
-    'ul,ol{margin:6px 0 6px 24px;line-height:1.8}li{margin-bottom:3px}',
-    'table{border-collapse:collapse;width:100%;margin:16px 0}',
-    'th{background:#2C3E50;color:#fff;padding:10px 14px;text-align:left;font-weight:bold;font-size:11pt;border:1px solid #2C3E50}',
-'td{padding:8px 14px;border:1px solid #dee2e6;vertical-align:top;font-size:11pt}',
-'tr:nth-child(even) td{background:#f8f9fa}',
-    'td{padding:8px 14px;border:1px solid #ddd;vertical-align:top;font-size:11pt}',
-    'tr:nth-child(even) td{background:#f8f8f8}',
+    'body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:1.5cm;color:#111;line-height:1.5;background:#fff}',
+    '.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #2C3E50}',
+    '.doc-brand{font-size:13pt;font-weight:bold;color:#2C3E50;letter-spacing:1px}',
+    '.doc-title{font-size:16pt;font-weight:bold;color:#2C3E50;text-transform:uppercase;margin:16px 0 24px;text-align:center;letter-spacing:1px}',
+    'h2{font-size:13pt;font-weight:bold;color:#2C3E50;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid #2C3E50}',
+    'h3{font-size:11pt;font-weight:bold;color:#2C3E50;margin:10px 0 4px}',
+    'p{margin:4px 0;line-height:1.5}',
+    'ul,ol{margin:4px 0 4px 20px;line-height:1.6}li{margin-bottom:2px}',
+    'table{border-collapse:collapse;width:100%;margin:10px 0;table-layout:fixed;word-wrap:break-word}',
+    'th{background:#2C3E50;color:#fff;padding:6px 8px;text-align:left;font-weight:bold;font-size:10pt;border:1px solid #2C3E50;word-wrap:break-word}',
+    'td{padding:6px 8px;border:1px solid #dee2e6;vertical-align:top;font-size:10pt;word-wrap:break-word}',
+    'tr:nth-child(even) td{background:#f8f9fa}',
     'strong{font-weight:bold}',
-    '.doc-footer{margin-top:40px;padding-top:12px;border-top:2px solid '+accent+';font-size:8pt;color:#888;display:flex;justify-content:space-between}'
+    '.doc-footer{margin-top:30px;padding-top:10px;border-top:2px solid #2C3E50;font-size:8pt;color:#888;display:flex;justify-content:space-between}'
   ].join('');
-  return {css:css,clone:clone,title:title,accent:accent};
+  return {css:css,clone:clone,title:title,accent:'#2C3E50'};
 }
 
 function barExportPDF(){
