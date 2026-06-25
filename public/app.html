@@ -1005,7 +1005,7 @@ async function doSend(){
   inp.value='';inp.style.height='auto';
   var _cfd=cfd,_cft=cft,_cfn=cfn;
   if(!_cfd)addMsg('u',msg);
-  if(_cfd)rmFile();
+  if(_cfd){addMsg('u',msg);rmFile();}
   var btn=document.getElementById('bsend');btn.disabled=true;
   var tid=addTyping('msgs');
   try{
@@ -1134,7 +1134,9 @@ function buildExportHTML(contentId){
     'p{margin:6px 0;line-height:1.8;text-align:justify}',
     'ul,ol{margin:6px 0 6px 24px;line-height:1.8}li{margin-bottom:3px}',
     'table{border-collapse:collapse;width:100%;margin:16px 0}',
-    'th{background:'+accent+';color:#fff;padding:10px 14px;text-align:left;font-weight:bold;font-size:11pt}',
+    'th{background:#2C3E50;color:#fff;padding:10px 14px;text-align:left;font-weight:bold;font-size:11pt;border:1px solid #2C3E50}',
+'td{padding:8px 14px;border:1px solid #dee2e6;vertical-align:top;font-size:11pt}',
+'tr:nth-child(even) td{background:#f8f9fa}',
     'td{padding:8px 14px;border:1px solid #ddd;vertical-align:top;font-size:11pt}',
     'tr:nth-child(even) td{background:#f8f8f8}',
     'strong{font-weight:bold}',
