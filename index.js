@@ -1034,6 +1034,83 @@ app.get('/admin/payments', authenticate, adminOnly, async (req, res) => {
   }
 });
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CURRICULUM ROUTES (Admin only)
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/admin', (req, res) => res.sendFile(__dirname + '/public/admin.html'));
+
+app.post('/admin/curriculum/detect', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { fileName, fileSize } = req.body;
+    const prompt = 'Analyze this curriculum PDF filename: "' + fileName + '". Detect: 1) Subject (Math/Science/English/Vietnamese/Physics/Chemistry/Biology/History/Geography/IT/Civic/Other) 2) Grade (1-12 or 0 for all) 3) Language (vi/en/both). Respond ONLY in JSON: {"subject":"Math","grade":6,"lang":"en","curriculum_type":"cambridge","preview":"Brief description"}';
+    const response = await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 300, messages: [{ role: 'user', content: prompt }] });
+    const text = response.content[0].text.replace(/```json|```/g, '').trim();
+    const detected = JSON.parse(text);
+    detected.estimated_chunks = Math.ceil((fileSize || 0) / 1000);
+    res.json(detected);
+  } catch (err) {
+    res.json({ subject: 'Other', grade: 0, lang: 'vi', curriculum_type: 'general', preview: 'Manual review needed', estimated_chunks: 0 });
+  }
+});
+
+app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { fileData, fileName, subject, grade, type, lang } = req.body;
+    const messageContent = [
+      { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: fileData } },
+      { type: 'text', text: 'Extract ALL learning objectives, topics and concepts from this PDF. Format ONLY as JSON array: [{"strand":"Chapter/Topic","substrand":"Sub-topic","objective":"Learning objective or concept"}]. Be thorough and extract everything.' }
+    ];
+    const response = await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 4000, messages: [{ role: 'user', content: messageContent }] });
+    const text = response.content[0].text.replace(/```json|```/g, '').trim();
+    let items = [];
+    try { items = JSON.parse(text); } catch(e) { const m = text.match(/\[[\s\S]+\]/); if(m) items = JSON.parse(m[0]); }
+    if (!items.length) return res.status(400).json({ error: 'Could not extract curriculum content' });
+    let imported = 0;
+    for (const item of items) {
+      await pool.query('INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', [subject, grade||0, item.strand||'', item.substrand||'', item.objective||'', type||'general', lang||'vi', fileName]);
+      imported++;
+    }
+    res.json({ imported });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/admin/curriculum/list', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT subject, grade, curriculum_type, lang, COUNT(*) as count FROM curriculum GROUP BY subject, grade, curriculum_type, lang ORDER BY subject, grade');
+    res.json({ items: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/admin/curriculum/delete', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { subject, grade } = req.body;
+    const result = await pool.query('DELETE FROM curriculum WHERE subject = $1 AND grade = $2', [subject, parseInt(grade)]);
+    res.json({ deleted: result.rowCount });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/admin/stats', authenticate, adminOnly, async (req, res) => {
+  try {
+    const [users, chats, curriculum, promos] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM users'),
+      pool.query("SELECT COUNT(*) FROM chat_history WHERE role = 'user'"),
+      pool.query('SELECT COUNT(*) FROM curriculum'),
+      pool.query('SELECT COUNT(*) FROM promo_codes WHERE uses < max_uses'),
+    ]);
+    res.json({ total_users: users.rows[0].count, total_chats: chats.rows[0].count, curriculum_count: curriculum.rows[0].count, active_promos: promos.rows[0].count });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/admin/payments', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT p.*, u.name as user_name FROM payments p LEFT JOIN users u ON p.user_id::text = u.id::text ORDER BY p.created_at DESC LIMIT 100');
+    res.json({ payments: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // START SERVER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1092,8 +1169,12 @@ async function startServer() {
   await pool.query(`
     ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP
   `);
+  await pool.query('CREATE TABLE IF NOT EXISTS curriculum (id SERIAL PRIMARY KEY, subject VARCHAR(100), grade INTEGER, strand VARCHAR(200), substrand VARCHAR(200), objective TEXT, curriculum_type VARCHAR(50) DEFAULT \'general\', lang VARCHAR(10) DEFAULT \'vi\', source_file VARCHAR(255), created_at TIMESTAMP DEFAULT NOW())');
+  await pool.query('ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT \'credits\'');
+  await pool.query('ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS plan VARCHAR(50)');
+  await pool.query('ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP');
   console.log('Database ready');
   app.listen(PORT, () => console.log(`EduBot Vietnam running on port ${PORT}`));
 }
 
-startServer();
+startServer();a
