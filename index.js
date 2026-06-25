@@ -74,6 +74,7 @@ app.get('/register', (req, res) => res.sendFile(__dirname + '/public/register.ht
 app.get('/login', (req, res) => res.sendFile(__dirname + '/public/login.html'));
 app.get('/pricing', (req, res) => res.sendFile(__dirname + '/public/pricing.html'));
 app.get('/games', (req, res) => res.sendFile(__dirname + '/public/games.html'));
+app.get('/upload', (req, res) => res.sendFile(__dirname + '/public/upload.html'));
 
 
 
@@ -121,6 +122,65 @@ app.post('/auth/login', async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCUMENT ANALYSIS ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/chat/document', authenticate, async (req, res) => {
+  try {
+    const { message, lang, role: userRole, document: doc } = req.body;
+    const userId = req.user.id;
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const user = userResult.rows[0];
+
+    // Credit check
+    if (user.role !== 'admin') {
+      if (user.plan === 'free') {
+        if (user.daily_count >= 5) {
+          return res.status(403).json({ error: lang === 'vi' ? 'Bạn đã dùng hết 5 câu miễn phí hôm nay!' : 'You have used all 5 free questions today!' });
+        }
+        await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]);
+      } else {
+        if ((user.credits || 0) < 2) {
+          return res.status(403).json({ error: lang === 'vi' ? 'Không đủ credits!' : 'Not enough credits!' });
+        }
+        await pool.query('UPDATE users SET credits = credits - 2 WHERE id = $1', [userId]);
+      }
+    }
+
+    // Build message with document
+    const messageContent = [];
+    if (doc && doc.data) {
+      if (doc.type === 'application/pdf') {
+        messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: doc.data } });
+      } else {
+        messageContent.push({ type: 'image', source: { type: 'base64', media_type: doc.type, data: doc.data } });
+      }
+    }
+    messageContent.push({ type: 'text', text: message });
+
+    const isTeacher = userRole === 'teacher' || user.role === 'teacher' || user.role === 'admin';
+    const systemPrompt = isTeacher
+      ? \`You are EduBot, an expert AI teaching assistant. Analyze the provided document and respond in \${language}. Be professional, thorough, and create high-quality educational materials.\`
+      : \`You are EduBot, a friendly AI tutor. Analyze the provided document and help the student in \${language}. Be clear, encouraging, and educational.\`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-opus-4-5',
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: messageContent }]
+    });
+
+    const reply = response.content[0].text;
+    res.json({ reply });
+  } catch (err) {
+    console.error('Document analysis error:', err);
+    res.status(500).json({ error: 'Analysis failed' });
   }
 });
 
