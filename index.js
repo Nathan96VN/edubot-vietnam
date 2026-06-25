@@ -161,9 +161,23 @@ app.post('/chat/document', authenticate, async (req, res) => {
     messageContent.push({ type: 'text', text: message });
 
     const isTeacher = userRole === 'teacher' || user.role === 'teacher' || user.role === 'admin';
+    const htmlFormat = `
+CRITICAL FORMATTING RULES:
+- Always respond in ${language}. Never switch languages.
+- Never use markdown symbols like ##, **, *, --, or backticks.
+- Format ALL responses as clean HTML only.
+- Use <h2> for main section headings.
+- Use <h3> for sub-headings.
+- Use <p> for paragraphs.
+- Use <strong> for bold text.
+- Use <ul><li> for bullet lists.
+- Use <ol><li> for numbered lists.
+- Use <table><thead><tr><th> and <tbody><tr><td> for any tabular data.
+- Never output raw markdown. Only clean HTML tags.`;
+
     const systemPrompt = isTeacher
-      ? `You are EduBot, an expert AI teaching assistant. Analyze the provided document and respond in ${language}. Be professional, thorough, and create high-quality educational materials.`
-      : `You are EduBot, a friendly AI tutor. Analyze the provided document and help the student in ${language}. Be clear, encouraging, and educational.`;
+      ? `You are EduBot, an expert AI teaching assistant. Analyze the provided document and respond in ${language}. Be professional, thorough, and create high-quality educational materials.${htmlFormat}`
+      : `You are EduBot, a friendly AI tutor. Analyze the provided document and help the student in ${language}. Be clear, encouraging, and educational.${htmlFormat}`;
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
