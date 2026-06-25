@@ -1002,11 +1002,16 @@ function rmFile(){cfd=null;cft=null;cfn='';document.getElementById('fbar').class
 async function doSend(){
   if(!tok){openModal();return;}
   var inp=document.getElementById('cinput');var msg=inp.value.trim();if(!msg)return;
-  inp.value='';inp.style.height='auto';if(!cfd)addMsg('u',msg);if(cfd)rmFile();
+  inp.value='';inp.style.height='auto';
+  var _cfd=cfd,_cft=cft,_cfn=cfn;
+  if(!_cfd)addMsg('u',msg);
+  if(_cfd)rmFile();
   var btn=document.getElementById('bsend');btn.disabled=true;
   var tid=addTyping('msgs');
   try{
-    var bd={message:msg,subject:document.getElementById('selsub').value,grade:parseInt(document.getElementById('selgrd').value),lang:lang,role:urole};if(cfd){bd.document={type:cft,data:cfd,name:cfn};}var res=await fetch(cfd?API+'/chat/document':API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify(bd)});
+    var bd={message:msg,subject:document.getElementById('selsub').value,grade:parseInt(document.getElementById('selgrd').value),lang:lang,role:urole};
+    if(_cfd){bd.document={type:_cft,data:_cfd,name:_cfn};}
+    var res=await fetch(_cfd?API+'/chat/document':API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify(bd)});
     var data=await res.json();
     var te=document.getElementById(tid);if(te)te.remove();
     if(!res.ok){
