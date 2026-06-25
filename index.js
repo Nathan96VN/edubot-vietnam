@@ -739,7 +739,7 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
     for (const item of uniqueItems) {
       await pool.query(
         `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file, stage) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [subject, safeGrade(grade), item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, type==='cambridge'?`Stage ${safeGrade(grade)}`:type==='national'?`Lớp ${safeGrade(grade)}`:`${safeGrade(grade)}`]
+        [subject, safeGrade(grade), item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, safeGrade(grade)===0?'':(type==='cambridge'?`Stage ${safeGrade(grade)}`:type==='national'?`Lớp ${safeGrade(grade)}`:`${safeGrade(grade)}`)]
       );
       imported++;
     }
@@ -1293,6 +1293,7 @@ async function startServer() {
       pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS substrand VARCHAR(200)"),
       pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS strand VARCHAR(200)"),
       pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS stage VARCHAR(200) DEFAULT ''"),
+      pool.query("ALTER TABLE curriculum ALTER COLUMN stage TYPE VARCHAR(200) USING stage::VARCHAR"),
     ]);
 
     console.log('✅ Database ready');
