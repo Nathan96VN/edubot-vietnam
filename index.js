@@ -712,8 +712,8 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
     let imported = 0;
     for (const item of uniqueItems) {
       await pool.query(
-        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-        [subject, parseInt(grade)||0, item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName]
+        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file, stage) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [subject, parseInt(grade)||0, item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, item.strand||'']
       );
       imported++;
     }
@@ -1266,6 +1266,7 @@ async function startServer() {
       pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS source_file VARCHAR(255)"),
       pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS substrand VARCHAR(200)"),
       pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS strand VARCHAR(200)"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS stage VARCHAR(200) DEFAULT ''"),
     ]);
 
     console.log('✅ Database ready');
