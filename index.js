@@ -735,11 +735,46 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
     }
 
     // Insert into DB
+    // Helper: extract grade/stage number from item content
+    // Handles: "Stage 3", "Grade 3", "Lớp 3", strand names like "Stage 3 - Numbers"
+    function detectItemGrade(item, fallbackGrade, currType) {
+      // If we already have a specific grade, use it
+      if (fallbackGrade > 0) return fallbackGrade;
+
+      // Try to detect from strand, substrand, or objective text
+      const searchText = `${item.strand||''} ${item.substrand||''} ${item.objective||''}`;
+
+      // Cambridge: "Stage N"
+      const stageMatch = searchText.match(/stage\s*(\d+)/i);
+      if (stageMatch) return parseInt(stageMatch[1]);
+
+      // Vietnam: "Lớp N" or "lop N"
+      const lopMatch = searchText.match(/l[oớ]p\s*(\d+)/i);
+      if (lopMatch) return parseInt(lopMatch[1]);
+
+      // Generic: "Grade N"
+      const gradeMatch = searchText.match(/grade\s*(\d+)/i);
+      if (gradeMatch) return parseInt(gradeMatch[1]);
+
+      // Year: "Year N"
+      const yearMatch = searchText.match(/year\s*(\d+)/i);
+      if (yearMatch) return parseInt(yearMatch[1]);
+
+      return 0; // truly all grades
+    }
+
     let imported = 0;
     for (const item of uniqueItems) {
+      const baseGrade = safeGrade(grade);
+      const itemGrade = detectItemGrade(item, baseGrade, type);
+      const stageLabel = itemGrade === 0 ? '' :
+        type === 'cambridge' ? `Stage ${itemGrade}` :
+        type === 'national'  ? `Lớp ${itemGrade}` :
+        `${itemGrade}`;
+
       await pool.query(
         `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file, stage) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [subject, safeGrade(grade), item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, safeGrade(grade)===0?'':(type==='cambridge'?`Stage ${safeGrade(grade)}`:type==='national'?`Lớp ${safeGrade(grade)}`:`${safeGrade(grade)}`)]
+        [subject, itemGrade, item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, stageLabel]
       );
       imported++;
     }
