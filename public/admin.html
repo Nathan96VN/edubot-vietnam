@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0D1B2E;--card:#112240;--panel:#0A1628;--primary:#00B4D8;--accent:#00D4FF;--teacher:#059669;--text:#E2E8F0;--muted:#94A3B8;--border:#1A3A5C;--success:#10B981;--error:#EF4444;--warn:#F59E0B;--purple:#7C3AED}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+    /* NAV */
+    nav{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-shrink:0}
+    .nav-logo{font-size:18px;font-weight:900;color:var(--text)}
+    .nav-logo em{color:var(--primary);font-style:normal}
+    .nav-badge{padding:4px 12px;border-radius:20px;background:rgba(239,68,68,0.15);border:1px solid var(--error);color:var(--error);font-size:11px;font-weight:700}
+    .nav-right{display:flex;align-items:center;gap:10px}
+    .btn-logout{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer}
+    .btn-logout:hover{color:var(--error);border-color:var(--error)}
+    /* LAYOUT */
+    .layout{display:flex;flex:1;min-height:0}
+    /* SIDEBAR */
+    .sidebar{width:220px;background:var(--panel);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;overflow-y:auto}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s;border-left:3px solid transparent}
+    .nav-item:hover{color:var(--text);background:rgba(0,180,216,0.05)}
+    .nav-item.active{color:var(--primary);background:rgba(0,180,216,0.08);border-left-color:var(--primary)}
+    .nav-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:16px 20px 6px;opacity:0.6}
+    /* MAIN */
+    .main{flex:1;overflow-y:auto;padding:24px}
+    .page{display:none}.page.active{display:block}
+    /* STATS */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+    .stat-card.blue::before{background:var(--primary)}
+    .stat-card.green::before{background:var(--success)}
+    .stat-card.yellow::before{background:var(--warn)}
+    .stat-card.purple::before{background:var(--purple)}
+    .stat-icon{font-size:24px;margin-bottom:8px}
+    .stat-val{font-size:28px;font-weight:900;color:var(--text);margin-bottom:2px}
+    .stat-label{font-size:12px;color:var(--muted);font-weight:600}
+    /* SECTION */
+    .section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px}
+    .section-title{font-size:16px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+    .section-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+    /* CURRICULUM UPLOAD */
+    .upload-zone{border:2px dashed var(--border);border-radius:14px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .25s;position:relative;margin-bottom:16px}
+    .upload-zone:hover,.upload-zone.drag{border-color:var(--primary);background:rgba(0,180,216,0.04)}
+    .upload-zone.has-file{border-color:var(--success);background:rgba(16,185,129,0.04)}
+    #curr-file-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .upload-icon{font-size:40px;margin-bottom:10px}
+    .upload-title{font-size:15px;font-weight:700;margin-bottom:4px}
+    .upload-sub{font-size:13px;color:var(--muted)}
+    .file-limit{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;background:rgba(0,180,216,0.08);border:1px solid rgba(0,180,216,0.2);color:var(--primary)}
+    /* SCAN RESULT */
+    .scan-result{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;display:none}
+    .scan-result.show{display:block}
+    .scan-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .scan-field{flex:1;min-width:140px}
+    .scan-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+    .scan-field select,.scan-field input{width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none}
+    .scan-field select:focus,.scan-field input:focus{border-color:var(--primary)}
+    .scan-preview{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);max-height:120px;overflow-y:auto;font-family:monospace;line-height:1.6;margin-bottom:12px}
+    .scan-stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .scan-stat{background:rgba(0,180,216,0.08);border:1px solid rgba(0,180,216,0.15);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--primary)}
+    /* BUTTONS */
+    .btn{padding:10px 20px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+    .btn-primary{background:var(--primary);color:#0D1B2E}.btn-primary:hover{background:var(--accent)}
+    .btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#059669}
+    .btn-danger{background:rgba(239,68,68,0.15);color:var(--error);border:1px solid rgba(239,68,68,0.3)}.btn-danger:hover{background:var(--error);color:#fff}
+    .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--primary)}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    /* PROGRESS */
+    .progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:3px;transition:width .3s}
+    /* TABLE */
+    .data-table{width:100%;border-collapse:collapse}
+    .data-table th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+    .data-table td{font-size:13px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+    .data-table tr:hover td{background:rgba(255,255,255,0.02)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+    .badge-blue{background:rgba(0,180,216,0.15);color:var(--primary);border:1px solid rgba(0,180,216,0.2)}
+    .badge-green{background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.2)}
+    .badge-yellow{background:rgba(245,158,11,0.15);color:var(--warn);border:1px solid rgba(245,158,11,0.2)}
+    .badge-red{background:rgba(239,68,68,0.15);color:var(--error);border:1px solid rgba(239,68,68,0.2)}
+    .badge-purple{background:rgba(124,58,237,0.15);color:#a78bfa;border:1px solid rgba(124,58,237,0.2)}
+    /* CURRICULUM LIST */
+    .curr-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;margin-bottom:8px}
+    .curr-info{flex:1}
+    .curr-name{font-size:14px;font-weight:700;margin-bottom:2px}
+    .curr-meta{font-size:12px;color:var(--muted)}
+    .curr-actions{display:flex;gap:8px}
+    /* PROMO */
+    .promo-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+    .form-group{display:flex;flex-direction:column;gap:5px}
+    .form-group label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+    .form-group input,.form-group select{padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none}
+    .form-group input:focus,.form-group select:focus{border-color:var(--primary)}
+    /* USER TABLE */
+    .search-bar{display:flex;gap:10px;margin-bottom:16px}
+    .search-inp{flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none}
+    .search-inp:focus{border-color:var(--primary)}
+    /* TOAST */
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999;max-width:320px}
+    .toast.show{opacity:1}
+    .toast.ok{border-color:var(--success);color:var(--success)}
+    .toast.err{border-color:var(--error);color:var(--error)}
+    /* EMPTY */
+    .empty{text-align:center;padding:40px;color:var(--muted);font-size:14px;background:var(--panel);border:1px dashed var(--border);border-radius:12px}
+    /* SPINNER */
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:768px){.sidebar{display:none}.stats-grid{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+<nav>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="nav-logo">Edu<em>Bot</em></div>
+    <div class="nav-badge">🔐 ADMIN</div>
+  </div>
+  <div class="nav-right">
+    <span id="admin-name" style="font-size:13px;color:var(--muted)"></span>
+    <button class="btn-logout" onclick="doLogout()">Log out</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">📊 Dashboard</div>
+    <div class="nav-section">Content</div>
+    <div class="nav-item" onclick="showPage('curriculum')">📚 Curriculum</div>
+    <div class="nav-section">Users</div>
+    <div class="nav-item" onclick="showPage('users')">👥 Users</div>
+    <div class="nav-section">Finance</div>
+    <div class="nav-item" onclick="showPage('promos')">🎟️ Promo Codes</div>
+    <div class="nav-item" onclick="showPage('payments')">💳 Payments</div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div style="margin-bottom:20px">
+        <div style="font-size:22px;font-weight:900;margin-bottom:4px">📊 Dashboard</div>
+        <div style="font-size:13px;color:var(--muted)">Welcome back! Here's what's happening.</div>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card blue"><div class="stat-icon">👥</div><div class="stat-val" id="stat-users">—</div><div class="stat-label">Total Users</div></div>
+        <div class="stat-card green"><div class="stat-icon">💬</div><div class="stat-val" id="stat-chats">—</div><div class="stat-label">Total Questions</div></div>
+        <div class="stat-card yellow"><div class="stat-icon">📚</div><div class="stat-val" id="stat-curriculum">—</div><div class="stat-label">Curriculum Items</div></div>
+        <div class="stat-card purple"><div class="stat-icon">🎟️</div><div class="stat-val" id="stat-promos">—</div><div class="stat-label">Active Promos</div></div>
+      </div>
+      <div class="section">
+        <div class="section-title">👥 Recent Users</div>
+        <div class="section-sub">Latest registrations</div>
+        <div id="recent-users"><div class="empty">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- CURRICULUM -->
+    <div class="page" id="page-curriculum">
+      <div style="margin-bottom:20px">
+        <div style="font-size:22px;font-weight:900;margin-bottom:4px">📚 Curriculum Manager</div>
+        <div style="font-size:13px;color:var(--muted)">Upload textbooks and curriculum PDFs. AI will scan, identify grade/subject, and import automatically.</div>
+      </div>
+
+      <!-- UPLOAD SECTION -->
+      <div class="section">
+        <div class="section-title">⬆️ Upload Curriculum PDF</div>
+        <div class="section-sub">Max file size: 150MB. Supports PDF format. AI will auto-detect grade and subject.</div>
+
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="curr-file-input" accept=".pdf" onchange="handleCurrFile(this.files[0])"/>
+          <div class="upload-icon">📄</div>
+          <div class="upload-title" id="upload-title-txt">Click to select PDF or drag & drop</div>
+          <div class="upload-sub">Textbooks, curriculum guides, exam papers</div>
+          <div class="file-limit">📏 Max 150MB</div>
+        </div>
+
+        <!-- SCAN RESULT -->
+        <div class="scan-result" id="scan-result">
+          <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--success)">✅ File scanned! Review and confirm details:</div>
+          <div class="scan-stats" id="scan-stats"></div>
+          <div class="scan-preview" id="scan-preview"></div>
+          <div class="scan-row">
+            <div class="scan-field">
+              <label>Subject</label>
+              <select id="curr-subject">
+                <option value="Math">Math / Toán</option>
+                <option value="Science">Science / Khoa học</option>
+                <option value="English">English / Tiếng Anh</option>
+                <option value="Vietnamese">Vietnamese / Tiếng Việt</option>
+                <option value="Physics">Physics / Vật lý</option>
+                <option value="Chemistry">Chemistry / Hóa học</option>
+                <option value="Biology">Biology / Sinh học</option>
+                <option value="History">History / Lịch sử</option>
+                <option value="Geography">Geography / Địa lý</option>
+                <option value="IT">IT / Tin học</option>
+                <option value="Civic">Civic Education / GDCD</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="scan-field">
+              <label>Grade</label>
+              <select id="curr-grade">
+                <option value="0">All Grades</option>
+                <option value="1">Grade 1</option><option value="2">Grade 2</option>
+                <option value="3">Grade 3</option><option value="4">Grade 4</option>
+                <option value="5">Grade 5</option><option value="6">Grade 6</option>
+                <option value="7">Grade 7</option><option value="8">Grade 8</option>
+                <option value="9">Grade 9</option><option value="10">Grade 10</option>
+                <option value="11">Grade 11</option><option value="12">Grade 12</option>
+              </select>
+            </div>
+            <div class="scan-field">
+              <label>Curriculum Type</label>
+              <select id="curr-type">
+                <option value="national">Vietnam National (MOET)</option>
+                <option value="cambridge">Cambridge</option>
+                <option value="ib">IB</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="scan-field">
+              <label>Language</label>
+              <select id="curr-lang">
+                <option value="vi">Vietnamese</option>
+                <option value="en">English</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+          </div>
+          <div id="import-progress" style="display:none;margin-bottom:12px">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px" id="import-status">Processing...</div>
+            <div class="progress-bar"><div class="progress-fill" id="import-fill" style="width:0%"></div></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-success" id="btn-import" onclick="importCurriculum()">✅ Confirm & Import</button>
+            <button class="btn btn-ghost" onclick="cancelScan()">✕ Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXISTING CURRICULUM -->
+      <div class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <div class="section-title">📋 Imported Curriculum</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:2px">All curriculum content currently in the system</div>
+          </div>
+          <button class="btn btn-ghost" onclick="loadCurriculum()">🔄 Refresh</button>
+        </div>
+        <div id="curriculum-list"><div class="empty">Loading curriculum...</div></div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div style="margin-bottom:20px">
+        <div style="font-size:22px;font-weight:900;margin-bottom:4px">👥 User Management</div>
+        <div style="font-size:13px;color:var(--muted)">View and manage all registered users</div>
+      </div>
+      <div class="section">
+        <div class="search-bar">
+          <input class="search-inp" id="user-search" placeholder="Search by name or email..." oninput="filterUsers()"/>
+          <select id="role-filter" onchange="filterUsers()" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none">
+            <option value="">All Roles</option>
+            <option value="student">Students</option>
+            <option value="teacher">Teachers</option>
+            <option value="admin">Admins</option>
+          </select>
+        </div>
+        <div id="users-table"><div class="empty">Loading users...</div></div>
+      </div>
+    </div>
+
+    <!-- PROMOS -->
+    <div class="page" id="page-promos">
+      <div style="margin-bottom:20px">
+        <div style="font-size:22px;font-weight:900;margin-bottom:4px">🎟️ Promo Codes</div>
+        <div style="font-size:13px;color:var(--muted)">Create promo codes for credits or pro plan upgrades</div>
+      </div>
+      <div class="section">
+        <div class="section-title">➕ Create Promo Code</div>
+        <div class="section-sub">Generate codes for credits or free plan upgrades</div>
+        <div class="promo-form">
+          <div class="form-group">
+            <label>Type</label>
+            <select id="promo-type" onchange="togglePromoType()">
+              <option value="credits">Credits</option>
+              <option value="plan">Plan Upgrade</option>
+            </select>
+          </div>
+          <div class="form-group" id="credits-field">
+            <label>Credits Amount</label>
+            <input type="number" id="promo-credits" placeholder="e.g. 100" min="1"/>
+          </div>
+          <div class="form-group" id="plan-field" style="display:none">
+            <label>Plan</label>
+            <select id="promo-plan">
+              <option value="basic">Student Basic</option>
+              <option value="plus">Student Plus</option>
+              <option value="teacher">Teacher</option>
+              <option value="teacher_pro">Teacher Pro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Max Uses</label>
+            <input type="number" id="promo-uses" placeholder="1" min="1" value="1"/>
+          </div>
+          <div class="form-group">
+            <label>Expires (optional)</label>
+            <input type="date" id="promo-expires"/>
+          </div>
+          <div class="form-group">
+            <label>Custom Code (optional)</label>
+            <input type="text" id="promo-custom" placeholder="Leave blank = auto"/>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="createPromo()">🎟️ Generate Code</button>
+      </div>
+      <div class="section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="section-title">📋 All Promo Codes</div>
+          <button class="btn btn-ghost" onclick="loadPromos()">🔄 Refresh</button>
+        </div>
+        <div id="promos-list"><div class="empty">Loading promos...</div></div>
+      </div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div class="page" id="page-payments">
+      <div style="margin-bottom:20px">
+        <div style="font-size:22px;font-weight:900;margin-bottom:4px">💳 Payments</div>
+        <div style="font-size:13px;color:var(--muted)">Payment history and transactions</div>
+      </div>
+      <div class="section">
+        <div id="payments-list"><div class="empty">Loading payments...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var API='https://edubot-vietnam.onrender.com';
+var tok=localStorage.getItem('eb_tok');
+var role=localStorage.getItem('eb_role');
+var allUsers=[];
+var currFileData=null;
+var currFileName='';
+
+// Auth check
+if(!tok||role!=='admin'){window.location.href='/login';}
+document.getElementById('admin-name').textContent=localStorage.getItem('eb_name')||'Admin';
+
+function ah(){return{'Authorization':'Bearer '+tok,'Content-Type':'application/json'};}
+function toast(msg,type){var el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+(type||'');setTimeout(function(){el.className='toast';},3500);}
+
+function showPage(name){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  document.getElementById('page-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if(name==='dashboard')loadDashboard();
+  if(name==='curriculum')loadCurriculum();
+  if(name==='users')loadUsers();
+  if(name==='promos')loadPromos();
+  if(name==='payments')loadPayments();
+}
+
+// ── DASHBOARD ──
+async function loadDashboard(){
+  try{
+    var res=await fetch(API+'/admin/stats',{headers:ah()});
+    var data=await res.json();
+    document.getElementById('stat-users').textContent=data.total_users||0;
+    document.getElementById('stat-chats').textContent=data.total_chats||0;
+    document.getElementById('stat-curriculum').textContent=data.curriculum_count||0;
+    document.getElementById('stat-promos').textContent=data.active_promos||0;
+  }catch(e){console.error(e);}
+  try{
+    var res2=await fetch(API+'/admin/users',{headers:ah()});
+    var data2=await res2.json();
+    var users=(data2.users||[]).slice(0,5);
+    if(!users.length){document.getElementById('recent-users').innerHTML='<div class="empty">No users yet</div>';return;}
+    document.getElementById('recent-users').innerHTML='<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Plan</th><th>Joined</th></tr></thead><tbody>'+
+      users.map(function(u){return '<tr><td><strong>'+esc(u.name)+'</strong></td><td>'+esc(u.email)+'</td><td>'+roleBadge(u.role)+'</td><td>'+planBadge(u.plan)+'</td><td>'+new Date(u.created_at).toLocaleDateString()+'</td></tr>';}).join('')+
+    '</tbody></table>';
+  }catch(e){}
+}
+
+// ── CURRICULUM UPLOAD ──
+var zone=document.getElementById('upload-zone');
+zone.addEventListener('dragover',function(e){e.preventDefault();zone.classList.add('drag');});
+zone.addEventListener('dragleave',function(){zone.classList.remove('drag');});
+zone.addEventListener('drop',function(e){e.preventDefault();zone.classList.remove('drag');var f=e.dataTransfer.files[0];if(f)handleCurrFile(f);});
+
+async function handleCurrFile(file){
+  if(!file)return;
+  if(file.size>150*1024*1024){toast('File too large! Max 150MB','err');return;}
+  if(!file.name.toLowerCase().endsWith('.pdf')){toast('Only PDF files accepted','err');return;}
+  
+  currFileName=file.name;
+  document.getElementById('upload-title-txt').textContent='📄 '+file.name;
+  zone.classList.add('has-file');
+  
+  // Show scanning state
+  document.getElementById('scan-result').classList.add('show');
+  document.getElementById('scan-stats').innerHTML='<div class="scan-stat"><span class="spinner"></span> Scanning PDF...</div>';
+  document.getElementById('scan-preview').textContent='Reading file content...';
+  document.getElementById('btn-import').disabled=true;
+
+  // Read file as base64
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    currFileData=e.target.result.split(',')[1];
+    var sizeMB=(file.size/1024/1024).toFixed(1);
+    
+    // Auto-detect subject and grade using AI
+    try{
+      var detectRes=await fetch(API+'/admin/curriculum/detect',{
+        method:'POST',
+        headers:ah(),
+        body:JSON.stringify({fileName:file.name,fileData:currFileData,fileSize:file.size})
+      });
+      var detected=await detectRes.json();
+      
+      // Show detected info
+      document.getElementById('scan-stats').innerHTML=
+        '<div class="scan-stat">📄 '+sizeMB+'MB</div>'+
+        '<div class="scan-stat">📝 ~'+detected.estimated_chunks+' chunks</div>'+
+        '<div class="scan-stat">🔍 Detected: '+detected.subject+' Grade '+detected.grade+'</div>';
+      
+      document.getElementById('scan-preview').textContent=detected.preview||'Content extracted successfully';
+      
+      // Auto-fill detected values
+      if(detected.subject){
+        var subSel=document.getElementById('curr-subject');
+        for(var i=0;i<subSel.options.length;i++){
+          if(subSel.options[i].value.toLowerCase()===detected.subject.toLowerCase()){subSel.selectedIndex=i;break;}
+        }
+      }
+      if(detected.grade){document.getElementById('curr-grade').value=detected.grade;}
+      if(detected.lang){document.getElementById('curr-lang').value=detected.lang;}
+      
+      document.getElementById('btn-import').disabled=false;
+      toast('✅ File scanned! Review details and confirm.','ok');
+    }catch(err){
+      document.getElementById('scan-stats').innerHTML='<div class="scan-stat">📄 '+sizeMB+'MB</div><div class="scan-stat">⚠️ Manual review needed</div>';
+      document.getElementById('scan-preview').textContent='Could not auto-detect. Please select subject and grade manually.';
+      document.getElementById('btn-import').disabled=false;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function importCurriculum(){
+  if(!currFileData){toast('No file selected','err');return;}
+  var subject=document.getElementById('curr-subject').value;
+  var grade=parseInt(document.getElementById('curr-grade').value);
+  var type=document.getElementById('curr-type').value;
+  var lang=document.getElementById('curr-lang').value;
+  
+  var btn=document.getElementById('btn-import');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Importing...';
+  
+  var progress=document.getElementById('import-progress');
+  var status=document.getElementById('import-status');
+  var fill=document.getElementById('import-fill');
+  progress.style.display='block';
+  
+  // Animate progress
+  var pct=0;
+  var pInterval=setInterval(function(){
+    pct=Math.min(pct+2,90);
+    fill.style.width=pct+'%';
+    if(pct<30)status.textContent='Extracting text from PDF...';
+    else if(pct<60)status.textContent='Processing curriculum content...';
+    else if(pct<85)status.textContent='Importing into database...';
+  },200);
+  
+  try{
+    var res=await fetch(API+'/admin/curriculum/import',{
+      method:'POST',
+      headers:ah(),
+      body:JSON.stringify({fileData:currFileData,fileName:currFileName,subject,grade,type,lang})
+    });
+    var data=await res.json();
+    clearInterval(pInterval);
+    fill.style.width='100%';
+    status.textContent='✅ Import complete!';
+    
+    if(!res.ok)throw new Error(data.error||'Import failed');
+    
+    toast('✅ '+data.imported+' curriculum items imported!','ok');
+    setTimeout(function(){cancelScan();loadCurriculum();},1500);
+  }catch(e){
+    clearInterval(pInterval);
+    toast('❌ Import failed: '+e.message,'err');
+    btn.disabled=false;
+    btn.innerHTML='✅ Confirm & Import';
+    progress.style.display='none';
+  }
+}
+
+function cancelScan(){
+  currFileData=null;currFileName='';
+  document.getElementById('scan-result').classList.remove('show');
+  zone.classList.remove('has-file');
+  document.getElementById('upload-title-txt').textContent='Click to select PDF or drag & drop';
+  document.getElementById('curr-file-input').value='';
+  document.getElementById('import-progress').style.display='none';
+  document.getElementById('import-fill').style.width='0%';
+  var btn=document.getElementById('btn-import');
+  btn.disabled=false;btn.innerHTML='✅ Confirm & Import';
+}
+
+async function loadCurriculum(){
+  try{
+    var res=await fetch(API+'/admin/curriculum/list',{headers:ah()});
+    var data=await res.json();
+    var items=data.items||[];
+    var el=document.getElementById('curriculum-list');
+    if(!items.length){el.innerHTML='<div class="empty">No curriculum imported yet. Upload a PDF above to get started!</div>';return;}
+    
+    // Group by subject
+    var grouped={};
+    items.forEach(function(item){
+      var key=item.subject+'-'+item.grade;
+      if(!grouped[key])grouped[key]={subject:item.subject,grade:item.grade,count:0,type:item.curriculum_type,lang:item.lang};
+      grouped[key].count++;
+    });
+    
+    el.innerHTML=Object.values(grouped).map(function(g){
+      return '<div class="curr-item">'+
+        '<div class="curr-info">'+
+          '<div class="curr-name">'+g.subject+' — Grade '+g.grade+'</div>'+
+          '<div class="curr-meta">'+g.count+' items · '+g.type+' · '+g.lang+'</div>'+
+        '</div>'+
+        '<div class="curr-actions">'+
+          '<span class="badge badge-green">✅ Active</span>'+
+          '<button class="btn btn-danger" style="padding:5px 12px;font-size:12px" onclick="deleteCurriculum(\''+g.subject+'\','+g.grade+')">🗑️</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }catch(e){document.getElementById('curriculum-list').innerHTML='<div class="empty">Failed to load curriculum</div>';}
+}
+
+async function deleteCurriculum(subject,grade){
+  if(!confirm('Delete all '+subject+' Grade '+grade+' curriculum? This cannot be undone.'))return;
+  try{
+    var res=await fetch(API+'/admin/curriculum/delete',{method:'DELETE',headers:ah(),body:JSON.stringify({subject,grade})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error);
+    toast('✅ Deleted '+subject+' Grade '+grade,'ok');
+    loadCurriculum();
+  }catch(e){toast('❌ '+e.message,'err');}
+}
+
+// ── USERS ──
+async function loadUsers(){
+  try{
+    var res=await fetch(API+'/admin/users',{headers:ah()});
+    var data=await res.json();
+    allUsers=data.users||[];
+    renderUsers(allUsers);
+  }catch(e){document.getElementById('users-table').innerHTML='<div class="empty">Failed to load users</div>';}
+}
+
+function filterUsers(){
+  var search=document.getElementById('user-search').value.toLowerCase();
+  var roleF=document.getElementById('role-filter').value;
+  var filtered=allUsers.filter(function(u){
+    var matchSearch=!search||(u.name||'').toLowerCase().includes(search)||(u.email||'').toLowerCase().includes(search);
+    var matchRole=!roleF||u.role===roleF;
+    return matchSearch&&matchRole;
+  });
+  renderUsers(filtered);
+}
+
+function renderUsers(users){
+  var el=document.getElementById('users-table');
+  if(!users.length){el.innerHTML='<div class="empty">No users found</div>';return;}
+  el.innerHTML='<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Plan</th><th>Credits</th><th>Joined</th><th>Actions</th></tr></thead><tbody>'+
+    users.map(function(u){return '<tr>'+
+      '<td><strong>'+esc(u.name||'—')+'</strong></td>'+
+      '<td style="color:var(--muted)">'+esc(u.email)+'</td>'+
+      '<td>'+roleBadge(u.role)+'</td>'+
+      '<td>'+planBadge(u.plan)+'</td>'+
+      '<td><span style="color:var(--warn);font-weight:700">⚡ '+(u.credits||0)+'</span></td>'+
+      '<td style="color:var(--muted)">'+new Date(u.created_at).toLocaleDateString()+'</td>'+
+      '<td><button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="addCredits(\''+u.id+'\',\''+esc(u.name)+'\')">+ Credits</button></td>'+
+    '</tr>';}).join('')+
+  '</tbody></table>';
+}
+
+async function addCredits(userId,userName){
+  var amount=prompt('Add credits to '+userName+':\nEnter amount:');
+  if(!amount||isNaN(amount))return;
+  try{
+    var res=await fetch(API+'/credits/add',{method:'POST',headers:ah(),body:JSON.stringify({userId,amount:parseInt(amount)})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error);
+    toast('✅ Added '+amount+' credits to '+userName,'ok');
+    loadUsers();
+  }catch(e){toast('❌ '+e.message,'err');}
+}
+
+// ── PROMOS ──
+function togglePromoType(){
+  var type=document.getElementById('promo-type').value;
+  document.getElementById('credits-field').style.display=type==='credits'?'flex':'none';
+  document.getElementById('plan-field').style.display=type==='plan'?'flex':'none';
+}
+
+async function createPromo(){
+  var type=document.getElementById('promo-type').value;
+  var uses=parseInt(document.getElementById('promo-uses').value)||1;
+  var expires=document.getElementById('promo-expires').value||null;
+  var custom=document.getElementById('promo-custom').value.trim()||null;
+  var body={type,max_uses:uses,expires_at:expires,custom_code:custom};
+  if(type==='credits'){
+    var credits=parseInt(document.getElementById('promo-credits').value);
+    if(!credits){toast('Enter credit amount','err');return;}
+    body.credits=credits;
+  } else {
+    body.plan=document.getElementById('promo-plan').value;
+  }
+  try{
+    var res=await fetch(API+'/promo/create',{method:'POST',headers:ah(),body:JSON.stringify(body)});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Failed');
+    toast('✅ Code created: '+data.promo.code,'ok');
+    document.getElementById('promo-credits').value='';
+    document.getElementById('promo-uses').value='1';
+    document.getElementById('promo-expires').value='';
+    document.getElementById('promo-custom').value='';
+    loadPromos();
+  }catch(e){toast('❌ '+e.message,'err');}
+}
+
+async function loadPromos(){
+  try{
+    var res=await fetch(API+'/promo/list',{headers:ah()});
+    var data=await res.json();
+    var promos=data.promos||[];
+    var el=document.getElementById('promos-list');
+    if(!promos.length){el.innerHTML='<div class="empty">No promo codes yet</div>';return;}
+    el.innerHTML='<table class="data-table"><thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Uses</th><th>Expires</th><th>Actions</th></tr></thead><tbody>'+
+      promos.map(function(p){return '<tr>'+
+        '<td><code style="font-family:monospace;font-size:13px;font-weight:700;letter-spacing:2px;color:var(--primary)">'+p.code+'</code></td>'+
+        '<td>'+typeBadge(p.type)+'</td>'+
+        '<td>'+(p.type==='credits'?'⚡ '+p.credits+' credits':'📦 '+p.plan)+'</td>'+
+        '<td>'+p.uses+'/'+p.max_uses+'</td>'+
+        '<td style="color:var(--muted)">'+(p.expires_at?new Date(p.expires_at).toLocaleDateString():'Never')+'</td>'+
+        '<td><button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="copyCode(\''+p.code+'\')">📋 Copy</button></td>'+
+      '</tr>';}).join('')+
+    '</tbody></table>';
+  }catch(e){document.getElementById('promos-list').innerHTML='<div class="empty">Failed to load promos</div>';}
+}
+
+function copyCode(code){navigator.clipboard.writeText(code).then(function(){toast('✅ Copied: '+code,'ok');});}
+
+// ── PAYMENTS ──
+async function loadPayments(){
+  try{
+    var res=await fetch(API+'/admin/payments',{headers:ah()});
+    var data=await res.json();
+    var payments=data.payments||[];
+    var el=document.getElementById('payments-list');
+    if(!payments.length){el.innerHTML='<div class="empty">No payments yet</div>';return;}
+    el.innerHTML='<table class="data-table"><thead><tr><th>User</th><th>Plan</th><th>Amount</th><th>Gateway</th><th>Status</th><th>Date</th></tr></thead><tbody>'+
+      payments.map(function(p){return '<tr>'+
+        '<td>'+esc(p.user_name||p.user_id)+'</td>'+
+        '<td>'+planBadge(p.plan)+'</td>'+
+        '<td style="font-weight:700;color:var(--success)">'+(p.currency==='usd'?'$'+(p.amount/100).toFixed(2):p.amount+'đ')+'</td>'+
+        '<td>'+esc(p.gateway)+'</td>'+
+        '<td>'+statusBadge(p.status)+'</td>'+
+        '<td style="color:var(--muted)">'+new Date(p.created_at).toLocaleDateString()+'</td>'+
+      '</tr>';}).join('')+
+    '</tbody></table>';
+  }catch(e){document.getElementById('payments-list').innerHTML='<div class="empty">Payment history coming soon</div>';}
+}
+
+// ── HELPERS ──
+function roleBadge(role){
+  var map={admin:'badge-red',teacher:'badge-green',student:'badge-blue'};
+  return '<span class="badge '+(map[role]||'badge-blue')+'">'+role+'</span>';
+}
+function planBadge(plan){
+  if(!plan||plan==='free')return '<span class="badge badge-yellow">Free</span>';
+  var map={basic:'badge-blue',plus:'badge-purple',teacher:'badge-green',teacher_pro:'badge-green'};
+  return '<span class="badge '+(map[plan]||'badge-blue')+'">'+plan+'</span>';
+}
+function typeBadge(type){
+  return type==='plan'?'<span class="badge badge-purple">Plan</span>':'<span class="badge badge-yellow">Credits</span>';
+}
+function statusBadge(status){
+  var map={completed:'badge-green',pending:'badge-yellow',failed:'badge-red'};
+  return '<span class="badge '+(map[status]||'badge-yellow')+'">'+status+'</span>';
+}
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function doLogout(){localStorage.clear();window.location.href='/login';}
+
+// Init
+loadDashboard();
+</script>
+</body>
+</html>
