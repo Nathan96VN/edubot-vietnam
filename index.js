@@ -638,7 +638,7 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
             model: 'claude-sonnet-4-6',
             max_tokens: 1500,
             messages: [{ role: 'user', content:
-              `Extract curriculum learning objectives from this ${subject} text. Return ONLY a JSON array:\n[{"strand":"topic","substrand":"sub-topic or empty","objective":"learning objective"}]\nIf nothing educational found return [].\n\nTEXT:\n${chunks[i]}`
+              `You are extracting ${subject} curriculum. CRITICAL RULE: Always prefix strand with the stage/grade label found above it in the text. Examples: "Stage 3: Number", "Grade 6: Algebra", "Lop 8: Hinh hoc". If you see Stage N, Grade N, Lop N or Year N as a heading, every item under it must have that prefix in strand.\n\nReturn ONLY a JSON array:\n[{"strand":"Stage N: topic","substrand":"sub-topic or empty","objective":"learning objective"}]\n\nIf no stage label visible, look earlier in the text chunk for the most recent stage heading.\nIf nothing educational found return [].\n\nTEXT:\n${chunks[i]}`
             }]
           });
           const items = parseItems(response.content[0].text);
