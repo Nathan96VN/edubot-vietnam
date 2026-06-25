@@ -1261,6 +1261,11 @@ async function startServer() {
       pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'credits'"),
       pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS plan VARCHAR(50)"),
       pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS lang VARCHAR(10) DEFAULT 'vi'"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS curriculum_type VARCHAR(50) DEFAULT 'general'"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS source_file VARCHAR(255)"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS substrand VARCHAR(200)"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS strand VARCHAR(200)"),
     ]);
 
     console.log('✅ Database ready');
