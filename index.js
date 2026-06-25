@@ -566,51 +566,97 @@ Respond ONLY in JSON with no other text:
 app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
   try {
     const { fileData, fileName, subject, grade, type, lang } = req.body;
-
     if (!fileData) return res.status(400).json({ error: 'No file data received' });
 
-    const messageContent = [
-      {
-        type: 'document',
-        source: { type: 'base64', media_type: 'application/pdf', data: fileData }
-      },
-      {
-        type: 'text',
-        text: `Extract ALL learning objectives, topics, concepts, and educational content from this curriculum PDF.
+    const docSource = { type: 'base64', media_type: 'application/pdf', data: fileData };
 
-Format STRICTLY as a JSON array with no other text, no markdown, no code blocks:
-[
-  {"strand":"Topic/Chapter name","substrand":"Sub-topic","objective":"Specific learning objective or concept"},
-  ...
-]
+    // Helper: safely parse JSON array from Claude response
+    function parseItems(text) {
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      // Try direct parse first
+      try { const r = JSON.parse(cleaned); if (Array.isArray(r)) return r; } catch(e) {}
+      // Try extracting first [...] block
+      const match = cleaned.match(/\[[\s\S]*\]/);
+      if (match) { try { const r = JSON.parse(match[0]); if (Array.isArray(r)) return r; } catch(e) {} }
+      return [];
+    }
 
-Extract as many items as possible. Be thorough. Cover all chapters, topics, and learning points.`
+    // Helper: single extraction pass asking for a specific part
+    async function extractPass(instruction) {
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'document', source: docSource },
+            { type: 'text', text: instruction }
+          ]
+        }]
+      });
+      return response.content[0].text;
+    }
+
+    // PASS 1: Get the chapter/strand structure
+    const structureText = await extractPass(
+      `List ALL chapter titles, unit titles, and main topic headings from this curriculum PDF.
+Return ONLY a JSON array of strings, no other text:
+["Chapter 1: ...", "Unit 2: ...", "Topic: ..."]`
+    );
+    const strands = parseItems(structureText).filter(s => typeof s === 'string');
+    console.log(`Curriculum import: found ${strands.length} strands from "${fileName}"`);
+
+    let allItems = [];
+
+    if (strands.length > 0) {
+      // PASS 2: Extract objectives per strand in batches of 5
+      const batchSize = 5;
+      for (let i = 0; i < strands.length; i += batchSize) {
+        const batch = strands.slice(i, i + batchSize);
+        const batchText = await extractPass(
+          `From this curriculum PDF, extract ALL learning objectives, topics, and concepts for these sections:
+${batch.map((s, idx) => `${idx + 1}. ${s}`).join('\n')}
+
+Return ONLY a JSON array, no other text:
+[{"strand":"section name","substrand":"sub-topic if any","objective":"specific learning objective or concept"}]
+
+Include every learning point, skill, concept, and outcome mentioned for these sections.`
+        );
+        const batchItems = parseItems(batchText);
+        allItems = allItems.concat(batchItems);
+        console.log(`Batch ${Math.ceil(i/batchSize)+1}: extracted ${batchItems.length} items`);
       }
-    ];
+    }
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: messageContent }]
+    // PASS 3 (fallback or supplement): General extraction pass
+    const generalText = await extractPass(
+      `Extract ALL learning objectives, skills, concepts, and outcomes from this curriculum PDF that may not be covered under chapter headings — including introduction sections, appendices, glossary terms, assessment criteria, and cross-cutting themes.
+
+Return ONLY a JSON array, no other text:
+[{"strand":"section/topic name","substrand":"sub-topic if any","objective":"specific learning objective or concept"}]
+
+Be thorough. Extract every distinct educational point.`
+    );
+    const generalItems = parseItems(generalText);
+    allItems = allItems.concat(generalItems);
+
+    // Deduplicate by objective text
+    const seen = new Set();
+    const uniqueItems = allItems.filter(item => {
+      if (!item || !item.objective) return false;
+      const key = (item.objective || '').trim().toLowerCase().slice(0, 100);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
 
-    let raw = response.content[0].text.replace(/```json|```/g, '').trim();
-
-    let items = [];
-    try {
-      items = JSON.parse(raw);
-    } catch (e) {
-      const match = raw.match(/\[[\s\S]+\]/);
-      if (match) items = JSON.parse(match[0]);
+    if (!uniqueItems.length) {
+      return res.status(400).json({ error: 'Could not extract curriculum content. The PDF may be scanned/image-based or password protected.' });
     }
 
-    if (!items || !items.length) {
-      return res.status(400).json({ error: 'Could not extract curriculum content from PDF' });
-    }
-
-    // Insert all items into DB
+    // Insert all into DB
     let imported = 0;
-    for (const item of items) {
+    for (const item of uniqueItems) {
       await pool.query(
         `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -628,6 +674,7 @@ Extract as many items as possible. Be thorough. Cover all chapters, topics, and 
       imported++;
     }
 
+    console.log(`Curriculum import complete: ${imported} items from "${fileName}"`);
     res.json({ imported, message: `Successfully imported ${imported} curriculum items from "${fileName}"` });
   } catch (err) {
     console.error('Curriculum import error:', err);
