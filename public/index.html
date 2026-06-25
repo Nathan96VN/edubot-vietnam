@@ -313,8 +313,8 @@
       <a href="#pricing" class="nav-link" data-vi="Bảng giá" data-en="Pricing">Bảng giá</a>
     </div>
     <div class="lang-toggle">
-      <button class="lt-btn on" id="lt-vi" onclick="setLang('vi')">🇻🇳 VI</button>
-      <button class="lt-btn" id="lt-en" onclick="setLang('en')">🇬🇧 EN</button>
+      <button class="lt-btn on" id="lt-vi" onclick="localStorage.setItem('eb_lp_lang','vi');setLang('vi')">🇻🇳 VI</button>
+      <button class="lt-btn" id="lt-en" onclick="localStorage.setItem('eb_lp_lang','en');setLang('en')">🇬🇧 EN</button>
     </div>
     <a href="https://nathansteyn96.bubbleapps.io/version-test?role=student" class="btn-nav-cta" id="nav-cta">Bắt đầu miễn phí</a>
   </div>
@@ -339,7 +339,7 @@
         <div class="stat"><div class="stat-num" id="stat1n">Lớp 1–12</div><div class="stat-label" id="stat1l">Mọi cấp học</div></div>
         <div class="stat"><div class="stat-num" id="stat2n">Toán · KH · TA</div><div class="stat-label" id="stat2l">Ba môn học chính</div></div>
         <div class="stat"><div class="stat-num">24/7</div><div class="stat-label" id="stat3l">Luôn sẵn sàng</div></div>
-        <div class="stat"><div class="stat-num">VI+EN</div><div class="stat-label" id="stat4l">Song ngữ</div></div>
+
       </div>
     </div>
 
@@ -644,14 +644,7 @@
   }
 })();
 
-// Speech bubbles
-var sbs=['sb1','sb2','sb3'],cur=0;
-function nextBubble(){
-  sbs.forEach(function(id){document.getElementById(id).classList.remove('show');});
-  document.getElementById(sbs[cur]).classList.add('show');
-  cur=(cur+1)%sbs.length;
-}
-nextBubble();setInterval(nextBubble,2600);
+// Speech bubbles (SVG robot handles its own — skip if elements missing)
 
 // Scroll reveal
 var obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('visible');});},{threshold:0.1});
@@ -665,7 +658,7 @@ var T={
     'h1-line1':'Học thông minh.','h1-line2':'Tiến bộ nhanh.','h1-line3':'Cùng AI 24/7.',
     'hero-sub':'EduBot là người bạn học tập AI — giải bài từng bước, tạo flashcards, vẽ biểu đồ và hỗ trợ giáo viên tạo giáo án chuyên nghiệp. Tất cả bằng tiếng Việt hoặc tiếng Anh.',
     'cta-s-txt':'Tôi là Học sinh','cta-t-txt':'Tôi là Giáo viên',
-    'stat1n':'Lớp 1–12','stat1l':'Mọi cấp học','stat2n':'Toán · KH · TA','stat2l':'Ba môn học chính','stat3l':'Luôn sẵn sàng','stat4l':'Song ngữ',
+    'stat1n':'Lớp 1–12','stat1l':'Mọi cấp học','stat2n':'Toán · KH · TA','stat2l':'Ba môn học chính','stat3l':'Luôn sẵn sàng',
     'nav-cta':'Bắt đầu miễn phí',
     'feat-tag':'Tính năng','feat-title':'Mọi công cụ để học tốt hơn','feat-sub':'Một nền tảng AI toàn diện — học sinh học hiệu quả, giáo viên dạy xuất sắc.',
     'f1t':'Gia sư AI thông minh','f1d':'Không chỉ đưa đáp án — EduBot giải thích từng bước, dạy cách tư duy và tự giải quyết vấn đề.',
@@ -702,7 +695,7 @@ var T={
     'h1-line1':'Learn Smarter.','h1-line2':'Progress Faster.','h1-line3':'With AI 24/7.',
     'hero-sub':'EduBot is your AI learning companion — step-by-step explanations, smart flashcards, visual charts, and professional lesson plans for teachers. All in Vietnamese or English.',
     'cta-s-txt':"I'm a Student",'cta-t-txt':"I'm a Teacher",
-    'stat1n':'Grades 1–12','stat1l':'All levels','stat2n':'Math · Sci · Eng','stat2l':'Three core subjects','stat3l':'Always available','stat4l':'Bilingual',
+    'stat1n':'Grades 1–12','stat1l':'All levels','stat2n':'Math · Sci · Eng','stat2l':'Three core subjects','stat3l':'Always available',
     'nav-cta':'Start for Free',
     'feat-tag':'Features','feat-title':'Every tool to learn better','feat-sub':'One complete AI platform — students learn effectively, teachers teach brilliantly.',
     'f1t':'Smart AI Tutor','f1d':'Not just answers — EduBot explains every step, teaches critical thinking and problem-solving skills.',
@@ -747,7 +740,16 @@ function setLang(l){
   document.documentElement.lang=l;
 }
 
-window.onload=function(){   var saved=localStorage.getItem('eb_lp_lang');   if(saved){setLang(saved);}   else{     var browserLang=navigator.language||navigator.userLanguage||'vi';     setLang(browserLang.toLowerCase().startsWith('vi')?'vi':'en');   } };
+window.onload=function(){
+  var saved=localStorage.getItem('eb_lp_lang');
+  if(saved){setLang(saved);}
+  else{var bl=navigator.language||navigator.userLanguage||'vi';setLang(bl.toLowerCase().startsWith('vi')?'vi':'en');}
+  var p=new URLSearchParams(window.location.search);
+  if(p.get('lang')==='en')setLang('en');
+  if(p.get('lang')==='vi')setLang('vi');
+};
+
+function setLangAndSave(l){localStorage.setItem('eb_lp_lang',l);setLang(l);}
 </script>
 </body>
 </html>
