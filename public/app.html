@@ -204,7 +204,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   <button class="tb" id="tab1">🏫 Lớp học</button>
   <button class="tb ton hide" id="tab2">👩‍🏫 Dashboard</button>
   <button class="tb hide" id="tab3">📚 Flashcards</button>
-  <button class="tb hide" id="tab4" onclick="window.open('https://edubot-vietnam.onrender.com/games','_blank')">🎮 Games</button>
+  <button class="tb hide" id="tab4" onclick="loadGames()">🎮 Games</button>
 </div>
 <div id="mc">
   <!-- TAB 0: AI TUTOR -->
@@ -330,7 +330,114 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   </div>
 </div>
 
-<!-- UPGRADE MODAL -->
+
+  <!-- GAMES PANEL -->
+  <div class="panel" id="p4">
+    <div id="gpanel" style="flex:1;overflow-y:auto;padding:16px">
+      <div id="game-menu">
+        <div style="margin-bottom:16px">
+          <div style="font-size:18px;font-weight:900;margin-bottom:4px">🎮 Games học tập</div>
+          <div style="font-size:13px;color:var(--muted)">Chọn trò chơi và bắt đầu học!</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
+          <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:22px;text-align:center;cursor:pointer;transition:all .25s" onmouseover="this.style.borderColor='rgba(245,158,11,0.4)'" onmouseout="this.style.borderColor='var(--border)'" onclick="startKahoot()">
+            <div style="font-size:44px;margin-bottom:12px">🧠</div>
+            <div style="font-size:16px;font-weight:800;margin-bottom:6px">Quiz Battle</div>
+            <div style="font-size:12px;color:var(--muted)">Trả lời câu hỏi trắc nghiệm AI tạo ra</div>
+            <div style="display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)">✅ Sẵn sàng</div>
+          </div>
+          <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:22px;text-align:center;cursor:pointer;transition:all .25s" onmouseover="this.style.borderColor='rgba(0,180,216,0.4)'" onmouseout="this.style.borderColor='var(--border)'" onclick="startSpeed()">
+            <div style="font-size:44px;margin-bottom:12px">⚡</div>
+            <div style="font-size:16px;font-weight:800;margin-bottom:6px">Speed Race</div>
+            <div style="font-size:12px;color:var(--muted)">Điền đáp án nhanh nhất có thể!</div>
+            <div style="display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)">✅ Sẵn sàng</div>
+          </div>
+          <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:22px;text-align:center;cursor:pointer;transition:all .25s" onmouseover="this.style.borderColor='rgba(124,58,237,0.4)'" onmouseout="this.style.borderColor='var(--border)'" onclick="startFlip()">
+            <div style="font-size:44px;margin-bottom:12px">🃏</div>
+            <div style="font-size:16px;font-weight:800;margin-bottom:6px">Flashcard Flip</div>
+            <div style="font-size:12px;color:var(--muted)">Lật thẻ xem đáp án. Học hiệu quả!</div>
+            <div style="display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)">✅ Sẵn sàng</div>
+          </div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:14px">⚙️ Cài đặt</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <select id="g-subject" style="flex:1;min-width:120px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none"><option value="math">Toán</option><option value="science">Khoa học</option><option value="english">Tiếng Anh</option></select>
+            <select id="g-grade" style="flex:1;min-width:100px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none"><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option><option value="6" selected>Lớp 6</option><option value="7">Lớp 7</option><option value="8">Lớp 8</option><option value="9">Lớp 9</option><option value="10">Lớp 10</option><option value="11">Lớp 11</option><option value="12">Lớp 12</option></select>
+            <select id="g-count" style="flex:1;min-width:100px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none"><option value="5">5 câu</option><option value="10" selected>10 câu</option><option value="15">15 câu</option></select>
+          </div>
+        </div>
+      </div>
+      <!-- Kahoot -->
+      <div id="kahoot-game" style="display:none;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="backToMenu()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer">← Menu</button>
+          <div style="flex:1;display:flex;justify-content:space-between;align-items:center;background:var(--panel);border-radius:10px;padding:8px 16px"><span id="k-qlabel" style="font-size:13px">Q 1/10</span><span style="font-size:13px">⭐ <span style="font-size:20px;font-weight:900;color:var(--primary)" id="k-score">0</span></span></div>
+        </div>
+        <div id="k-loading" style="text-align:center;padding:40px;color:var(--muted)">⏳ Đang tạo câu hỏi AI...</div>
+        <div id="k-game" style="display:none;flex-direction:column;gap:14px">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="k-qnum">Q 1</div>
+            <div style="font-size:16px;font-weight:700;line-height:1.5;margin-bottom:8px" id="k-qtext"></div>
+            <div style="font-size:28px;font-weight:900;color:var(--warn)" id="k-timer">20</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="k-answers"></div>
+          <div id="k-feedback" style="display:none;text-align:center;padding:10px;border-radius:10px;font-weight:700;font-size:14px"></div>
+        </div>
+      </div>
+      <!-- Speed -->
+      <div id="speed-game" style="display:none;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="backToMenu()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer">← Menu</button>
+          <div style="flex:1;display:flex;justify-content:space-between;align-items:center;background:var(--panel);border-radius:10px;padding:8px 16px"><span id="sp-qlabel" style="font-size:13px">Q 1/10</span><span style="font-size:13px">⚡ <span style="font-size:20px;font-weight:900;color:var(--primary)" id="sp-score">0</span></span></div>
+        </div>
+        <div id="sp-loading" style="text-align:center;padding:40px;color:var(--muted)">⏳ Đang tạo câu hỏi AI...</div>
+        <div id="sp-game" style="display:none;flex-direction:column;gap:14px">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;font-size:18px;font-weight:800;min-height:80px;display:flex;align-items:center;justify-content:center" id="sp-qtext"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center" id="sp-progress"></div>
+          <input style="width:100%;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--panel);color:var(--text);font-size:18px;font-weight:700;text-align:center;outline:none;transition:border-color .2s" id="sp-input" placeholder="Nhập đáp án..." autocomplete="off" oninput="checkSpeed()"/>
+          <div style="text-align:center;font-size:13px;color:var(--muted);min-height:20px" id="sp-fb"></div>
+        </div>
+      </div>
+      <!-- Flip -->
+      <div id="flip-game" style="display:none;flex-direction:column;gap:14px;align-items:center">
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+          <button onclick="backToMenu()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer">← Menu</button>
+          <span style="font-size:13px;color:var(--muted)" id="flip-prog">1 / 10</span>
+        </div>
+        <div style="perspective:1000px;width:100%;max-width:500px;height:220px;cursor:pointer" onclick="doFlip()">
+          <div style="position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s;border-radius:16px" id="flip-inner">
+            <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(0,180,216,0.12),var(--card));border:1.5px solid rgba(0,180,216,0.3)">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">❓ CÂU HỎI</div>
+              <div style="font-size:17px;font-weight:700;line-height:1.5" id="flip-q"></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:8px">Nhấn để xem đáp án</div>
+            </div>
+            <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(16,185,129,0.12),var(--card));border:1.5px solid rgba(16,185,129,0.3);transform:rotateY(180deg)">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">✅ ĐÁP ÁN</div>
+              <div style="font-size:17px;font-weight:700;line-height:1.5" id="flip-a"></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <button onclick="flipPrev()" style="padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer">← Trước</button>
+          <span style="font-size:13px;color:var(--muted)" id="flip-counter">1/10</span>
+          <button onclick="flipNext()" style="padding:10px 20px;border-radius:10px;border:none;background:var(--primary);color:#0D1B2E;font-size:13px;font-weight:700;cursor:pointer">Tiếp →</button>
+        </div>
+      </div>
+      <!-- Result -->
+      <div id="game-result" style="display:none;flex-direction:column;align-items:center;gap:16px;padding:20px 0">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;width:100%;max-width:400px">
+          <div style="font-size:44px;margin-bottom:8px" id="result-emoji">🏆</div>
+          <div style="font-size:18px;font-weight:900;margin-bottom:4px" id="result-title">Kết quả</div>
+          <div style="font-size:52px;font-weight:900;color:var(--primary);margin:8px 0" id="result-score">0</div>
+          <div style="font-size:16px;color:var(--muted);margin-bottom:20px" id="result-msg">Tốt lắm!</div>
+          <button onclick="backToMenu()" style="padding:12px 28px;border-radius:10px;background:var(--primary);border:none;color:#0D1B2E;font-size:14px;font-weight:700;cursor:pointer">🔄 Chơi lại</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPGRADE MODAL -->
 <div id="upgoverlay">
   <div id="upgmodal">
     <button id="upgcls" onclick="closeUpgrade()">✕</button>
@@ -418,7 +525,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <div id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-var _v='5.25';
+var _v='5.26';
 var API='https://edubot-vietnam.onrender.com';
 var tok=localStorage.getItem('eb_tok')||'';
 var uname=localStorage.getItem('eb_name')||'';
@@ -673,8 +780,115 @@ function showApp(){
   }
 }
 
+
+function loadGames(){showTab(4);backToMenu();}
+
+var gQ=[],gIdx=0,gScore=0,gTimer=null,flipIdx=0,flipped=false;
+
+function backToMenu(){
+  clearInterval(gTimer);
+  ['kahoot-game','speed-game','flip-game'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+  var gr=document.getElementById('game-result');if(gr)gr.style.display='none';
+  var gm=document.getElementById('game-menu');if(gm)gm.style.display='block';
+}
+
+async function genQ(type){
+  var sub=document.getElementById('g-subject').value;
+  var grade=document.getElementById('g-grade').value;
+  var count=parseInt(document.getElementById('g-count').value)||10;
+  var subMap={math:'Math',science:'Science',english:'English'};
+  var p='';
+  if(type==='kahoot')p='Generate '+count+' multiple choice questions for grade '+grade+' '+subMap[sub]+'. JSON only: {"questions":[{"q":"question","options":["A","B","C","D"],"correct":0}]}';
+  else if(type==='speed')p='Generate '+count+' short answer questions for grade '+grade+' '+subMap[sub]+'. Answers 1-4 words. JSON only: {"questions":[{"q":"question","a":"answer"}]}';
+  else p='Generate '+count+' flashcard pairs for grade '+grade+' '+subMap[sub]+'. JSON only: {"questions":[{"q":"term","a":"definition"}]}';
+  var res=await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({message:p,subject:sub,grade:grade,lang:'en',role:'student'})});
+  var data=await res.json();
+  var text=(data.reply||'').replace(/```json|```/g,'').trim();
+  return JSON.parse(text).questions||[];
+}
+
+async function startKahoot(){
+  document.getElementById('game-menu').style.display='none';
+  var kg=document.getElementById('kahoot-game');kg.style.display='flex';kg.style.flexDirection='column';kg.style.gap='14px';
+  document.getElementById('k-loading').style.display='block';
+  document.getElementById('k-game').style.display='none';
+  gScore=0;gIdx=0;document.getElementById('k-score').textContent='0';
+  try{gQ=await genQ('kahoot');document.getElementById('k-loading').style.display='none';document.getElementById('k-game').style.display='flex';document.getElementById('k-game').style.flexDirection='column';document.getElementById('k-game').style.gap='14px';showKQ();}
+  catch(e){document.getElementById('k-loading').textContent='❌ Lỗi! Thử lại.';}}
+
+function showKQ(){
+  if(gIdx>=gQ.length){endGame('kahoot');return;}clearInterval(gTimer);
+  var q=gQ[gIdx];
+  document.getElementById('k-qnum').textContent='Q '+(gIdx+1);
+  document.getElementById('k-qlabel').textContent='Q '+(gIdx+1)+'/'+gQ.length;
+  document.getElementById('k-qtext').textContent=q.q;
+  document.getElementById('k-feedback').style.display='none';
+  var shapes=['▲','◆','●','■'];
+  var colors=['rgba(239,68,68,0.2)','rgba(59,130,246,0.2)','rgba(245,158,11,0.2)','rgba(16,185,129,0.2)'];
+  var borders=['rgba(239,68,68,0.4)','rgba(59,130,246,0.4)','rgba(245,158,11,0.4)','rgba(16,185,129,0.4)'];
+  var textc=['#fca5a5','#93c5fd','#fcd34d','#6ee7b7'];
+  var html='';
+  (q.options||[]).forEach(function(opt,i){html+='<button onclick="ansK('+i+')" style="padding:14px 12px;border-radius:12px;border:1.5px solid '+borders[i]+';background:'+colors[i]+';color:'+textc[i]+';font-size:13px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px"><span>'+shapes[i]+'</span>'+opt+'</button>';});
+  document.getElementById('k-answers').innerHTML=html;
+  var t=20;document.getElementById('k-timer').textContent=t;
+  gTimer=setInterval(function(){t--;document.getElementById('k-timer').textContent=t;if(t<=0){clearInterval(gTimer);timeoutK();}},1000);
+}
+
+function ansK(idx){
+  clearInterval(gTimer);var q=gQ[gIdx];
+  var btns=document.getElementById('k-answers').querySelectorAll('button');
+  btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.4)';else if(i===idx)b.style.background='rgba(239,68,68,0.4)';});
+  var tv=parseInt(document.getElementById('k-timer').textContent)||0;
+  var fb=document.getElementById('k-feedback');
+  if(idx===q.correct){var pts=Math.max(100,tv*10);gScore+=pts;document.getElementById('k-score').textContent=gScore;fb.style.cssText='display:block;background:rgba(16,185,129,0.15);border:1px solid var(--success);color:var(--success);padding:10px;border-radius:10px;text-align:center;font-weight:700;font-size:14px';fb.textContent='✅ Đúng! +'+pts+' pts';}
+  else{fb.style.cssText='display:block;background:rgba(239,68,68,0.15);border:1px solid var(--error);color:var(--error);padding:10px;border-radius:10px;text-align:center;font-weight:700;font-size:14px';fb.textContent='❌ Sai! Đáp án: '+(q.options[q.correct]);}
+  gIdx++;setTimeout(showKQ,1800);
+}
+
+function timeoutK(){var q=gQ[gIdx];var btns=document.getElementById('k-answers').querySelectorAll('button');btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.4)';});var fb=document.getElementById('k-feedback');fb.style.cssText='display:block;background:rgba(245,158,11,0.15);border:1px solid var(--warn);color:var(--warn);padding:10px;border-radius:10px;text-align:center;font-weight:700;font-size:14px';fb.textContent='⏰ Hết giờ! Đáp án: '+(q.options[q.correct]);gIdx++;setTimeout(showKQ,1800);}
+
+async function startSpeed(){
+  document.getElementById('game-menu').style.display='none';
+  var sg=document.getElementById('speed-game');sg.style.display='flex';sg.style.flexDirection='column';sg.style.gap='14px';
+  document.getElementById('sp-loading').style.display='block';document.getElementById('sp-game').style.display='none';
+  gScore=0;gIdx=0;document.getElementById('sp-score').textContent='0';
+  try{gQ=await genQ('speed');document.getElementById('sp-loading').style.display='none';document.getElementById('sp-game').style.display='flex';document.getElementById('sp-game').style.flexDirection='column';document.getElementById('sp-game').style.gap='14px';
+  var ph='';gQ.forEach(function(q,i){ph+='<div style="width:12px;height:12px;border-radius:50%;background:'+(i===0?'var(--primary)':'var(--border)')+';display:inline-block;transition:background .3s" id="spdot'+i+'"></div>';});
+  document.getElementById('sp-progress').innerHTML=ph;showSQ();}
+  catch(e){document.getElementById('sp-loading').textContent='❌ Lỗi!';}}
+
+function showSQ(){
+  if(gIdx>=gQ.length){endGame('speed');return;}
+  var q=gQ[gIdx];document.getElementById('sp-qtext').textContent=q.q;document.getElementById('sp-qlabel').textContent='Q '+(gIdx+1)+'/'+gQ.length;
+  var inp=document.getElementById('sp-input');inp.value='';inp.style.borderColor='var(--border)';inp.focus();document.getElementById('sp-fb').textContent='';
+  if(gIdx>0){var pd=document.getElementById('spdot'+(gIdx-1));if(pd)pd.style.background='var(--success)';}
+  var cd=document.getElementById('spdot'+gIdx);if(cd)cd.style.background='var(--primary)';
+}
+
+function checkSpeed(){var q=gQ[gIdx];var inp=document.getElementById('sp-input');var val=inp.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');var ans=(q.a||'').toString().trim().toLowerCase().replace(/[^a-z0-9]/g,'');if(val===ans){inp.style.borderColor='var(--success)';gScore+=100;document.getElementById('sp-score').textContent=gScore;document.getElementById('sp-fb').textContent='✅ Chính xác!';gIdx++;setTimeout(showSQ,700);}}
+
+async function startFlip(){
+  document.getElementById('game-menu').style.display='none';
+  var fg=document.getElementById('flip-game');fg.style.display='flex';fg.style.flexDirection='column';fg.style.gap='14px';fg.style.alignItems='center';
+  document.getElementById('flip-q').textContent='⏳ Đang tạo...';flipIdx=0;flipped=false;
+  try{gQ=await genQ('flip');showFC();}catch(e){document.getElementById('flip-q').textContent='❌ Lỗi!';}}
+
+function showFC(){if(!gQ.length)return;var q=gQ[flipIdx];document.getElementById('flip-q').textContent=q.q;document.getElementById('flip-a').textContent=q.a;document.getElementById('flip-counter').textContent=(flipIdx+1)+'/'+gQ.length;document.getElementById('flip-prog').textContent=(flipIdx+1)+' / '+gQ.length;document.getElementById('flip-inner').style.transform='';flipped=false;}
+function doFlip(){var fi=document.getElementById('flip-inner');flipped=!flipped;fi.style.transform=flipped?'rotateY(180deg)':'';}
+function flipNext(){if(flipIdx<gQ.length-1){flipIdx++;showFC();}else{endGame('flip');}}
+function flipPrev(){if(flipIdx>0){flipIdx--;showFC();}}
+
+function endGame(type){
+  clearInterval(gTimer);
+  ['kahoot-game','speed-game','flip-game'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+  var res=document.getElementById('game-result');res.style.display='flex';res.style.flexDirection='column';res.style.alignItems='center';res.style.gap='16px';res.style.padding='20px 0';
+  var total=gQ.length;
+  if(type==='flip'){document.getElementById('result-emoji').textContent='🃏';document.getElementById('result-score').textContent=total+' thẻ';document.getElementById('result-msg').textContent='Bạn đã xem hết tất cả thẻ!';document.getElementById('result-title').textContent='Hoàn thành!';}
+  else{var pct=total>0?Math.round((gScore/(total*100))*100):0;document.getElementById('result-emoji').textContent=pct>=80?'🏆':pct>=60?'⭐':'💪';document.getElementById('result-score').textContent=gScore+' pts';document.getElementById('result-msg').textContent=pct>=80?'Xuất sắc!':pct>=60?'Tốt lắm!':'Cố lên!';document.getElementById('result-title').textContent='Kết quả';}
+}
+
 function doLogout(){['eb_tok','eb_name','eb_role'].forEach(function(k){localStorage.removeItem(k);});location.reload();}
-function showTab(n){[0,1,2,3].forEach(function(i){var t=document.getElementById('tab'+i);var p=document.getElementById('p'+i);if(t)t.className='tb'+(i===2?' ton':'')+(i===n?' on':'');if(p)p.className='panel'+(i===n?' on':'');});}
+function showTab(n){[0,1,2,3,4].forEach(function(i){var t=document.getElementById('tab'+i);var p=document.getElementById('p'+i);if(t)t.className='tb'+(i===2?' ton':'')+(i===n?' on':'');if(p)p.className='panel'+(i===n?' on':'');});}
 function showSub(n){
   ['stb0','stb1','stb2'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='stb'+(i===n?' on':'');});
   ['sp0','sp1','sp2'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='sp'+(i===n?' on':'');});
@@ -689,7 +903,7 @@ async function loadHistory(){
 }
 
 var cfd=null,cft=null,cfn='';
-function onFile(f){if(!f)return;if(f.size>20*1024*1024){toast('Max 20MB','err');return;}cfn=f.name;var ext=f.name.split('.').pop().toLowerCase();cft=ext==='pdf'?'application/pdf':('image/'+(ext==='jpg'?'jpeg':ext));var r=new FileReader();r.onload=function(e){cfd=e.target.result.split(',')[1];document.getElementById('ficon').textContent=ext==='pdf'?'📄':'🖼️';document.getElementById('fname').textContent=f.name;document.getElementById('fbar').className='fbar on';document.getElementById('battach').className='on';var isImg=cft.startsWith('image');var fm=isImg?'<img src="'+e.target.result+'" style="max-width:220px;max-height:180px;border-radius:8px;border:1px solid var(--border)"/>':'<div style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px"><span style="font-size:20px">📄</span><span style="font-size:13px;font-weight:700">'+f.name+'</span></div>';addMsg('u',fm,1);addMsg('a',lang==='vi'?'📎 Đã tải lên! Bạn muốn tôi làm gì?\n• Giải thích nội dung\n• Tạo câu hỏi\n• Tóm tắt\n• Tạo flashcards\n• Hoặc hỏi bất cứ điều gì!':'📎 Uploaded! What shall I do?\n• Explain the content\n• Create quiz questions\n• Summarize\n• Create flashcards\n• Or ask anything!');};r.onerror=function(){toast('Error reading file','err');};r.readAsDataURL(f);}
+function onFile(f){if(!f)return;if(f.size>100*1024*1024){toast('Max 100MB','err');return;}cfn=f.name;var ext=f.name.split('.').pop().toLowerCase();cft=ext==='pdf'?'application/pdf':('image/'+(ext==='jpg'?'jpeg':ext));var r=new FileReader();r.onload=function(e){cfd=e.target.result.split(',')[1];document.getElementById('ficon').textContent=ext==='pdf'?'📄':'🖼️';document.getElementById('fname').textContent=f.name;document.getElementById('fbar').className='fbar on';document.getElementById('battach').className='on';var isImg=cft.startsWith('image');var fm=isImg?'<img src="'+e.target.result+'" style="max-width:220px;max-height:180px;border-radius:8px;border:1px solid var(--border)"/>':'<div style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px"><span style="font-size:20px">📄</span><span style="font-size:13px;font-weight:700">'+f.name+'</span></div>';addMsg('u',fm,1);addMsg('a',lang==='vi'?'📎 Đã tải lên! Bạn muốn tôi làm gì?\n• Giải thích nội dung\n• Tạo câu hỏi\n• Tóm tắt\n• Tạo flashcards\n• Hoặc hỏi bất cứ điều gì!':'📎 Uploaded! What shall I do?\n• Explain the content\n• Create quiz questions\n• Summarize\n• Create flashcards\n• Or ask anything!');};r.onerror=function(){toast('Error reading file','err');};r.readAsDataURL(f);}
 function rmFile(){cfd=null;cft=null;cfn='';document.getElementById('fbar').className='fbar';document.getElementById('battach').className='';document.getElementById('cfi').value='';}
 async function doSend(){
   if(!tok){openModal();return;}
