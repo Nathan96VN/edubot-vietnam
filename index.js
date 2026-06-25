@@ -563,40 +563,14 @@ Respond ONLY in JSON with no other text:
   }
 });
 
-// Import curriculum from PDF — extracts text first, then processes in chunks
+
+// Import curriculum from PDF
 app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
   try {
     const { fileData, fileName, subject, grade, type, lang } = req.body;
     if (!fileData) return res.status(400).json({ error: 'No file data received' });
 
-    // Step 1: Extract raw text from PDF using pdf-parse (no AI, no token cost)
-    let pdfText = '';
-    try {
-      const pdfBuffer = Buffer.from(fileData, 'base64');
-      if (!pdfParse) pdfParse = require('pdf-parse');
-      const pdfData = await pdfParse(pdfBuffer);
-      pdfText = pdfData.text || '';
-      console.log(`PDF text extracted: ${pdfText.length} chars from "${fileName}"`);
-    } catch(pdfErr) {
-      console.error('pdf-parse failed:', pdfErr.message);
-      return res.status(400).json({ error: 'Could not read PDF. Make sure it is a text-based PDF (not a scanned image).' });
-    }
-
-    if (!pdfText || pdfText.length < 100) {
-      return res.status(400).json({ error: 'PDF appears to be empty or image-based. Please use a text-based PDF.' });
-    }
-
-    // Step 2: Split text into chunks of ~4000 chars (well under token limits)
-    const CHUNK_SIZE = 4000;
-    const chunks = [];
-    for (let i = 0; i < pdfText.length; i += CHUNK_SIZE) {
-      chunks.push(pdfText.slice(i, i + CHUNK_SIZE));
-    }
-    console.log(`Split into ${chunks.length} chunks for processing`);
-
-    // Step 3: Process each chunk with Claude, with 2s delay between calls to avoid rate limits
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
     function parseItems(text) {
       const cleaned = text.replace(/```json|```/g, '').trim();
       try { const r = JSON.parse(cleaned); if (Array.isArray(r)) return r; } catch(e) {}
@@ -605,93 +579,154 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
       return [];
     }
 
-    let allItems = [];
-    // Process in batches of 3 chunks at a time, with delay between batches
-    const BATCH = 3;
-    for (let i = 0; i < chunks.length; i += BATCH) {
-      const batchChunks = chunks.slice(i, i + BATCH);
-      const combinedText = batchChunks.join('\n');
+    let pdfText = '';
+    let usedPdfParse = false;
 
-      try {
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 2000,
-          messages: [{
-            role: 'user',
-            content: `You are extracting curriculum content from a ${subject} textbook/framework.
-
-Extract ALL learning objectives, topics, concepts, and skills from this text section:
-
----
-${combinedText}
----
-
-Return ONLY a JSON array, absolutely no other text:
-[{"strand":"chapter or topic name","substrand":"sub-topic if any, or empty string","objective":"specific learning objective or concept"}]
-
-If no clear educational content is found, return: []`
-          }]
-        });
-
-        const items = parseItems(response.content[0].text);
-        allItems = allItems.concat(items);
-        console.log(`Chunk batch ${Math.ceil(i/BATCH)+1}/${Math.ceil(chunks.length/BATCH)}: ${items.length} items`);
-      } catch(chunkErr) {
-        console.warn(`Chunk batch ${Math.ceil(i/BATCH)+1} failed:`, chunkErr.message);
-        // If rate limited, wait longer and retry once
-        if (chunkErr.message && chunkErr.message.includes('rate_limit')) {
-          console.log('Rate limited — waiting 15s before retry...');
-          await sleep(15000);
-          try {
-            const retry = await anthropic.messages.create({
-              model: 'claude-sonnet-4-6',
-              max_tokens: 2000,
-              messages: [{ role: 'user', content: `Extract learning objectives from this curriculum text as JSON array [{"strand":"...","substrand":"...","objective":"..."}]. Text: ${combinedText.slice(0, 2000)}` }]
-            });
-            const retryItems = parseItems(retry.content[0].text);
-            allItems = allItems.concat(retryItems);
-          } catch(retryErr) { console.warn('Retry also failed, skipping chunk'); }
-        }
+    // Try pdf-parse first (fast, no token cost)
+    try {
+      const pdfBuffer = Buffer.from(fileData, 'base64');
+      let pp = pdfParse;
+      if (!pp) pp = require('pdf-parse');
+      const pdfData = await pp(pdfBuffer);
+      pdfText = (pdfData.text || '').trim();
+      if (pdfText.length > 100) {
+        usedPdfParse = true;
+        console.log(`pdf-parse: extracted ${pdfText.length} chars from "${fileName}"`);
       }
-
-      // Delay between batches to stay under rate limits
-      if (i + BATCH < chunks.length) await sleep(2000);
+    } catch(e) {
+      console.log('pdf-parse unavailable, will use Claude PDF vision:', e.message);
     }
 
-    // Step 4: Deduplicate
+    let allItems = [];
+
+    if (usedPdfParse && pdfText.length > 100) {
+      // TEXT PATH: split into chunks and send text only to Claude
+      const CHUNK_SIZE = 3500;
+      const chunks = [];
+      for (let i = 0; i < pdfText.length; i += CHUNK_SIZE) chunks.push(pdfText.slice(i, i + CHUNK_SIZE));
+      console.log(`Processing ${chunks.length} text chunks`);
+
+      for (let i = 0; i < chunks.length; i++) {
+        try {
+          const response = await anthropic.messages.create({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 1500,
+            messages: [{ role: 'user', content:
+              `Extract curriculum learning objectives from this ${subject} text. Return ONLY a JSON array:\n[{"strand":"topic","substrand":"sub-topic or empty","objective":"learning objective"}]\nIf nothing educational found return [].\n\nTEXT:\n${chunks[i]}`
+            }]
+          });
+          const items = parseItems(response.content[0].text);
+          allItems = allItems.concat(items);
+          console.log(`Chunk ${i+1}/${chunks.length}: ${items.length} items`);
+        } catch(err) {
+          if (err.message && err.message.includes('rate_limit')) {
+            console.log('Rate limited, waiting 20s...');
+            await sleep(20000);
+            i--; // retry this chunk
+          } else {
+            console.warn(`Chunk ${i+1} failed:`, err.message);
+          }
+        }
+        // 2.5s between each chunk to stay under 30k tokens/min
+        if (i < chunks.length - 1) await sleep(2500);
+      }
+
+    } else {
+      // VISION PATH: send PDF directly to Claude but only ask for summary extraction
+      // Use haiku (cheaper, smaller context) and ask for structured output in 2 passes
+      console.log('Using Claude PDF vision for extraction');
+
+      const docSource = { type: 'base64', media_type: 'application/pdf', data: fileData };
+
+      // Pass 1: Get all chapter/topic names only (small output)
+      let topicNames = [];
+      try {
+        await sleep(3000); // wait before first call
+        const r1 = await anthropic.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: [
+            { type: 'document', source: docSource },
+            { type: 'text', text: 'List only the main chapter and unit titles from this PDF. Return ONLY a JSON array of strings: ["title1","title2",...]. Maximum 30 items.' }
+          ]}]
+        });
+        topicNames = parseItems(r1.content[0].text).filter(s => typeof s === 'string').slice(0, 30);
+        console.log(`Vision pass 1: ${topicNames.length} topics`);
+      } catch(e) { console.warn('Vision pass 1 failed:', e.message); }
+
+      // Pass 2: For each topic (batches of 8), extract objectives from text description
+      const BATCH = 8;
+      for (let i = 0; i < topicNames.length; i += BATCH) {
+        await sleep(5000);
+        const batch = topicNames.slice(i, i + BATCH);
+        try {
+          const r2 = await anthropic.messages.create({
+            model: 'claude-haiku-4-5',
+            max_tokens: 1500,
+            messages: [{ role: 'user', content: [
+              { type: 'document', source: docSource },
+              { type: 'text', text: `Extract all learning objectives for these topics from the PDF: ${batch.join(', ')}. Return ONLY JSON: [{"strand":"topic","substrand":"sub-topic or empty","objective":"specific learning objective"}]` }
+            ]}]
+          });
+          const items = parseItems(r2.content[0].text);
+          allItems = allItems.concat(items);
+          console.log(`Vision batch ${Math.ceil(i/BATCH)+1}: ${items.length} items`);
+        } catch(e) { console.warn(`Vision batch failed:`, e.message); }
+      }
+
+      // Fallback if topics empty — one general pass with haiku
+      if (allItems.length === 0) {
+        await sleep(5000);
+        try {
+          const rf = await anthropic.messages.create({
+            model: 'claude-haiku-4-5',
+            max_tokens: 2000,
+            messages: [{ role: 'user', content: [
+              { type: 'document', source: docSource },
+              { type: 'text', text: `Extract up to 50 key learning objectives from this ${subject} curriculum PDF. Return ONLY JSON: [{"strand":"topic","substrand":"","objective":"learning objective"}]` }
+            ]}]
+          });
+          allItems = parseItems(rf.content[0].text);
+          console.log(`Fallback pass: ${allItems.length} items`);
+        } catch(e) { console.warn('Fallback pass failed:', e.message); }
+      }
+    }
+
+    // Deduplicate
     const seen = new Set();
     const uniqueItems = allItems.filter(item => {
-      if (!item || !item.objective || typeof item.objective !== 'string') return false;
+      if (!item || typeof item.objective !== 'string' || !item.objective.trim()) return false;
       const key = item.objective.trim().toLowerCase().slice(0, 120);
-      if (!key || seen.has(key)) return false;
+      if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
 
-    console.log(`Total unique items: ${uniqueItems.length} from ${allItems.length} raw`);
+    console.log(`Unique items: ${uniqueItems.length} from ${allItems.length} raw`);
 
     if (!uniqueItems.length) {
-      return res.status(400).json({ error: 'No curriculum content could be extracted. Please check the PDF contains readable text.' });
+      return res.status(400).json({ error: 'No curriculum content could be extracted. Try a different PDF or add pdf-parse to package.json.' });
     }
 
-    // Step 5: Insert into DB
+    // Insert into DB
     let imported = 0;
     for (const item of uniqueItems) {
       await pool.query(
-        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [subject, parseInt(grade) || 0, item.strand || '', item.substrand || '', item.objective, type || 'general', lang || 'vi', fileName]
+        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [subject, parseInt(grade)||0, item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName]
       );
       imported++;
     }
 
-    console.log(`✅ Import complete: ${imported} items from "${fileName}"`);
+    console.log(`✅ Imported ${imported} items from "${fileName}"`);
     res.json({ imported, message: `Successfully imported ${imported} curriculum items from "${fileName}"` });
+
   } catch (err) {
     console.error('Curriculum import error:', err);
     res.status(500).json({ error: 'Import failed: ' + err.message });
   }
 });
+
 
 // List curriculum grouped by subject + grade
 app.get('/admin/curriculum/list', authenticate, adminOnly, async (req, res) => {
