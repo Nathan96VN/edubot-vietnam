@@ -12,15 +12,15 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
 app.use(cors());
-app.use(express.json({limit:'150mb'}));
-app.use(express.urlencoded({limit:'150mb',extended:true}));
+app.use(express.json({ limit: '150mb' }));
+app.use(express.urlencoded({ limit: '150mb', extended: true }));
 app.use(express.static('public'));
 
-// ─── DB + AI clients ─────────────────────────────────────────────────────────
+// ─── DB + AI clients ──────────────────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// ─── Pricing config (VND for VNPay, USD cents for Stripe) ────────────────────
+// ─── Pricing config ───────────────────────────────────────────────────────────
 const PLANS = {
   student_basic: { vnd: 79000,  usd_cents: 320,  label: 'Student Basic', plan: 'basic'       },
   student_plus:  { vnd: 149000, usd_cents: 599,  label: 'Student Plus',  plan: 'plus'        },
@@ -38,7 +38,7 @@ const CREDIT_COSTS = {
   flashcards: 2,
 };
 
-// ─── Credits per plan on signup/upgrade ──────────────────────────────────────
+// ─── Credits per plan ─────────────────────────────────────────────────────────
 const PLAN_CREDITS = {
   basic: 100,
   plus: 250,
@@ -64,23 +64,16 @@ const adminOnly = (req, res, next) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LANDING PAGE
+// PAGE ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ONBOARDING PAGES
-// ─────────────────────────────────────────────────────────────────────────────
+app.get('/',         (req, res) => res.sendFile(__dirname + '/public/index.html'));
 app.get('/register', (req, res) => res.sendFile(__dirname + '/public/register.html'));
-app.get('/login', (req, res) => res.sendFile(__dirname + '/public/login.html'));
-app.get('/pricing', (req, res) => res.sendFile(__dirname + '/public/pricing.html'));
-app.get('/games', (req, res) => res.sendFile(__dirname + '/public/games.html'));
-app.get('/upload', (req, res) => res.sendFile(__dirname + '/public/upload.html'));
-app.get('/admin', (req, res) => res.sendFile(__dirname + '/public/admin.html'));
-app.get('/app', (req, res) => res.sendFile(__dirname + '/public/app.html'));
-app.get('/login', (req, res) => res.sendFile(__dirname + '/public/login.html'));
-
-
+app.get('/login',    (req, res) => res.sendFile(__dirname + '/public/login.html'));
+app.get('/pricing',  (req, res) => res.sendFile(__dirname + '/public/pricing.html'));
+app.get('/games',    (req, res) => res.sendFile(__dirname + '/public/games.html'));
+app.get('/upload',   (req, res) => res.sendFile(__dirname + '/public/upload.html'));
+app.get('/admin',    (req, res) => res.sendFile(__dirname + '/public/admin.html'));
+app.get('/app',      (req, res) => res.sendFile(__dirname + '/public/app.html'));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH ROUTES
@@ -129,7 +122,6 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // DOCUMENT ANALYSIS ROUTE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -142,7 +134,6 @@ app.post('/chat/document', authenticate, async (req, res) => {
     const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
 
-    // Credit check
     if (user.role !== 'admin') {
       if (user.plan === 'free') {
         if (user.daily_count >= 5) {
@@ -157,7 +148,6 @@ app.post('/chat/document', authenticate, async (req, res) => {
       }
     }
 
-    // Build message with document
     const messageContent = [];
     if (doc && doc.data) {
       if (doc.type === 'application/pdf') {
@@ -174,14 +164,13 @@ app.post('/chat/document', authenticate, async (req, res) => {
       : `You are EduBot, a friendly AI tutor. Analyze the provided document and help the student in ${language}. Be clear, encouraging, and educational.`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-5',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       system: systemPrompt,
       messages: [{ role: 'user', content: messageContent }]
     });
 
-    const reply = response.content[0].text;
-    res.json({ reply });
+    res.json({ reply: response.content[0].text });
   } catch (err) {
     console.error('Document analysis error:', err);
     res.status(500).json({ error: 'Analysis failed' });
@@ -209,8 +198,7 @@ app.post('/chat', authenticate, async (req, res) => {
       user.daily_count = 0;
     }
 
-    // Enforce free tier limit (5 questions/day) OR credit check for paid users
-    const isPaid = ['basic','plus','teacher','teacher_pro'].includes(user.plan) || user.role === 'teacher' || user.role === 'admin';
+    const isPaid = ['basic', 'plus', 'teacher', 'teacher_pro'].includes(user.plan) || user.role === 'teacher' || user.role === 'admin';
     if (!isPaid && user.daily_count >= 5) {
       return res.status(429).json({ error: 'Daily limit reached. Upgrade to continue!', upgrade: true });
     }
@@ -218,22 +206,21 @@ app.post('/chat', authenticate, async (req, res) => {
       return res.status(402).json({ error: 'Not enough credits. Top up to continue!', upgrade: true });
     }
 
-    // Fetch curriculum context (RAG)
+    // RAG: fetch curriculum context
     let curriculumContext = '';
     if (subject && grade) {
       const curriculum = await pool.query(
         `SELECT objective, strand, substrand FROM curriculum
-         WHERE LOWER(subject) = LOWER($1) AND grade = $2
-         LIMIT 10`,
+         WHERE LOWER(subject) = LOWER($1) AND grade = $2 LIMIT 10`,
         [subject, parseInt(grade)]
       );
       if (curriculum.rows.length > 0) {
-        curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly — never say you only have certain curriculum content):\n' +
+        curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly):\n' +
           curriculum.rows.map(r => `- [${r.strand}${r.substrand ? ' > ' + r.substrand : ''}] ${r.objective}`).join('\n');
       }
     }
 
-    // Fetch recent history
+    // Fetch recent chat history
     const history = await pool.query(
       `SELECT role, content FROM chat_history
        WHERE user_id = $1 AND subject = $2
@@ -279,7 +266,6 @@ ${curriculumContext}`;
 
     const reply = response.content[0].text;
 
-    // Save both messages
     await pool.query(
       `INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, 'user', $2, $3, $4)`,
       [userId, message, subject || 'general', grade || null]
@@ -289,7 +275,6 @@ ${curriculumContext}`;
       [userId, reply, subject || 'general', grade || null]
     );
 
-    // Deduct credit for paid users, increment daily count for free users
     let creditsRemaining = user.credits || 0;
     if (isPaid) {
       const updated = await pool.query(
@@ -366,10 +351,12 @@ app.post('/credits/deduct', authenticate, async (req, res) => {
 
 app.post('/credits/add', authenticate, async (req, res) => {
   try {
-    const { amount } = req.body;
+    const { userId, amount } = req.body;
+    // Allow admin to add credits to any user, or user to add to themselves
+    const targetId = (req.user.role === 'admin' && userId) ? userId : req.user.id;
     const result = await pool.query(
       'UPDATE users SET credits = credits + $1 WHERE id = $2 RETURNING credits',
-      [amount, req.user.id]
+      [parseInt(amount), targetId]
     );
     res.json({ credits: result.rows[0].credits });
   } catch (err) {
@@ -455,19 +442,29 @@ app.get('/classroom/:id/students', authenticate, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Dashboard stats
 app.get('/admin/stats', authenticate, adminOnly, async (req, res) => {
   try {
-    const [users, chats, classrooms] = await Promise.all([
-      pool.query('SELECT COUNT(*) as total, role, plan FROM users GROUP BY role, plan'),
-      pool.query('SELECT COUNT(*) as total FROM chat_history WHERE role = $1', ['user']),
-      pool.query('SELECT COUNT(*) as total FROM classrooms'),
+    const [users, chats, curriculum, promos] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM users'),
+      pool.query("SELECT COUNT(*) FROM chat_history WHERE role = 'user'"),
+      pool.query('SELECT COUNT(*) FROM curriculum'),
+      pool.query('SELECT COUNT(*) FROM promo_codes WHERE uses < max_uses'),
     ]);
-    res.json({ users: users.rows, total_chats: chats.rows[0].total, total_classrooms: classrooms.rows[0].total });
+    res.json({
+      total_users:     parseInt(users.rows[0].count),
+      total_chats:     parseInt(chats.rows[0].count),
+      curriculum_count: parseInt(curriculum.rows[0].count),
+      active_promos:   parseInt(promos.rows[0].count),
+    });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to load stats' });
+    console.error('Stats error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
+// List all users — FIXED: returns { users: [...] }
 app.get('/admin/users', authenticate, adminOnly, async (req, res) => {
   try {
     const { search, role, plan } = req.query;
@@ -478,7 +475,7 @@ app.get('/admin/users', authenticate, adminOnly, async (req, res) => {
     if (plan)   { params.push(plan);           query += ` AND plan = $${params.length}`; }
     query += ' ORDER BY created_at DESC LIMIT 100';
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    res.json({ users: result.rows }); // ← FIXED: wrapped in { users: [] }
   } catch (err) {
     res.status(500).json({ error: 'Failed to load users' });
   }
@@ -503,6 +500,167 @@ app.delete('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
     res.json({ message: 'User deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// Payments list
+app.get('/admin/payments', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.*, u.name as user_name
+       FROM payments p
+       LEFT JOIN users u ON p.user_id::text = u.id::text
+       ORDER BY p.created_at DESC LIMIT 100`
+    );
+    res.json({ payments: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CURRICULUM ROUTES (Admin only) — single clean set, no duplicates
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Detect subject/grade from PDF filename
+app.post('/admin/curriculum/detect', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { fileName, fileData, fileSize } = req.body;
+
+    const prompt = `Analyze this curriculum PDF filename: "${fileName}"
+
+Based on the filename, detect:
+1. Subject (Math, Science, English, Vietnamese, Physics, Chemistry, Biology, History, Geography, IT, Civic, or Other)
+2. Grade level (1-12, or 0 for all grades)
+3. Language (vi for Vietnamese, en for English, both)
+4. Estimated curriculum type (national, cambridge, ib, other)
+
+Respond ONLY in JSON with no other text:
+{"subject":"Math","grade":6,"lang":"en","curriculum_type":"cambridge","preview":"Brief description of what this curriculum covers"}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 300,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const text = response.content[0].text.replace(/```json|```/g, '').trim();
+    const detected = JSON.parse(text);
+    detected.estimated_chunks = Math.ceil((fileSize || 0) / 1000);
+
+    res.json(detected);
+  } catch (err) {
+    console.error('Curriculum detect error:', err);
+    res.json({
+      subject: 'Other',
+      grade: 0,
+      lang: 'vi',
+      curriculum_type: 'general',
+      preview: 'Manual review needed',
+      estimated_chunks: 0
+    });
+  }
+});
+
+// Import curriculum from PDF — sends PDF to Claude for full extraction
+app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { fileData, fileName, subject, grade, type, lang } = req.body;
+
+    if (!fileData) return res.status(400).json({ error: 'No file data received' });
+
+    const messageContent = [
+      {
+        type: 'document',
+        source: { type: 'base64', media_type: 'application/pdf', data: fileData }
+      },
+      {
+        type: 'text',
+        text: `Extract ALL learning objectives, topics, concepts, and educational content from this curriculum PDF.
+
+Format STRICTLY as a JSON array with no other text, no markdown, no code blocks:
+[
+  {"strand":"Topic/Chapter name","substrand":"Sub-topic","objective":"Specific learning objective or concept"},
+  ...
+]
+
+Extract as many items as possible. Be thorough. Cover all chapters, topics, and learning points.`
+      }
+    ];
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: messageContent }]
+    });
+
+    let raw = response.content[0].text.replace(/```json|```/g, '').trim();
+
+    let items = [];
+    try {
+      items = JSON.parse(raw);
+    } catch (e) {
+      const match = raw.match(/\[[\s\S]+\]/);
+      if (match) items = JSON.parse(match[0]);
+    }
+
+    if (!items || !items.length) {
+      return res.status(400).json({ error: 'Could not extract curriculum content from PDF' });
+    }
+
+    // Insert all items into DB
+    let imported = 0;
+    for (const item of items) {
+      await pool.query(
+        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          subject,
+          parseInt(grade) || 0,
+          item.strand || '',
+          item.substrand || '',
+          item.objective || '',
+          type || 'general',
+          lang || 'vi',
+          fileName
+        ]
+      );
+      imported++;
+    }
+
+    res.json({ imported, message: `Successfully imported ${imported} curriculum items from "${fileName}"` });
+  } catch (err) {
+    console.error('Curriculum import error:', err);
+    res.status(500).json({ error: 'Import failed: ' + err.message });
+  }
+});
+
+// List curriculum grouped by subject + grade
+app.get('/admin/curriculum/list', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT subject, grade, curriculum_type, lang, COUNT(*) as count
+       FROM curriculum
+       GROUP BY subject, grade, curriculum_type, lang
+       ORDER BY subject, grade`
+    );
+    res.json({ items: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete curriculum by subject + grade
+app.delete('/admin/curriculum/delete', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { subject, grade } = req.body;
+    const result = await pool.query(
+      'DELETE FROM curriculum WHERE subject = $1 AND grade = $2',
+      [subject, parseInt(grade)]
+    );
+    res.json({ deleted: result.rowCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -532,17 +690,17 @@ app.post('/payment/create-vnpay', authenticate, async (req, res) => {
     const txnRef = `${req.user.id}-${Date.now()}`;
 
     const params = {
-      vnp_Version:   '2.1.0',
-      vnp_Command:   'pay',
-      vnp_TmnCode:   tmnCode,
-      vnp_Amount:    plan.vnd * 100,
-      vnp_CurrCode:  'VND',
-      vnp_TxnRef:    txnRef,
-      vnp_OrderInfo: `EduBot ${plan.label} - User ${req.user.id}`,
-      vnp_OrderType: 'other',
-      vnp_Locale:    'vn',
-      vnp_ReturnUrl: returnUrl,
-      vnp_IpAddr:    req.ip || '127.0.0.1',
+      vnp_Version:    '2.1.0',
+      vnp_Command:    'pay',
+      vnp_TmnCode:    tmnCode,
+      vnp_Amount:     plan.vnd * 100,
+      vnp_CurrCode:   'VND',
+      vnp_TxnRef:     txnRef,
+      vnp_OrderInfo:  `EduBot ${plan.label} - User ${req.user.id}`,
+      vnp_OrderType:  'other',
+      vnp_Locale:     'vn',
+      vnp_ReturnUrl:  returnUrl,
+      vnp_IpAddr:     req.ip || '127.0.0.1',
       vnp_CreateDate: createDate,
     };
 
@@ -557,8 +715,7 @@ app.post('/payment/create-vnpay', authenticate, async (req, res) => {
       [req.user.id, planKey, plan.vnd, txnRef]
     );
 
-    const paymentUrl = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?' + querystring.stringify(sorted);
-    res.json({ paymentUrl });
+    res.json({ paymentUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?' + querystring.stringify(sorted) });
   } catch (err) {
     console.error('VNPay create error:', err);
     res.status(500).json({ error: 'Failed to create VNPay payment' });
@@ -580,10 +737,10 @@ app.get('/payment/vnpay-return', async (req, res) => {
     const signData = querystring.stringify(sorted);
     const hmac     = crypto.createHmac('sha512', hashSecret).update(signData, 'utf8').digest('hex');
 
-    const bubbleUrl = process.env.BUBBLE_URL || 'https://nathansteyn96.bubbleapps.io';
+    const appUrl = 'https://edubot-vietnam.onrender.com';
 
     if (hmac !== secureHash) {
-      return res.redirect(`${bubbleUrl}/version-test?payment=failed&reason=invalid_signature`);
+      return res.redirect(`${appUrl}/app?payment=failed&reason=invalid_signature`);
     }
 
     if (responseCode === '00') {
@@ -593,15 +750,14 @@ app.get('/payment/vnpay-return', async (req, res) => {
         await upgradePlan(user_id, plan);
         await pool.query('UPDATE payments SET status = $1 WHERE txn_ref = $2', ['success', txnRef]);
       }
-      return res.redirect(`${bubbleUrl}/version-test?payment=success`);
+      return res.redirect(`${appUrl}/app?payment=success`);
     } else {
       await pool.query('UPDATE payments SET status = $1 WHERE txn_ref = $2', ['failed', txnRef]);
-      return res.redirect(`${bubbleUrl}/version-test?payment=failed&reason=declined`);
+      return res.redirect(`${appUrl}/app?payment=failed&reason=declined`);
     }
   } catch (err) {
     console.error('VNPay return error:', err);
-    const bubbleUrl = process.env.BUBBLE_URL || 'https://nathansteyn96.bubbleapps.io';
-    res.redirect(`${bubbleUrl}/version-test?payment=failed&reason=server_error`);
+    res.redirect('https://edubot-vietnam.onrender.com/app?payment=failed&reason=server_error');
   }
 });
 
@@ -611,7 +767,7 @@ app.post('/payment/create-stripe-session', authenticate, async (req, res) => {
     const plan = PLANS[planKey];
     if (!plan) return res.status(400).json({ error: 'Invalid plan' });
 
-    const bubbleUrl = process.env.BUBBLE_URL || 'https://nathansteyn96.bubbleapps.io';
+    const appUrl = 'https://edubot-vietnam.onrender.com';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -624,8 +780,8 @@ app.post('/payment/create-stripe-session', authenticate, async (req, res) => {
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: `${bubbleUrl}/version-test?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${bubbleUrl}/version-test?payment=cancelled`,
+      success_url: `${appUrl}/app?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:  `${appUrl}/pricing?payment=cancelled`,
       metadata: {
         user_id:  String(req.user.id),
         plan_key: planKey,
@@ -656,13 +812,11 @@ app.post('/payment/verify-stripe', authenticate, async (req, res) => {
       return res.status(402).json({ error: 'Payment not completed', status: session.payment_status });
     }
 
-    const expectedUserId = String(req.user.id);
-    if (session.metadata.user_id !== expectedUserId) {
+    if (session.metadata.user_id !== String(req.user.id)) {
       return res.status(403).json({ error: 'Session does not belong to this user' });
     }
 
-    const planKey = session.metadata.plan_key;
-
+    const planKey  = session.metadata.plan_key;
     const existing = await pool.query('SELECT status FROM payments WHERE txn_ref = $1', [sessionId]);
 
     if (existing.rows.length === 0 || existing.rows[0].status !== 'success') {
@@ -719,8 +873,7 @@ Example format:
       messages: [{ role: 'user', content: prompt }],
     });
 
-    let raw = response.content[0].text.trim();
-    raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+    let raw = response.content[0].text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
 
     let cards;
     try {
@@ -780,7 +933,7 @@ app.post('/image/generate', authenticate, async (req, res) => {
 
     const userResult = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
     const user = userResult.rows[0];
-    const canGenerate = ['plus','teacher_pro'].includes(user.plan) || user.role === 'admin';
+    const canGenerate = ['plus', 'teacher_pro'].includes(user.plan) || user.role === 'admin';
     if (!canGenerate) {
       return res.status(403).json({ error: 'Image generation requires Student Plus or Teacher Pro plan.', upgrade: true });
     }
@@ -798,12 +951,9 @@ app.post('/image/generate', authenticate, async (req, res) => {
       quality: 'medium',
     });
 
-    const imgData = response.data[0];
-    const imageUrl = imgData.url
-      ? imgData.url
-      : `data:image/png;base64,${imgData.b64_json}`;
+    const imgData  = response.data[0];
+    const imageUrl = imgData.url ? imgData.url : `data:image/png;base64,${imgData.b64_json}`;
 
-    // Deduct credits
     await pool.query('UPDATE users SET credits = credits - $1 WHERE id = $2', [CREDIT_COSTS.ai_image, req.user.id]);
 
     res.json({ imageUrl });
@@ -862,8 +1012,7 @@ The JSON must have exactly this structure:
       messages: [{ role: 'user', content: prompt }],
     });
 
-    let raw = response.content[0].text.trim();
-    raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+    let raw = response.content[0].text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
 
     let chartData;
     try {
@@ -879,267 +1028,154 @@ The JSON must have exactly this structure:
   }
 });
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// CURRICULUM ROUTES (Admin only)
+// PROMO CODE ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
-
-// Detect subject/grade from PDF
-app.post('/admin/curriculum/detect', authenticate, adminOnly, async (req, res) => {
+app.post('/promo/create', authenticate, adminOnly, async (req, res) => {
   try {
-    const { fileName, fileData, fileSize } = req.body;
-    
-    // Use Claude to detect subject and grade from filename + content sample
-    const prompt = `Analyze this curriculum PDF filename: "${fileName}"
-    
-Based on the filename, detect:
-1. Subject (Math, Science, English, Vietnamese, Physics, Chemistry, Biology, History, Geography, IT, Civic, or Other)
-2. Grade level (1-12, or 0 for all grades)
-3. Language (vi for Vietnamese, en for English, both)
-4. Estimated curriculum type
-
-Respond ONLY in JSON: {"subject":"Math","grade":6,"lang":"en","curriculum_type":"cambridge","preview":"Brief description of what this curriculum covers"}`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 300,
-      messages: [{ role: 'user', content: prompt }]
-    });
-    
-    const text = response.content[0].text.replace(/\`\`\`json|\`\`\`/g, '').trim();
-    const detected = JSON.parse(text);
-    detected.estimated_chunks = Math.ceil(fileSize / 1000);
-    
-    res.json(detected);
-  } catch (err) {
-    console.error('Detect error:', err);
-    res.json({ subject: 'Other', grade: 0, lang: 'vi', curriculum_type: 'general', preview: 'Manual review needed', estimated_chunks: 0 });
-  }
-});
-
-// Import curriculum from PDF
-app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
-  try {
-    const { fileData, fileName, subject, grade, type, lang } = req.body;
-    
-    // Use Claude to extract curriculum content from PDF
-    const messageContent = [
-      {
-        type: 'document',
-        source: { type: 'base64', media_type: 'application/pdf', data: fileData }
-      },
-      {
-        type: 'text',
-        text: `Extract ALL learning objectives, topics, concepts, and educational content from this curriculum PDF.
-        
-Format STRICTLY as JSON array - no other text:
-[
-  {"strand":"Topic/Chapter name","substrand":"Sub-topic","objective":"Specific learning objective or concept"},
-  ...
-]
-
-Extract as many items as possible. Be thorough. Cover all chapters, topics, and learning points.`
-      }
-    ];
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: messageContent }]
-    });
-
-    const text = response.content[0].text.replace(/\`\`\`json|\`\`\`/g, '').trim();
-    let items = [];
-    try { items = JSON.parse(text); } catch(e) { 
-      // Try to extract JSON array from response
-      const match = text.match(/\[[\s\S]+\]/);
-      if (match) items = JSON.parse(match[0]);
-    }
-
-    if (!items.length) return res.status(400).json({ error: 'Could not extract curriculum content' });
-
-    // Insert into database
-    let imported = 0;
-    for (const item of items) {
-      await pool.query(
-        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [subject, grade || 0, item.strand || '', item.substrand || '', item.objective || '', type || 'general', lang || 'vi', fileName]
-      );
-      imported++;
-    }
-
-    res.json({ imported, message: 'Curriculum imported successfully' });
-  } catch (err) {
-    console.error('Import error:', err);
-    res.status(500).json({ error: 'Import failed: ' + err.message });
-  }
-});
-
-// List curriculum
-app.get('/admin/curriculum/list', authenticate, adminOnly, async (req, res) => {
-  try {
+    const { type, credits, plan, max_uses, expires_at, custom_code } = req.body;
+    const code = custom_code || ('EDU' + Math.random().toString(36).substring(2, 8).toUpperCase());
     const result = await pool.query(
-      'SELECT DISTINCT subject, grade, curriculum_type, lang, COUNT(*) as count FROM curriculum GROUP BY subject, grade, curriculum_type, lang ORDER BY subject, grade'
+      `INSERT INTO promo_codes (code, credits, max_uses, uses, type, plan, expires_at)
+       VALUES ($1, $2, $3, 0, $4, $5, $6) RETURNING *`,
+      [code, credits || 0, max_uses || 1, type || 'credits', plan || null, expires_at || null]
     );
-    res.json({ items: result.rows });
+    res.json({ promo: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Delete curriculum
-app.delete('/admin/curriculum/delete', authenticate, adminOnly, async (req, res) => {
+app.get('/promo/list', authenticate, adminOnly, async (req, res) => {
   try {
-    const { subject, grade } = req.body;
-    const result = await pool.query(
-      'DELETE FROM curriculum WHERE subject = $1 AND grade = $2',
-      [subject, parseInt(grade)]
+    const result = await pool.query('SELECT * FROM promo_codes ORDER BY created_at DESC');
+    res.json({ promos: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/promo/redeem', authenticate, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const promo = await pool.query(
+      `SELECT * FROM promo_codes WHERE code = $1 AND uses < max_uses AND (expires_at IS NULL OR expires_at > NOW())`,
+      [code.toUpperCase()]
     );
-    res.json({ deleted: result.rowCount });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    if (!promo.rows.length) return res.status(404).json({ error: 'Invalid or expired promo code' });
 
-// Admin stats
-app.get('/admin/stats', authenticate, adminOnly, async (req, res) => {
-  try {
-    const [users, chats, curriculum, promos] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM users'),
-      pool.query("SELECT COUNT(*) FROM chat_history WHERE role = 'user'"),
-      pool.query('SELECT COUNT(*) FROM curriculum'),
-      pool.query("SELECT COUNT(*) FROM promo_codes WHERE uses < max_uses"),
-    ]);
-    res.json({
-      total_users: users.rows[0].count,
-      total_chats: chats.rows[0].count,
-      curriculum_count: curriculum.rows[0].count,
-      active_promos: promos.rows[0].count
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    const p = promo.rows[0];
+    await pool.query('UPDATE promo_codes SET uses = uses + 1 WHERE id = $1', [p.id]);
 
-// Admin payments list
-app.get('/admin/payments', authenticate, adminOnly, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT p.*, u.name as user_name FROM payments p LEFT JOIN users u ON p.user_id::text = u.id::text ORDER BY p.created_at DESC LIMIT 100'
-    );
-    res.json({ payments: result.rows });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CURRICULUM ROUTES (Admin only)
-// ─────────────────────────────────────────────────────────────────────────────
-app.get('/admin', (req, res) => res.sendFile(__dirname + '/public/admin.html'));
-
-app.post('/admin/curriculum/detect', authenticate, adminOnly, async (req, res) => {
-  try {
-    const { fileName, fileSize } = req.body;
-    const prompt = 'Analyze this curriculum PDF filename: "' + fileName + '". Detect: 1) Subject (Math/Science/English/Vietnamese/Physics/Chemistry/Biology/History/Geography/IT/Civic/Other) 2) Grade (1-12 or 0 for all) 3) Language (vi/en/both). Respond ONLY in JSON: {"subject":"Math","grade":6,"lang":"en","curriculum_type":"cambridge","preview":"Brief description"}';
-    const response = await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 300, messages: [{ role: 'user', content: prompt }] });
-    const text = response.content[0].text.replace(/```json|```/g, '').trim();
-    const detected = JSON.parse(text);
-    detected.estimated_chunks = Math.ceil((fileSize || 0) / 1000);
-    res.json(detected);
-  } catch (err) {
-    res.json({ subject: 'Other', grade: 0, lang: 'vi', curriculum_type: 'general', preview: 'Manual review needed', estimated_chunks: 0 });
-  }
-});
-
-app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
-  try {
-    const { fileData, fileName, subject, grade, type, lang } = req.body;
-    const messageContent = [
-      { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: fileData } },
-      { type: 'text', text: 'Extract ALL learning objectives, topics and concepts from this PDF. Format ONLY as JSON array: [{"strand":"Chapter/Topic","substrand":"Sub-topic","objective":"Learning objective or concept"}]. Be thorough and extract everything.' }
-    ];
-    const response = await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 4000, messages: [{ role: 'user', content: messageContent }] });
-    const text = response.content[0].text.replace(/```json|```/g, '').trim();
-    let items = [];
-    try { items = JSON.parse(text); } catch(e) { const m = text.match(/\[[\s\S]+\]/); if(m) items = JSON.parse(m[0]); }
-    if (!items.length) return res.status(400).json({ error: 'Could not extract curriculum content' });
-    let imported = 0;
-    for (const item of items) {
-      await pool.query('INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', [subject, grade||0, item.strand||'', item.substrand||'', item.objective||'', type||'general', lang||'vi', fileName]);
-      imported++;
+    if (p.type === 'plan' && p.plan) {
+      const credits = PLAN_CREDITS[p.plan] || 0;
+      await pool.query('UPDATE users SET plan = $1, credits = credits + $2 WHERE id = $3', [p.plan, credits, req.user.id]);
+      res.json({ success: true, message: `Plan upgraded to ${p.plan}!`, type: 'plan', plan: p.plan });
+    } else {
+      await pool.query('UPDATE users SET credits = credits + $1 WHERE id = $2', [p.credits, req.user.id]);
+      res.json({ success: true, message: `${p.credits} credits added!`, type: 'credits', credits: p.credits });
     }
-    res.json({ imported });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/admin/curriculum/list', authenticate, adminOnly, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT subject, grade, curriculum_type, lang, COUNT(*) as count FROM curriculum GROUP BY subject, grade, curriculum_type, lang ORDER BY subject, grade');
-    res.json({ items: result.rows });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/admin/curriculum/delete', authenticate, adminOnly, async (req, res) => {
-  try {
-    const { subject, grade } = req.body;
-    const result = await pool.query('DELETE FROM curriculum WHERE subject = $1 AND grade = $2', [subject, parseInt(grade)]);
-    res.json({ deleted: result.rowCount });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.get('/admin/stats', authenticate, adminOnly, async (req, res) => {
-  try {
-    const [users, chats, curriculum, promos] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM users'),
-      pool.query("SELECT COUNT(*) FROM chat_history WHERE role = 'user'"),
-      pool.query('SELECT COUNT(*) FROM curriculum'),
-      pool.query('SELECT COUNT(*) FROM promo_codes WHERE uses < max_uses'),
-    ]);
-    res.json({ total_users: users.rows[0].count, total_chats: chats.rows[0].count, curriculum_count: curriculum.rows[0].count, active_promos: promos.rows[0].count });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.get('/admin/payments', authenticate, adminOnly, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT p.*, u.name as user_name FROM payments p LEFT JOIN users u ON p.user_id::text = u.id::text ORDER BY p.created_at DESC LIMIT 100');
-    res.json({ payments: result.rows });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 // ─────────────────────────────────────────────────────────────────────────────
-// START SERVER
+// SERVER START + DB SETUP
 // ─────────────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
-    // Run all DB setup in parallel for faster boot
+    // Users table columns
     await Promise.all([
-      pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0'),
-      pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT \'free\''),
-      pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_count INTEGER DEFAULT 0'),
-      pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reset TIMESTAMP'),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0"),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'free'"),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_count INTEGER DEFAULT 0"),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reset TIMESTAMP"),
     ]);
-    await pool.query(`CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, user_id UUID, plan VARCHAR(50), gateway VARCHAR(20), amount INTEGER, currency VARCHAR(10), txn_ref VARCHAR(255) UNIQUE, status VARCHAR(20) DEFAULT 'pending', created_at TIMESTAMP DEFAULT NOW())`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS flashcards (id SERIAL PRIMARY KEY, user_id UUID, subject VARCHAR(50), grade INTEGER, topic VARCHAR(200), question TEXT, answer TEXT, hint TEXT, lang VARCHAR(5) DEFAULT 'vi', created_at TIMESTAMP DEFAULT NOW())`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS promo_codes (id SERIAL PRIMARY KEY, code VARCHAR(20) UNIQUE, credits INTEGER DEFAULT 0, max_uses INTEGER DEFAULT 1, uses INTEGER DEFAULT 0, type VARCHAR(20) DEFAULT 'credits', plan VARCHAR(50), expires_at TIMESTAMP, created_at TIMESTAMP DEFAULT NOW())`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS curriculum (id SERIAL PRIMARY KEY, subject VARCHAR(100), grade INTEGER, strand VARCHAR(200), substrand VARCHAR(200), objective TEXT, curriculum_type VARCHAR(50) DEFAULT 'general', lang VARCHAR(10) DEFAULT 'vi', source_file VARCHAR(255), created_at TIMESTAMP DEFAULT NOW())`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS chat_history (id SERIAL PRIMARY KEY, user_id UUID, role VARCHAR(20), content TEXT, subject VARCHAR(50), grade INTEGER, created_at TIMESTAMP DEFAULT NOW())`);
-    // Safe ALTER TABLE additions
-    const alters = [
-      'ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT \'credits\'',
-      'ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS plan VARCHAR(50)',
-      'ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP',
-    ];
-    await Promise.all(alters.map(q => pool.query(q)));
-  } catch(e) { console.error('DB setup error:', e.message); }
-  console.log('Database ready');
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+    // Core tables
+    await pool.query(`CREATE TABLE IF NOT EXISTS payments (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      plan VARCHAR(50),
+      gateway VARCHAR(20),
+      amount INTEGER,
+      currency VARCHAR(10),
+      txn_ref VARCHAR(255) UNIQUE,
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS flashcards (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      subject VARCHAR(50),
+      grade INTEGER,
+      topic VARCHAR(200),
+      question TEXT,
+      answer TEXT,
+      hint TEXT,
+      lang VARCHAR(5) DEFAULT 'vi',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS promo_codes (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(20) UNIQUE,
+      credits INTEGER DEFAULT 0,
+      max_uses INTEGER DEFAULT 1,
+      uses INTEGER DEFAULT 0,
+      type VARCHAR(20) DEFAULT 'credits',
+      plan VARCHAR(50),
+      expires_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS curriculum (
+      id SERIAL PRIMARY KEY,
+      subject VARCHAR(100),
+      grade INTEGER,
+      strand VARCHAR(200),
+      substrand VARCHAR(200),
+      objective TEXT,
+      curriculum_type VARCHAR(50) DEFAULT 'general',
+      lang VARCHAR(10) DEFAULT 'vi',
+      source_file VARCHAR(255),
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS chat_history (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      role VARCHAR(20),
+      content TEXT,
+      subject VARCHAR(50),
+      grade INTEGER,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS classroom_students (
+      id SERIAL PRIMARY KEY,
+      classroom_id INTEGER,
+      student_id UUID,
+      UNIQUE(classroom_id, student_id)
+    )`);
+
+    // Safe column additions
+    await Promise.all([
+      pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'credits'"),
+      pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS plan VARCHAR(50)"),
+      pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP"),
+    ]);
+
+    console.log('✅ Database ready');
+  } catch (e) {
+    console.error('DB setup error:', e.message);
+  }
+
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 }
 
 startServer();
