@@ -75,6 +75,8 @@ app.get('/login', (req, res) => res.sendFile(__dirname + '/public/login.html'));
 app.get('/pricing', (req, res) => res.sendFile(__dirname + '/public/pricing.html'));
 app.get('/games', (req, res) => res.sendFile(__dirname + '/public/games.html'));
 app.get('/upload', (req, res) => res.sendFile(__dirname + '/public/upload.html'));
+app.get('/app', (req, res) => res.sendFile(__dirname + '/public/app.html'));
+app.get('/login', (req, res) => res.sendFile(__dirname + '/public/login.html'));
 
 
 
