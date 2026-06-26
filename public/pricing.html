@@ -1,182 +1,128 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>EduBot — Chọn gói</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#0D1B2E;--card:#112240;--panel:#0A1628;--primary:#00B4D8;--accent:#00D4FF;--teacher:#059669;--text:#E2E8F0;--muted:#94A3B8;--border:#1A3A5C;--success:#10B981;--error:#EF4444;--warn:#F59E0B}
-    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:40px 20px}
-    .bg-glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 70% 20%,rgba(0,180,216,0.12),transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(124,58,237,0.1),transparent 50%)}
-    .wrap{max-width:860px;margin:0 auto;position:relative;z-index:1}
-    .logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:32px;text-decoration:none}
-    .logo img{height:36px}
-    .logo-txt{font-size:22px;font-weight:900;color:var(--text)}
-    .logo-txt em{color:var(--primary);font-style:normal}
-    h1{font-size:clamp(24px,4vw,36px);font-weight:900;text-align:center;margin-bottom:8px;letter-spacing:-1px}
-    .sub{font-size:15px;color:var(--muted);text-align:center;margin-bottom:40px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:32px}
-    .plan{background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:24px;transition:all .25s;position:relative;overflow:hidden}
-    .plan::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--primary),transparent);opacity:0;transition:opacity .3s}
-    .plan:hover{border-color:rgba(0,180,216,0.4);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,180,216,0.08)}
-    .plan:hover::before{opacity:1}
-    .plan.featured{border-color:rgba(0,180,216,0.5);background:linear-gradient(135deg,rgba(0,180,216,0.07),var(--card))}
-    .plan.featured::before{opacity:1}
-    .plan.teacher-plan{border-color:rgba(5,150,105,0.4)}
-    .plan.teacher-plan::before{background:linear-gradient(90deg,transparent,var(--teacher),transparent);opacity:1}
-    .popular{display:inline-block;background:linear-gradient(90deg,var(--primary),var(--accent));color:#0D1B2E;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;margin-bottom:10px}
-    .popular.teacher{background:linear-gradient(90deg,var(--teacher),#10b981)}
-    .plan-name{font-size:15px;font-weight:800;margin-bottom:6px}
-    .plan-price{font-size:32px;font-weight:900;color:var(--primary);letter-spacing:-1px;margin-bottom:4px}
-    .plan-price span{font-size:12px;color:var(--muted);font-weight:400;letter-spacing:0}
-    .plan-price.teacher-price{color:var(--teacher)}
-    .credits{font-size:11px;color:var(--success);font-weight:700;padding:3px 10px;background:rgba(16,185,129,0.1);border-radius:20px;display:inline-block;border:1px solid rgba(16,185,129,0.2);margin-bottom:14px}
-    ul.feats{list-style:none;margin-bottom:20px}
-    ul.feats li{font-size:12px;color:rgba(255,255,255,0.75);padding:5px 0;display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(255,255,255,0.04)}
-    ul.feats li:last-child{border:none}
-    ul.feats li::before{content:'✓';color:var(--primary);font-weight:700;flex-shrink:0;font-size:13px}
-    ul.feats li.teacher-feat::before{color:var(--teacher)}
-    .btn-stripe{display:block;width:100%;padding:11px;border-radius:9px;background:var(--primary);color:#0D1B2E;font-size:12px;font-weight:700;border:none;cursor:pointer;margin-bottom:7px;transition:all .2s;text-align:center}
-    .btn-stripe:hover{background:var(--accent)}
-    .btn-stripe.teacher-btn{background:var(--teacher);color:#fff}
-    .btn-stripe.teacher-btn:hover{background:#10b981}
-    .btn-vnpay{display:block;width:100%;padding:11px;border-radius:9px;background:#e61d24;color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;transition:all .2s;text-align:center}
-    .btn-vnpay:hover{background:#c01018}
-    .free-section{text-align:center;padding:24px;background:rgba(0,180,216,0.04);border:1px solid rgba(0,180,216,0.15);border-radius:16px;margin-bottom:40px}
-    .free-section p{font-size:14px;color:var(--muted);margin-bottom:16px}
-    .btn-free{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:12px;background:transparent;border:2px solid rgba(0,180,216,0.35);color:var(--primary);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
-    .btn-free:hover{border-color:var(--primary);background:rgba(0,180,216,0.08);transform:translateY(-1px)}
-    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#112240;border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
-    .toast.show{opacity:1}
-    .toast.ok{border-color:var(--success);color:var(--success)}
-    .toast.err{border-color:var(--error);color:var(--error)}
-    .lang-toggle{display:flex;justify-content:center;margin-bottom:24px;background:rgba(0,180,216,0.08);border:1px solid rgba(0,180,216,0.2);border-radius:20px;overflow:hidden;width:fit-content;margin-left:auto;margin-right:auto}
-    .lt-btn{padding:5px 14px;font-size:12px;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer}
-    .lt-btn.on{background:var(--primary);color:#0D1B2E}
-    @media(max-width:600px){.grid{grid-template-columns:1fr 1fr}}
-    @media(max-width:400px){.grid{grid-template-columns:1fr}}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduBot — Bảng giá</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#150810;--primary:#F43F5E;--secondary:#F97316;--pg:rgba(244,63,94,0.65);--sg:rgba(249,115,22,0.5);--card:rgba(244,63,94,0.07);--card2:rgba(255,255,255,0.03);--border:rgba(244,63,94,0.15);--border2:rgba(255,255,255,0.07);--text:#FFF1F2;--muted:rgba(253,164,175,0.7);--muted2:rgba(255,255,255,0.45);--font:'Plus Jakarta Sans',system-ui,sans-serif;}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);padding:80px 20px 40px;position:relative;overflow-x:hidden}
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+.o1{width:500px;height:500px;background:radial-gradient(circle,rgba(244,63,94,0.18),transparent 70%);top:-150px;right:-100px}
+.o2{width:350px;height:350px;background:radial-gradient(circle,rgba(249,115,22,0.14),transparent 70%);bottom:-80px;left:-60px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;background:rgba(21,8,16,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.brand-text{font-size:20px;font-weight:800;color:var(--text)}
+.brand-text span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-right{display:flex;align-items:center;gap:10px}
+.lang-wrap{display:flex;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:20px;overflow:hidden}
+.lb{padding:5px 12px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:var(--font)}
+.lb.on{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
+.btn-nav{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);text-decoration:none;background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(244,63,94,0.4);color:#fff}
+main{max-width:1100px;margin:0 auto;position:relative;z-index:1}
+.hero{text-align:center;padding:40px 0 52px}
+.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(244,63,94,0.6);margin-bottom:12px}
+.hero h1{font-size:42px;font-weight:800;margin-bottom:12px;letter-spacing:-0.5px}
+.hero p{font-size:16px;color:var(--muted);max-width:480px;margin:0 auto;line-height:1.7}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px}
+.pcard{background:var(--card2);border:1.5px solid var(--border2);border-radius:18px;padding:26px;transition:all 0.25s;position:relative}
+.pcard.featured{border-color:rgba(244,63,94,0.3);background:rgba(244,63,94,0.06)}
+.pcard:hover{transform:translateY(-4px)}
+.popular{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff;margin-bottom:8px}
+.pname{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+.pamount{font-size:30px;font-weight:800;color:var(--primary);letter-spacing:-0.5px}
+.pperiod{font-size:11px;color:var(--muted);margin-bottom:8px}
+.pcredits{font-size:12px;color:rgba(110,231,183,0.9);font-weight:600;margin:10px 0;padding:3px 10px;background:rgba(16,185,129,0.1);border-radius:20px;display:inline-block;border:1px solid rgba(16,185,129,0.2)}
+.pfeats{list-style:none;display:flex;flex-direction:column;gap:8px;margin:16px 0;font-size:13px;color:var(--muted);line-height:1.5}
+.pfeats li::before{content:'✓ ';color:var(--primary);font-weight:700}
+.pbtn{width:100%;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);border:none;margin-top:8px;text-decoration:none;display:block;text-align:center;transition:all 0.2s}
+.pb-p{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
+.pb-g{background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted2)}
+.pb-g:hover{border-color:var(--border);color:var(--text)}
+.faq{margin-top:60px}
+.faq h2{font-size:28px;font-weight:800;text-align:center;margin-bottom:28px}
+.faq-item{background:var(--card2);border:1px solid var(--border2);border-radius:14px;padding:20px 24px;margin-bottom:12px}
+.faq-q{font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px}
+.faq-a{font-size:14px;color:var(--muted);line-height:1.7}
+.cta{text-align:center;margin-top:60px;background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.2);border-radius:20px;padding:40px}
+.cta h2{font-size:28px;font-weight:800;margin-bottom:10px}
+.cta p{color:var(--muted);margin-bottom:24px}
+.cta-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:12px;background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(244,63,94,0.4);color:#fff;font-size:15px;font-weight:700;text-decoration:none;transition:all 0.2s}
+.cta-btn:hover{opacity:0.88;transform:translateY(-2px)}
+@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}nav{padding:12px 20px}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-<div class="bg-glow"></div>
-<div class="wrap">
-  <a class="logo" href="/">
-    <img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" alt="EduBot"/>
-    <span class="logo-txt">Edu<em>Bot</em></span>
-  </a>
-  <div class="lang-toggle">
-    <button class="lt-btn on" id="lt-vi" onclick="setLang('vi')">🇻🇳 VI</button>
-    <button class="lt-btn" id="lt-en" onclick="setLang('en')">🇬🇧 EN</button>
+<div class="orb o1"></div>
+<div class="orb o2"></div>
+<nav>
+  <a href="/" style="text-decoration:none"><span class="brand-text">Edu<span>Bot</span></span></a>
+  <div class="nav-right">
+    <div class="lang-wrap"><button class="lb on" id="lvi" onclick="setLang('vi')">🇻🇳 VI</button><button class="lb" id="len" onclick="setLang('en')">🇬🇧 EN</button></div>
+    <a href="/app" class="btn-nav" id="nav-app">Vào ứng dụng</a>
   </div>
-  <h1 id="title">🎉 Chào mừng! Chọn gói của bạn</h1>
-  <p class="sub" id="sub">Nâng cấp bất cứ lúc nào. Hủy bất cứ lúc nào.</p>
-
-  <!-- Student plans -->
-  <div class="grid" id="student-plans">
-    <div class="plan">
-      <div class="plan-name" id="pn-sb">Student Basic</div>
-      <div class="plan-price">79k <span id="pm-sb">VND/tháng</span></div>
-      <div class="credits">⚡ 100 credits</div>
-      <ul class="feats"><li id="f-sb1">Câu hỏi không giới hạn</li><li id="f-sb2">Flashcards AI</li><li id="f-sb3">Biểu đồ (Lớp 4+)</li><li id="f-sb4">VI + EN</li></ul>
-      <button class="btn-stripe" onclick="pay('student_basic','stripe')">💳 Stripe $3.20</button>
-      <button class="btn-vnpay" onclick="pay('student_basic','vnpay')">🏦 VNPay 79k</button>
-    </div>
-    <div class="plan featured">
-      <div class="popular" id="pop-s">⭐ Phổ biến nhất</div>
-      <div class="plan-name">Student Plus</div>
-      <div class="plan-price">149k <span id="pm-sp">VND/tháng</span></div>
-      <div class="credits">⚡ 250 credits</div>
-      <ul class="feats"><li id="f-sp1">Tất cả Basic</li><li id="f-sp2">Hình ảnh AI</li><li id="f-sp3">Ưu tiên hỗ trợ</li></ul>
-      <button class="btn-stripe" onclick="pay('student_plus','stripe')">💳 Stripe $5.99</button>
-      <button class="btn-vnpay" onclick="pay('student_plus','vnpay')">🏦 VNPay 149k</button>
-    </div>
+</nav>
+<main>
+  <div class="hero">
+    <div class="sec-label" id="hl">Bảng giá</div>
+    <h1 id="ht">Giá phù hợp với mọi học sinh</h1>
+    <p id="hs">Bắt đầu miễn phí. Nâng cấp khi cần thêm tính năng. Không cần thẻ tín dụng.</p>
   </div>
-
-  <!-- Teacher plans -->
-  <div class="grid" id="teacher-plans" style="display:none">
-    <div class="plan teacher-plan">
-      <div class="plan-name" id="pn-t">Teacher</div>
-      <div class="plan-price teacher-price">249k <span id="pm-t">VND/tháng</span></div>
-      <div class="credits">⚡ 400 credits</div>
-      <ul class="feats"><li class="teacher-feat" id="f-t1">Dashboard + Lớp học</li><li class="teacher-feat" id="f-t2">Trợ lý AI giáo viên</li><li class="teacher-feat" id="f-t3">Câu hỏi không giới hạn</li></ul>
-      <button class="btn-stripe teacher-btn" onclick="pay('teacher','stripe')">💳 Stripe $9.99</button>
-      <button class="btn-vnpay" onclick="pay('teacher','vnpay')">🏦 VNPay 249k</button>
+  <div class="grid">
+    <div class="pcard">
+      <div class="pname" id="p0n">Miễn phí</div>
+      <div class="pamount">0đ</div>
+      <div class="pperiod" id="p0p">Mãi mãi</div>
+      <div class="pcredits">5 câu hỏi / ngày</div>
+      <ul class="pfeats"><li id="p0f1">AI Tutor cơ bản</li><li id="p0f2">Flashcards</li><li id="p0f3">Games học tập</li><li id="p0f4">VI + EN</li></ul>
+      <a href="/register" class="pbtn pb-g" id="p0b">Bắt đầu miễn phí</a>
     </div>
-    <div class="plan teacher-plan featured" style="border-color:rgba(5,150,105,0.6)">
-      <div class="popular teacher" id="pop-t">⭐ Phổ biến nhất</div>
-      <div class="plan-name">Teacher Pro</div>
-      <div class="plan-price teacher-price">299k <span id="pm-tp">VND/tháng</span></div>
-      <div class="credits">⚡ 600 credits</div>
-      <ul class="feats"><li class="teacher-feat" id="f-tp1">Tất cả Teacher</li><li class="teacher-feat" id="f-tp2">Hình ảnh AI</li><li class="teacher-feat" id="f-tp3">Ưu tiên hỗ trợ</li></ul>
-      <button class="btn-stripe teacher-btn" onclick="pay('teacher_pro','stripe')">💳 Stripe $12.99</button>
-      <button class="btn-vnpay" onclick="pay('teacher_pro','vnpay')">🏦 VNPay 299k</button>
+    <div class="pcard featured">
+      <div class="popular">⭐ Phổ biến nhất</div>
+      <div class="pname" id="p1n">Student Basic</div>
+      <div class="pamount">79k</div>
+      <div class="pperiod" id="p1p">VND / tháng</div>
+      <div class="pcredits">⚡ 100 credits</div>
+      <ul class="pfeats"><li id="p1f1">Câu hỏi không giới hạn</li><li id="p1f2">Upload PDF & ảnh</li><li id="p1f3">Biểu đồ AI (Lớp 4+)</li><li id="p1f4">VI + EN</li></ul>
+      <a href="/register" class="pbtn pb-p" id="p1b">Đăng ký ngay</a>
+    </div>
+    <div class="pcard">
+      <div class="pname" id="p2n">Student Plus</div>
+      <div class="pamount">149k</div>
+      <div class="pperiod" id="p2p">VND / tháng</div>
+      <div class="pcredits">⚡ 250 credits</div>
+      <ul class="pfeats"><li id="p2f1">Tất cả Basic</li><li id="p2f2">Ảnh AI giáo dục</li><li id="p2f3">Ưu tiên hỗ trợ</li></ul>
+      <a href="/register" class="pbtn pb-g" id="p2b">Chọn gói này</a>
+    </div>
+    <div class="pcard">
+      <div class="pname" id="p3n">Teacher Pro</div>
+      <div class="pamount">299k</div>
+      <div class="pperiod" id="p3p">VND / tháng</div>
+      <div class="pcredits">⚡ 600 credits</div>
+      <ul class="pfeats"><li id="p3f1">Dashboard giáo viên</li><li id="p3f2">Tạo giáo án & đề thi</li><li id="p3f3">Xuất Word / PDF</li><li id="p3f4">Quản lý lớp học</li></ul>
+      <a href="/register?role=teacher" class="pbtn pb-g" id="p3b">Dành cho giáo viên</a>
     </div>
   </div>
-
-  <!-- Try Free -->
-  <div class="free-section">
-    <p id="free-desc">Hoặc bắt đầu miễn phí với 5 câu hỏi mỗi ngày. Nâng cấp bất cứ lúc nào.</p>
-    <button class="btn-free" onclick="goFree()">🎒 <span id="free-btn-txt">Thử miễn phí — 5 câu/ngày</span></button>
+  <div class="faq">
+    <h2 id="faq-title">Câu hỏi thường gặp</h2>
+    <div class="faq-item"><div class="faq-q" id="q1">Credits là gì?</div><div class="faq-a" id="a1">1 credit = 1 câu hỏi AI. Flashcards = 2 credits, Games = 5 credits, Ảnh AI = 5 credits. Credits không hết hạn trong tháng.</div></div>
+    <div class="faq-item"><div class="faq-q" id="q2">Tôi có thể dùng thử trước khi mua không?</div><div class="faq-a" id="a2">Có! Gói miễn phí cho phép 5 câu hỏi mỗi ngày mà không cần thẻ tín dụng.</div></div>
+    <div class="faq-item"><div class="faq-q" id="q3">Thanh toán bằng cách nào?</div><div class="faq-a" id="a3">Chúng tôi chấp nhận VNPay (chuyển khoản ngân hàng, ví điện tử) và Stripe (thẻ quốc tế Visa/Mastercard).</div></div>
+    <div class="faq-item"><div class="faq-q" id="q4">Giáo viên có thể dùng gói học sinh không?</div><div class="faq-a" id="a4">Được, nhưng gói Teacher Pro có thêm Dashboard quản lý lớp, tạo giáo án và đề kiểm tra chuyên nghiệp hơn.</div></div>
   </div>
-</div>
-<div class="toast" id="toast"></div>
-
+  <div class="cta">
+    <h2 id="cta-h">Sẵn sàng bắt đầu?</h2>
+    <p id="cta-p">Tham gia miễn phí ngay hôm nay. Không cần thẻ tín dụng.</p>
+    <a href="/register" class="cta-btn" id="cta-btn">Bắt đầu miễn phí →</a>
+  </div>
+</main>
 <script>
-var lang='vi';
-var urlp=new URLSearchParams(window.location.search);
-var role=urlp.get('role')||localStorage.getItem('eb_role')||'student';
-var tok=localStorage.getItem('eb_tok');
-
-// Show correct plans
-if(role==='teacher'||role==='admin'){
-  document.getElementById('student-plans').style.display='none';
-  document.getElementById('teacher-plans').style.display='grid';
-}
-
-// If not logged in redirect to register
-if(!tok){window.location.href='/register?role='+role;}
-
-var T={
-  vi:{title:'🎉 Chào mừng! Chọn gói của bạn',sub:'Nâng cấp bất cứ lúc nào. Hủy bất cứ lúc nào.','pop-s':'⭐ Phổ biến nhất','pop-t':'⭐ Phổ biến nhất','pm-sb':'VND/tháng','pm-sp':'VND/tháng','pm-t':'VND/tháng','pm-tp':'VND/tháng','f-sb1':'Câu hỏi không giới hạn','f-sb2':'Flashcards AI','f-sb3':'Biểu đồ (Lớp 4+)','f-sb4':'VI + EN','f-sp1':'Tất cả Basic','f-sp2':'Hình ảnh AI','f-sp3':'Ưu tiên hỗ trợ','f-t1':'Dashboard + Lớp học','f-t2':'Trợ lý AI giáo viên','f-t3':'Câu hỏi không giới hạn','f-tp1':'Tất cả Teacher','f-tp2':'Hình ảnh AI','f-tp3':'Ưu tiên hỗ trợ','free-desc':'Hoặc bắt đầu miễn phí với 5 câu hỏi mỗi ngày. Nâng cấp bất cứ lúc nào.','free-btn-txt':'Thử miễn phí — 5 câu/ngày','coming':'Tính năng thanh toán sắp ra mắt! Đang chuyển sang dùng thử...'},
-  en:{title:'🎉 Welcome! Choose your plan',sub:'Upgrade anytime. Cancel anytime.','pop-s':'⭐ Most Popular','pop-t':'⭐ Most Popular','pm-sb':'VND/month','pm-sp':'VND/month','pm-t':'VND/month','pm-tp':'VND/month','f-sb1':'Unlimited questions','f-sb2':'AI Flashcards','f-sb3':'Charts (Grade 4+)','f-sb4':'VI + EN','f-sp1':'Everything in Basic','f-sp2':'AI Images','f-sp3':'Priority support','f-t1':'Dashboard + Classrooms','f-t2':'AI Teaching Assistant','f-t3':'Unlimited questions','f-tp1':'Everything in Teacher','f-tp2':'AI Images','f-tp3':'Priority support','free-desc':'Or start free with 5 questions per day. Upgrade anytime.','free-btn-txt':'Try free — 5 questions/day','coming':'Payment coming soon! Redirecting to free trial...'}
-};
-
-function setLang(l){
-  lang=l;
-  document.getElementById('lt-vi').className='lt-btn'+(l==='vi'?' on':'');
-  document.getElementById('lt-en').className='lt-btn'+(l==='en'?' on':'');
-  var t=T[l];
-  Object.keys(t).forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=t[id];});
-  document.getElementById('title').textContent=t['title'];
-  document.getElementById('sub').textContent=t['sub'];
-}
-
-function toast(msg,type){
-  var el=document.getElementById('toast');
-  el.textContent=msg;el.className='toast show '+(type||'');
-  setTimeout(function(){el.className='toast';},3000);
-}
-
-function goApp(){
-  window.location.href='/app';
-}
-
-function pay(plan,gateway){
-  // For now show coming soon and redirect to app
-  toast(T[lang]['coming'],'ok');
-  setTimeout(goApp,2000);
-}
-
-function goFree(){
-  goApp();
-}
-
-// Init lang
-var saved=localStorage.getItem('eb_lp_lang');
-if(saved)setLang(saved);
-else{var bl=navigator.language||'vi';setLang(bl.toLowerCase().startsWith('vi')?'vi':'en');}
+var lang=localStorage.getItem('eb_lang')||'vi';
+var T={vi:{'hl':'Bảng giá','ht':'Giá phù hợp với mọi học sinh','hs':'Bắt đầu miễn phí. Nâng cấp khi cần thêm tính năng. Không cần thẻ tín dụng.','nav-app':'Vào ứng dụng','p0n':'Miễn phí','p0p':'Mãi mãi','p0f1':'AI Tutor cơ bản','p0f2':'Flashcards','p0f3':'Games học tập','p0f4':'VI + EN','p0b':'Bắt đầu miễn phí','p1n':'Student Basic','p1p':'VND / tháng','p1f1':'Câu hỏi không giới hạn','p1f2':'Upload PDF & ảnh','p1f3':'Biểu đồ AI (Lớp 4+)','p1f4':'VI + EN','p1b':'Đăng ký ngay','p2n':'Student Plus','p2p':'VND / tháng','p2f1':'Tất cả Basic','p2f2':'Ảnh AI giáo dục','p2f3':'Ưu tiên hỗ trợ','p2b':'Chọn gói này','p3n':'Teacher Pro','p3p':'VND / tháng','p3f1':'Dashboard giáo viên','p3f2':'Tạo giáo án & đề thi','p3f3':'Xuất Word / PDF','p3f4':'Quản lý lớp học','p3b':'Dành cho giáo viên','faq-title':'Câu hỏi thường gặp','q1':'Credits là gì?','a1':'1 credit = 1 câu hỏi AI. Flashcards = 2 credits, Games = 5 credits, Ảnh AI = 5 credits. Credits không hết hạn trong tháng.','q2':'Tôi có thể dùng thử trước khi mua không?','a2':'Có! Gói miễn phí cho phép 5 câu hỏi mỗi ngày mà không cần thẻ tín dụng.','q3':'Thanh toán bằng cách nào?','a3':'Chúng tôi chấp nhận VNPay (chuyển khoản ngân hàng, ví điện tử) và Stripe (thẻ quốc tế Visa/Mastercard).','q4':'Giáo viên có thể dùng gói học sinh không?','a4':'Được, nhưng gói Teacher Pro có thêm Dashboard quản lý lớp, tạo giáo án và đề kiểm tra chuyên nghiệp hơn.','cta-h':'Sẵn sàng bắt đầu?','cta-p':'Tham gia miễn phí ngay hôm nay. Không cần thẻ tín dụng.','cta-btn':'Bắt đầu miễn phí →'},en:{'hl':'Pricing','ht':'Affordable for every student','hs':'Start free. Upgrade when you need more. No credit card required.','nav-app':'Open App','p0n':'Free','p0p':'Forever','p0f1':'Basic AI Tutor','p0f2':'Flashcards','p0f3':'Learning Games','p0f4':'VI + EN','p0b':'Start for free','p1n':'Student Basic','p1p':'VND / month','p1f1':'Unlimited questions','p1f2':'Upload PDF & images','p1f3':'AI Charts (Grade 4+)','p1f4':'VI + EN','p1b':'Sign up now','p2n':'Student Plus','p2p':'VND / month','p2f1':'Everything in Basic','p2f2':'AI educational images','p2f3':'Priority support','p2b':'Choose this plan','p3n':'Teacher Pro','p3p':'VND / month','p3f1':'Teacher dashboard','p3f2':'Lesson plans & exams','p3f3':'Export Word / PDF','p3f4':'Classroom management','p3b':'For teachers','faq-title':'Frequently Asked Questions','q1':'What are credits?','a1':'1 credit = 1 AI question. Flashcards = 2 credits, Games = 5 credits, AI Images = 5 credits. Credits do not expire within the month.','q2':'Can I try before buying?','a2':'Yes! The free plan allows 5 questions per day with no credit card required.','q3':'How do I pay?','a3':'We accept VNPay (bank transfer, e-wallets) and Stripe (international Visa/Mastercard).','q4':'Can teachers use a student plan?','a4':'Yes, but Teacher Pro includes a classroom management dashboard, lesson plan creation and professional exam tools.','cta-h':'Ready to get started?','cta-p':'Join for free today. No credit card required.','cta-btn':'Start for free →'}};
+function setLang(l){lang=l;localStorage.setItem('eb_lang',l);document.getElementById('lvi').className='lb'+(l==='vi'?' on':'');document.getElementById('len').className='lb'+(l==='en'?' on':'');var d=T[l];Object.keys(d).forEach(function(k){var el=document.getElementById(k);if(el)el.textContent=d[k];});}
+setLang(lang);
 </script>
 </body>
 </html>
