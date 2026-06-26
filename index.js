@@ -1610,7 +1610,7 @@ app.post('/exam/:id/assign', authenticate, async (req, res) => {
     const { classId, maxAttempts } = req.body;
     const result = await pool.query(
       `UPDATE exams SET status='active', classroom_id=$3, max_attempts=$4 WHERE id=$1 AND teacher_id=$2 RETURNING *`,
-      [req.params.id, req.user.id, classId || null, maxAttempts || 1]
+      [req.params.id, req.user.id, classId ? parseInt(classId) : null, maxAttempts || 1]
     );
     res.json({ exam: result.rows[0] });
   } catch (e) {
@@ -1620,7 +1620,7 @@ app.post('/exam/:id/assign', authenticate, async (req, res) => {
       await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 1`);
       const result = await pool.query(
         `UPDATE exams SET status='active', classroom_id=$3, max_attempts=$4 WHERE id=$1 AND teacher_id=$2 RETURNING *`,
-        [req.params.id, req.user.id, req.body.classId || null, req.body.maxAttempts || 1]
+        [req.params.id, req.user.id, req.body.classId ? parseInt(classId) : null, req.body.maxAttempts || 1]
       );
       res.json({ exam: result.rows[0] });
     } catch(e2) {
