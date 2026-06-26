@@ -367,27 +367,27 @@ var lang = localStorage.getItem('eb_lang') || 'vi';
 
 // ── BUBBLE DATA ──
 var bubbles = [
-  { lang:'vi', user:'Giải phương trình x² + 5x + 6 = 0', ai:'\\(x^2+5x+6=(x+2)(x+3)=0\\) → x = −2 hoặc x = −3 ✅', math:true },
-  { lang:'en', user:'What is photosynthesis?', ai:'<strong>Plants use</strong> sunlight + CO₂ + water → glucose + oxygen 🌿', math:false },
-  { lang:'vi', user:'Tính đạo hàm f(x) = x³ + 2x', ai:'\\(f\'(x) = 3x^2 + 2\\) ✅', math:true },
-  { lang:'en', user:'Explain the water cycle for Grade 5', ai:'<strong>Evaporation → Condensation → Precipitation → Collection</strong> — and repeats! 🌧️', math:false },
-  { lang:'vi', user:'Phân số ½ + ⅓ bằng bao nhiêu?', ai:'\\(\\frac{1}{2}+\\frac{1}{3}=\\frac{3}{6}+\\frac{2}{6}=\\frac{5}{6}\\) ✅', math:true },
-  { lang:'en', user:'Create 10 quiz questions on gravity', ai:'<strong>✅ 10 questions generated</strong> with full answer key — ready to export!', math:false },
-  { lang:'vi', user:'Tạo giáo án về hình học lớp 7', ai:'<strong>✅ Giáo án 45 phút đã tạo</strong> với bài tập và đáp án chi tiết!', math:false },
-  { lang:'en', user:'Solve ∫x² dx', ai:'\\(\\int x^2\\,dx = \\frac{x^3}{3} + C\\) ✅', math:true },
-  { lang:'vi', user:'Viết đoạn văn về môi trường', ai:'<strong>✅ Đoạn văn 150 chữ đã tạo</strong> — sẵn sàng xuất Word!', math:false },
-  { lang:'en', user:"What is Newton's second law?", ai:'\\(F = ma\\) — Force equals mass times acceleration ✅', math:true },
+  { lang:'vi', user:'Giải phương trình x² + 5x + 6 = 0', ai:'(x + 2)(x + 3) = 0 → x = −2 hoặc x = −3 ✅', math:false },
+  { lang:'en', user:'What is photosynthesis?', ai:'Sunlight + CO₂ + H₂O → Glucose + O₂ 🌿', math:false },
+  { lang:'vi', user:'Tính đạo hàm f(x) = x³ + 2x', ai:"f'(x) = 3x² + 2 ✅", math:false },
+  { lang:'en', user:'Explain the water cycle for Grade 5', ai:'Evaporation → Condensation → Precipitation → Collection 🌧️', math:false },
+  { lang:'vi', user:'Phân số ½ + ⅓ bằng bao nhiêu?', ai:'½ + ⅓ = 3⁄6 + 2⁄6 = 5⁄6 ✅', math:false },
+  { lang:'en', user:'Create 10 quiz questions on gravity', ai:'✅ 10 questions generated with full answer key!', math:false },
+  { lang:'vi', user:'Tạo giáo án về hình học lớp 7', ai:'✅ Giáo án 45 phút đã tạo với bài tập và đáp án!', math:false },
+  { lang:'en', user:'Solve ∫x² dx', ai:'∫x² dx = x³/3 + C ✅', math:false },
+  { lang:'vi', user:'Viết đoạn văn về môi trường', ai:'✅ Đoạn văn 150 chữ đã tạo — sẵn sàng xuất Word!', math:false },
+  { lang:'en', user:"What is Newton's second law?", ai:'F = ma — Force = mass × acceleration ✅', math:false },
 ];
 
 // Positions — right side of screen, never over headline (which is left side)
 // All positions are within the right hero panel
 var positions = [
-  { top:'8%',  left:'5%',  type:'user' },
-  { top:'20%', left:'15%', type:'ai' },
-  { top:'38%', left:'2%',  type:'user' },
-  { top:'52%', left:'18%', type:'ai' },
-  { top:'68%', left:'5%',  type:'user' },
-  { top:'80%', left:'12%', type:'ai' },
+  { utop:'10%', uleft:'5%', atop:'28%', aleft:'5%' },
+  { utop:'20%', uleft:'8%', atop:'38%', aleft:'8%' },
+  { utop:'35%', uleft:'3%', atop:'53%', aleft:'3%' },
+  { utop:'50%', uleft:'6%', atop:'68%', aleft:'6%' },
+  { utop:'15%', uleft:'2%', atop:'33%', aleft:'2%' },
+  { utop:'42%', uleft:'5%', atop:'60%', aleft:'5%' },
 ];
 
 var currentBubble = 0;
@@ -405,8 +405,9 @@ function renderMath(el, text) {
 function showBubble() {
   var stage = document.getElementById('bubble-stage');
   var b = bubbles[currentBubble % bubbles.length];
-  var upos = positions[currentBubble % 3];
-  var apos = positions[(currentBubble % 3) + 3];
+  var pos = positions[currentBubble % positions.length];
+  var upos = { top: pos.utop, left: pos.uleft };
+  var apos = { top: pos.atop, left: pos.aleft };
 
   // Remove old bubbles
   if (userEl) { userEl.style.opacity = '0'; userEl.style.transform = 'translateY(-8px)'; setTimeout(function(el){ return function(){ if(el && el.parentNode) el.parentNode.removeChild(el); }; }(userEl), 700); }
@@ -438,10 +439,10 @@ function showBubble() {
       stage.appendChild(aiEl);
       setTimeout(function() { aiEl.classList.add('show'); aiEl.style.transform = 'translateY(0)'; }, 50);
     }
-  }, 900);
+  }, 1400);
 
   currentBubble++;
-  setTimeout(showBubble, 4000);
+  setTimeout(showBubble, 7000);
 }
 
 // Start bubbles
