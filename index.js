@@ -1377,6 +1377,42 @@ async function startServer() {
       pool.query("ALTER TABLE curriculum ALTER COLUMN stage TYPE VARCHAR(200) USING stage::VARCHAR"),
     ]);
 
+    // Exam tables
+    await pool.query(`CREATE TABLE IF NOT EXISTS exams (
+      id SERIAL PRIMARY KEY,
+      teacher_id UUID REFERENCES users(id),
+      title VARCHAR(255) NOT NULL,
+      subject VARCHAR(100),
+      grade INTEGER,
+      context VARCHAR(20) DEFAULT 'local',
+      purpose VARCHAR(20) DEFAULT 'test',
+      difficulty VARCHAR(20) DEFAULT 'medium',
+      adapted_for_weak BOOLEAN DEFAULT false,
+      time_limit INTEGER DEFAULT 30,
+      show_answers BOOLEAN DEFAULT false,
+      questions JSONB NOT NULL,
+      total_points INTEGER DEFAULT 0,
+      code VARCHAR(20) UNIQUE,
+      status VARCHAR(20) DEFAULT 'draft',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS exam_submissions (
+      id SERIAL PRIMARY KEY,
+      exam_id INTEGER REFERENCES exams(id),
+      student_id UUID REFERENCES users(id),
+      guest_name VARCHAR(100),
+      answers JSONB DEFAULT '[]',
+      ai_scores JSONB DEFAULT '[]',
+      final_scores JSONB DEFAULT '[]',
+      total_score INTEGER DEFAULT 0,
+      max_score INTEGER DEFAULT 0,
+      status VARCHAR(20) DEFAULT 'in_progress',
+      started_at TIMESTAMP DEFAULT NOW(),
+      submitted_at TIMESTAMP,
+      time_extended INTEGER DEFAULT 0
+    )`);
+
     console.log('✅ Database ready');
   } catch (e) {
     console.error('DB setup error:', e.message);
@@ -1386,3 +1422,346 @@ async function startServer() {
 }
 
 startServer();
+
+// ─── EXAM ROUTES ──────────────────────────────────────────────────────────────
+
+// Generate exam with AI
+app.post('/exam/generate', authenticate, async (req, res) => {
+  try {
+    const { subject, topics, context, purpose, difficulty, questionTypes, questionCount, adaptForWeak, timeLimit, showAnswers, grade } = req.body;
+    const userId = req.user.id;
+    const user = await pool.query('SELECT * FROM users WHERE id=$1', [userId]);
+    if (!user.rows[0] || (user.rows[0].role !== 'teacher' && user.rows[0].role !== 'admin')) {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
+
+    const contextLabel = context === 'international' ? 'International curriculum (Cambridge, IELTS style)' : 'Vietnamese national curriculum (MOET style)';
+    const purposeLabel = purpose === 'exam' ? 'formal end-of-term exam' : 'class test';
+    const adaptNote = adaptForWeak ? 'IMPORTANT: Adapt questions for underperforming students — simpler language, more scaffolding, clearer instructions.' : '';
+    const typesLabel = (questionTypes || ['mcq', 'truefalse', 'fillinblank']).join(', ');
+
+    const prompt = `You are an expert ${contextLabel} exam creator for Grade ${grade} ${subject}.
+
+Create a ${purposeLabel} covering these topics: ${topics}
+Difficulty: ${difficulty}
+Question types to include: ${typesLabel}
+Total questions: ${questionCount || 10}
+${adaptNote}
+
+Question type codes:
+- mcq: Multiple choice with 4 options (A,B,C,D), one correct answer
+- truefalse: True or False statement
+- fillinblank: Sentence with a blank to fill in
+- matching: Two columns to match (provide 4-5 pairs)
+- shortanswer: Question requiring 2-3 sentence answer
+- errorcorrection: Sentence with an error to find and correct
+- ordering: Steps/items to put in correct order (provide 4-5 items)
+- comprehension: Short passage followed by 2-3 questions about it
+
+Respond ONLY with valid JSON, no markdown, no explanation:
+{
+  "title": "exam title",
+  "instructions": "brief instructions for students",
+  "sections": [
+    {
+      "type": "mcq",
+      "label": "Section A: Multiple Choice",
+      "questions": [
+        {
+          "id": 1,
+          "question": "question text",
+          "options": ["A. option1", "B. option2", "C. option3", "D. option4"],
+          "answer": "A",
+          "points": 2,
+          "explanation": "brief explanation of correct answer"
+        }
+      ]
+    },
+    {
+      "type": "truefalse",
+      "label": "Section B: True or False",
+      "questions": [
+        {
+          "id": 5,
+          "question": "statement text",
+          "answer": "True",
+          "points": 1,
+          "explanation": "why this is true/false"
+        }
+      ]
+    }
+  ]
+}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    let text = response.content[0].text.replace(/```json|```/g, '').trim();
+    const examData = JSON.parse(text);
+
+    // Calculate total points
+    let totalPoints = 0;
+    examData.sections.forEach(s => s.questions.forEach(q => { totalPoints += q.points || 1; }));
+
+    // Generate unique exam code
+    const code = 'EXAM-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+
+    // Save to DB
+    const result = await pool.query(
+      `INSERT INTO exams (teacher_id, title, subject, grade, context, purpose, difficulty, adapted_for_weak, time_limit, show_answers, questions, total_points, code, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'draft') RETURNING *`,
+      [userId, examData.title, subject, grade, context, purpose, difficulty, adaptForWeak || false, timeLimit || 30, showAnswers || false, JSON.stringify(examData), totalPoints, code]
+    );
+
+    res.json({ exam: result.rows[0], examData });
+  } catch (e) {
+    console.error('Exam generate error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get teacher's exams (Memory)
+app.get('/exam/my', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM exams WHERE teacher_id=$1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json({ exams: result.rows });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get single exam by ID (teacher)
+app.get('/exam/:id', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM exams WHERE id=$1', [req.params.id]);
+    if (!result.rows[0]) return res.status(404).json({ error: 'Exam not found' });
+    res.json({ exam: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update exam (teacher edits questions/points)
+app.put('/exam/:id', authenticate, async (req, res) => {
+  try {
+    const { questions, title, timeLimit, showAnswers } = req.body;
+    let totalPoints = 0;
+    if (questions && questions.sections) {
+      questions.sections.forEach(s => s.questions.forEach(q => { totalPoints += q.points || 1; }));
+    }
+    const result = await pool.query(
+      `UPDATE exams SET questions=$1, title=$2, time_limit=$3, show_answers=$4, total_points=$5 WHERE id=$6 AND teacher_id=$7 RETURNING *`,
+      [JSON.stringify(questions), title, timeLimit, showAnswers, totalPoints, req.params.id, req.user.id]
+    );
+    res.json({ exam: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Assign exam (change status to active)
+app.post('/exam/:id/assign', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE exams SET status='active' WHERE id=$1 AND teacher_id=$2 RETURNING *`,
+      [req.params.id, req.user.id]
+    );
+    res.json({ exam: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Close exam
+app.post('/exam/:id/close', authenticate, async (req, res) => {
+  try {
+    await pool.query(`UPDATE exams SET status='closed' WHERE id=$1 AND teacher_id=$2`, [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Add extra time
+app.post('/exam/:id/extend', authenticate, async (req, res) => {
+  try {
+    const { minutes } = req.body;
+    await pool.query(
+      `UPDATE exam_submissions SET time_extended=time_extended+$1 WHERE exam_id=$2 AND status='in_progress'`,
+      [minutes || 5, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete exam
+app.delete('/exam/:id', authenticate, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM exam_submissions WHERE exam_id=$1', [req.params.id]);
+    await pool.query('DELETE FROM exams WHERE id=$1 AND teacher_id=$2', [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── STUDENT EXAM ROUTES ──
+
+// Get exam by code (public — no auth needed)
+app.get('/exam/join/:code', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, title, subject, grade, instructions, time_limit, questions, total_points, status
+       FROM exams WHERE code=$1`,
+      [req.params.code.toUpperCase()]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: 'Exam not found' });
+    if (result.rows[0].status !== 'active') return res.status(403).json({ error: 'This exam is not active yet' });
+
+    // Return exam without answers
+    const exam = result.rows[0];
+    const questions = exam.questions;
+    // Strip answers from questions
+    if (questions.sections) {
+      questions.sections.forEach(s => {
+        s.questions.forEach(q => {
+          delete q.answer;
+          delete q.explanation;
+        });
+      });
+    }
+    res.json({ exam: { ...exam, questions } });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Start exam submission
+app.post('/exam/join/:code/start', async (req, res) => {
+  try {
+    const { guestName, studentId } = req.body;
+    const examResult = await pool.query('SELECT * FROM exams WHERE code=$1 AND status=$2', [req.params.code.toUpperCase(), 'active']);
+    if (!examResult.rows[0]) return res.status(404).json({ error: 'Exam not found or not active' });
+    const exam = examResult.rows[0];
+
+    const result = await pool.query(
+      `INSERT INTO exam_submissions (exam_id, student_id, guest_name, max_score, status)
+       VALUES ($1,$2,$3,$4,'in_progress') RETURNING *`,
+      [exam.id, studentId || null, guestName || null, exam.total_points]
+    );
+    res.json({ submission: result.rows[0], timeLimit: exam.time_limit });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Submit exam answers
+app.post('/exam/submission/:id/submit', async (req, res) => {
+  try {
+    const { answers } = req.body;
+    const subResult = await pool.query('SELECT * FROM exam_submissions WHERE id=$1', [req.params.id]);
+    if (!subResult.rows[0]) return res.status(404).json({ error: 'Submission not found' });
+    const sub = subResult.rows[0];
+
+    const examResult = await pool.query('SELECT * FROM exams WHERE id=$1', [sub.exam_id]);
+    const exam = examResult.rows[0];
+    const examQuestions = exam.questions;
+
+    // AI grades automatically where possible
+    let aiScores = [];
+    let autoTotal = 0;
+
+    examQuestions.sections.forEach(section => {
+      section.questions.forEach(q => {
+        const studentAnswer = answers.find(a => a.id === q.id);
+        const ans = studentAnswer ? studentAnswer.answer : '';
+        let score = 0;
+        let autoGraded = false;
+
+        if (['mcq', 'truefalse', 'matching'].includes(section.type)) {
+          // Auto-grade
+          autoGraded = true;
+          if (ans.toString().trim().toLowerCase() === q.answer.toString().trim().toLowerCase()) {
+            score = q.points || 1;
+          }
+        } else {
+          // AI will suggest grade — set to null for teacher review
+          autoGraded = false;
+          score = null;
+        }
+
+        aiScores.push({ id: q.id, score, maxScore: q.points || 1, autoGraded, studentAnswer: ans, correctAnswer: q.answer });
+        if (autoGraded && score !== null) autoTotal += score;
+      });
+    });
+
+    await pool.query(
+      `UPDATE exam_submissions SET answers=$1, ai_scores=$2, final_scores=$2, status='submitted', submitted_at=NOW()
+       WHERE id=$3`,
+      [JSON.stringify(answers), JSON.stringify(aiScores), req.params.id]
+    );
+
+    res.json({ success: true, message: 'Exam submitted successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Teacher updates grades
+app.put('/exam/submission/:id/grade', authenticate, async (req, res) => {
+  try {
+    const { finalScores } = req.body;
+    const total = finalScores.reduce((sum, s) => sum + (s.score || 0), 0);
+    await pool.query(
+      `UPDATE exam_submissions SET final_scores=$1, total_score=$2, status='graded' WHERE id=$3`,
+      [JSON.stringify(finalScores), total, req.params.id]
+    );
+    res.json({ success: true, totalScore: total });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get live results for teacher
+app.get('/exam/:id/results', authenticate, async (req, res) => {
+  try {
+    const exam = await pool.query('SELECT * FROM exams WHERE id=$1 AND teacher_id=$2', [req.params.id, req.user.id]);
+    if (!exam.rows[0]) return res.status(404).json({ error: 'Not found' });
+
+    const submissions = await pool.query(
+      `SELECT s.*, u.name as student_name FROM exam_submissions s
+       LEFT JOIN users u ON s.student_id=u.id
+       WHERE s.exam_id=$1 ORDER BY s.started_at ASC`,
+      [req.params.id]
+    );
+
+    const rows = submissions.rows;
+    const submitted = rows.filter(r => r.status !== 'in_progress');
+    const avgScore = submitted.length > 0
+      ? Math.round(submitted.reduce((sum, r) => sum + (r.total_score || 0), 0) / submitted.length)
+      : 0;
+
+    res.json({
+      exam: exam.rows[0],
+      submissions: rows,
+      stats: {
+        total: rows.length,
+        inProgress: rows.filter(r => r.status === 'in_progress').length,
+        submitted: submitted.length,
+        graded: rows.filter(r => r.status === 'graded').length,
+        avgScore,
+        maxScore: exam.rows[0].total_points
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
