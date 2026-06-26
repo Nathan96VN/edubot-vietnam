@@ -1415,9 +1415,7 @@ async function startServer() {
       submitted_at TIMESTAMP,
       time_extended INTEGER DEFAULT 0
     )`);
-    await pool.query(`DROP TABLE IF EXISTS exam_submissions`);
-    await pool.query(`DROP TABLE IF EXISTS exams`);
-    await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 1`);
+    
     console.log('✅ Database ready');
   } catch (e) {
     console.error('DB setup error:', e.message);
