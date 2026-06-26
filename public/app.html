@@ -1790,11 +1790,24 @@ function showExamPreview(examData, exam){
       html += '<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.04)" id="eq-'+q.id+'">';
       html += '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">';
       html += '<span style="font-size:13px;font-weight:700;color:rgba(244,63,94,0.7);flex-shrink:0">Q'+q.id+'.</span>';
-      html += '<div style="flex:1"><div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:6px">'+esc(q.question)+'</div>';
+      html += '<div style="flex:1;min-width:0"><div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:6px;word-wrap:break-word">'+esc(q.question)+'</div>';
 
       if(q.options){
         q.options.forEach(function(opt){
           html += '<div style="font-size:13px;color:var(--muted);padding:3px 0">'+esc(opt)+'</div>';
+        });
+      }
+      if(q.items){
+        q.items.forEach(function(item,i){
+          html += '<div style="font-size:13px;color:var(--muted);padding:3px 0">'+(i+1)+'. '+esc(item)+'</div>';
+        });
+      }
+      if(q.passage){
+        html += '<div style="font-size:13px;color:var(--muted);padding:8px;background:rgba(255,255,255,0.03);border-radius:6px;margin:6px 0;line-height:1.7">'+esc(q.passage)+'</div>';
+      }
+      if(q.questions){
+        q.questions.forEach(function(sq,i){
+          html += '<div style="font-size:13px;color:var(--text);padding:3px 0;margin-top:4px">'+(i+1)+'. '+esc(sq.q||sq)+'</div>';
         });
       }
       if(section.type === 'matching' && q.pairs){
@@ -2075,6 +2088,7 @@ async function generateExam(){
     if(!res.ok) throw new Error(data.error||'Failed');
     currentExamId = data.exam.id;
     currentExamCode = null;
+    currentExam = data.examData;
     status.textContent='✅ Exam generated!';
     showExamPreview(data.examData, data.exam);
   }catch(e){
