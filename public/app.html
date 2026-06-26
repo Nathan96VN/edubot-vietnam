@@ -2110,7 +2110,7 @@ async function loadMemory(){
         +'</div>'
         +'<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">'
         +'<button onclick="recallExam('+e.id+')" style="padding:6px 14px;border-radius:6px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);color:rgba(253,164,175,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📝 Open</button>'
-        +(e.status==='active'?'<button onclick="currentExamId='+e.id+';currentExamCode=''+e.code+'';showPanel(5);viewLiveResults()" style="padding:6px 14px;border-radius:6px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:rgba(110,231,183,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📊 Results</button>':'')
+        +(e.status==='active'?'<button onclick="viewLiveResults('+e.id+')" style="padding:6px 14px;border-radius:6px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:rgba(110,231,183,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📊 Results</button>':'')
         +'<button onclick="deleteExamFromMemory('+e.id+')" style="padding:6px 14px;border-radius:6px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);color:rgba(252,165,165,0.8);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🗑️ Delete</button>'
         +'</div>'
         +'</div>';
@@ -2209,7 +2209,7 @@ function renderExamPreview(exam, examData){
       html += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border2)">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">';
       html += '<div style="font-size:13px;font-weight:600;color:var(--text);flex:1"><span style="color:var(--primary)">'+(q.id)+'.</span> '+esc(q.question)+'</div>';
-      html += '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><input type="number" value="'+(q.points||1)+'" min="0" max="20" style="width:48px;padding:4px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:12px;text-align:center" onchange="updateQuestionPoints(''+exam.id+'','+q.id+',this.value)"/> <span style="font-size:11px;color:var(--muted)">pts</span></div>';
+      html += '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><input type="number" value="'+(q.points||1)+'" min="0" max="20" style="width:48px;padding:4px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:12px;text-align:center" onchange="updateQuestionPoints(this.value)"/> <span style="font-size:11px;color:var(--muted)">pts</span></div>';
       html += '</div>';
       if(section.type==='mcq'&&q.options){
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px">';
@@ -2331,7 +2331,7 @@ async function loadMemory(){
       if(q&&q.sections) q.sections.forEach(function(s){qCount+=s.questions.length;});
       var statusColor = e.status==='active'?'rgba(110,231,183,0.9)':e.status==='closed'?'rgba(252,165,165,0.9)':'rgba(253,186,116,0.9)';
       var statusLabel = e.status==='active'?'🟢 Live':e.status==='closed'?'🔴 Closed':'📋 Draft';
-      return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(e.title)+'</div><div class="tcm">'+esc(e.subject)+' · Grade '+e.grade+' · '+qCount+' questions · '+e.total_points+' pts</div></div><span class="tcbadge" style="color:'+statusColor+'">'+statusLabel+'</span></div><div class="tcst"><span style="font-family:monospace;color:var(--primary)">'+e.code+'</span>'+(e.status==='active'?'<button class="tcvb" onclick="viewLiveResults('+e.id+')">📊 Live Results</button>':'')+'<button class="tcvb" onclick="exportMemoryExam('+e.id+','student')">📄 Export</button><button class="tcvb" style="color:rgba(252,165,165,0.9)" onclick="deleteMemoryExam('+e.id+')">🗑️</button></div></div>';
+      return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(e.title)+'</div><div class="tcm">'+esc(e.subject)+' · Grade '+e.grade+' · '+qCount+' questions · '+e.total_points+' pts</div></div><span class="tcbadge" style="color:'+statusColor+'">'+statusLabel+'</span></div><div class="tcst"><span style="font-family:monospace;color:var(--primary)">'+e.code+'</span>'+(e.status==='active'?'<button class="tcvb" onclick="viewLiveResults('+e.id+')">📊 Live Results</button>':'')+'<button class="tcvb" onclick="exportMemoryExam('+e.id+'">📄 Export</button><button class="tcvb" style="color:rgba(252,165,165,0.9)" onclick="deleteMemoryExam('+e.id+')">🗑️</button></div></div>';
     }).join('');
   }catch(e){document.getElementById('memory-list').innerHTML='<div class="ebox">Failed to load</div>';}
 }
@@ -2351,7 +2351,7 @@ async function viewLiveResults(id){
   loadLiveResults(id);
 }
 
-function exportMemoryExam(id, type){ currentExamId=id; exportExamWord(type); }
+function exportMemoryExam(id){ currentExamId=id; exportExamWord('student'); }
 
 function doLogout(){['eb_tok','eb_name','eb_role'].forEach(function(k){localStorage.removeItem(k);});location.reload();}
 function ah(){return{'Authorization':'Bearer '+tok,'Content-Type':'application/json'};}
