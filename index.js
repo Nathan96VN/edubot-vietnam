@@ -1616,7 +1616,7 @@ app.post('/exam/:id/assign', authenticate, async (req, res) => {
   } catch (e) {
     // Try without new columns if they don't exist yet
     try {
-      await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS classroom_id UUID`);
+      await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS classroom_id TEXT`);
       await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 1`);
       const result = await pool.query(
         `UPDATE exams SET status='active', classroom_id=$3, max_attempts=$4 WHERE id=$1 AND teacher_id=$2 RETURNING *`,
