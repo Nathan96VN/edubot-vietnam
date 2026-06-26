@@ -1423,6 +1423,44 @@ async function startServer() {
 
 startServer();
 
+// ─── EXAM FILE SCAN ──────────────────────────────────────────────────────────
+app.post('/exam/scan-file', authenticate, async (req, res) => {
+  try {
+    const { fileData, fileType, fileName } = req.body;
+    if (!fileData) return res.status(400).json({ error: 'No file data' });
+
+    const isImage = fileType && fileType.startsWith('image/');
+    const isPdf = fileType === 'application/pdf';
+
+    let messageContent;
+    if (isPdf) {
+      messageContent = [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: fileData } },
+        { type: 'text', text: 'Extract the key topics, concepts and learning objectives from this educational document. List them clearly and concisely so they can be used to generate exam questions. Format as a clear bullet list of topics.' }
+      ];
+    } else if (isImage) {
+      messageContent = [
+        { type: 'image', source: { type: 'base64', media_type: fileType, data: fileData } },
+        { type: 'text', text: 'Extract the key topics, concepts and learning objectives from this educational document image. List them clearly and concisely. Format as a clear bullet list of topics.' }
+      ];
+    } else {
+      return res.status(400).json({ error: 'Only PDF and image files can be scanned' });
+    }
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 800,
+      messages: [{ role: 'user', content: messageContent }]
+    });
+
+    const topics = response.content[0].text;
+    res.json({ topics });
+  } catch (e) {
+    console.error('Scan file error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── EXAM ROUTES ──────────────────────────────────────────────────────────────
 
 // Generate exam with AI
