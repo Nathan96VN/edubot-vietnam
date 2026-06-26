@@ -1899,7 +1899,7 @@ async function saveExamToMemory(){
     var res = await fetch(API+'/exam/'+currentExamId+'/assign', {
       method:'POST',
       headers:{'Content-Type':'application/json',...ah()},
-      body:JSON.stringify({classId:classId||null, maxAttempts:parseInt(attempts)||1})
+      body:JSON.stringify({classId:classId ? parseInt(classId) : null, maxAttempts:parseInt(attempts)||1})
     });
     var data = await res.json();
     if(!res.ok) throw new Error(data.error);
