@@ -1394,7 +1394,7 @@ async function startServer() {
       questions JSONB NOT NULL,
       total_points INTEGER DEFAULT 0,
       code VARCHAR(20) UNIQUE,
-      status VARCHAR(20) DEFAULT 'draft',classroom_id TEXT,
+      status VARCHAR(20) DEFAULT 'draft',       classroom_id TEXT,
       max_attempts INTEGER DEFAULT 1,
       created_at TIMESTAMP DEFAULT NOW()
     )`);
@@ -1414,9 +1414,8 @@ async function startServer() {
       submitted_at TIMESTAMP,
       time_extended INTEGER DEFAULT 0
     )`);
-
-    await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS classroom_id TEXT`);
-    await pool.query(`ALTER TABLE exams ALTER COLUMN classroom_id TYPE TEXT USING classroom_id::TEXT`);
+    await pool.query(`DROP TABLE IF EXISTS exam_submissions`);
+    await pool.query(`DROP TABLE IF EXISTS exams`);
     await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 1`);
     console.log('✅ Database ready');
   } catch (e) {
