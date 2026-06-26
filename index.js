@@ -1415,6 +1415,9 @@ async function startServer() {
       time_extended INTEGER DEFAULT 0
     )`);
 
+    await pool.query(`ALTER TABLE exams DROP COLUMN IF EXISTS classroom_id`);
+    await pool.query(`ALTER TABLE exams ADD COLUMN classroom_id TEXT`);
+    await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 1`);
     console.log('✅ Database ready');
   } catch (e) {
     console.error('DB setup error:', e.message);
