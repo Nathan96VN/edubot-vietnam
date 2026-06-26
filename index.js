@@ -224,42 +224,60 @@ app.post('/chat', authenticate, async (req, res) => {
       return res.status(402).json({ error: 'Not enough credits. Top up to continue!', upgrade: true });
     }
 
-    // RAG: fetch curriculum context — smart lookup by grade OR stage depending on curriculum type
+    // RAG: Auto-detect subject and grade from message, then fetch curriculum context
     let curriculumContext = '';
-    if (subject && grade) {
-      const gradeNum = parseInt(String(grade).replace(/[^0-9]/g,''),10) || 0;
+    let detectedSubject = subject || '';
+    let detectedGrade = parseInt(String(grade || '0').replace(/[^0-9]/g,''),10) || 0;
 
-      // Query matches:
-      // 1. Vietnam MOET: grade column matches (e.g. Lớp 6 → grade=6)
-      // 2. Cambridge: stage column matches (e.g. Stage 6 → stage="Stage 6" or grade=6)
-      // 3. Any curriculum where grade=0 (All Grades) — always include
-      const curriculum = await pool.query(
-        `SELECT objective, strand, substrand, curriculum_type, stage FROM curriculum
-         WHERE LOWER(subject) = LOWER($1)
-         AND (
-           grade = $2
-           OR grade = 0
-           OR stage ILIKE $3
-           OR stage ILIKE $4
-         )
-         ORDER BY
-           CASE WHEN grade = $2 THEN 0
-                WHEN stage ILIKE $3 THEN 1
-                WHEN stage ILIKE $4 THEN 2
-                ELSE 3 END
-         LIMIT 12`,
-        [
-          subject,
-          gradeNum,
-          `Stage ${gradeNum}`,      // Cambridge: "Stage 6"
-          `%${gradeNum}%`           // fallback: anything containing the number
-        ]
-      );
+    // Auto-detect subject from message keywords if not provided
+    if (!detectedSubject || detectedSubject === 'general') {
+      const msg = message.toLowerCase();
+      if (/\b(math|toán|algebra|geometry|calculus|equation|fraction|số|hình|tích phân|phương trình|đại số|hình học|phân số|nhân|chia|cộng|trừ)\b/.test(msg)) detectedSubject = 'Math';
+      else if (/\b(science|khoa học|biology|sinh|chemistry|hóa|physics|vật lý|photosynthesis|quang hợp|atom|nguyên tử|cell|tế bào|evolution|tiến hóa)\b/.test(msg)) detectedSubject = 'Science';
+      else if (/\b(english|grammar|vocabulary|reading|writing|listening|speaking|ielts|toefl|tense|verb|noun|adjective|essay|paragraph)\b/.test(msg)) detectedSubject = 'English';
+      else if (/\b(tiếng việt|văn|literature|văn học|thơ|truyện|ngữ văn|đọc hiểu|tập làm văn)\b/.test(msg)) detectedSubject = 'Vietnamese';
+      else if (/\b(history|lịch sử|war|chiến tranh|dynasty|triều đại|revolution|cách mạng)\b/.test(msg)) detectedSubject = 'History';
+      else if (/\b(geography|địa lý|map|bản đồ|climate|khí hậu|continent|châu lục|river|sông|mountain|núi)\b/.test(msg)) detectedSubject = 'Geography';
+    }
 
-      if (curriculum.rows.length > 0) {
-        curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly — never say you only have certain curriculum content):\n' +
-          curriculum.rows.map(r => `- [${r.strand}${r.substrand ? ' > ' + r.substrand : ''}] ${r.objective}`).join('\n');
-      }
+    // Auto-detect grade from message keywords if not provided
+    if (!detectedGrade) {
+      const gradeMatch = message.match(/\b(grade|lớp|class|khối)\s*(\d+)\b/i);
+      if (gradeMatch) detectedGrade = parseInt(gradeMatch[2]);
+    }
+
+    // Query curriculum with detected subject and grade
+    if (detectedSubject) {
+      try {
+        const gradeNum = detectedGrade || 0;
+        const curriculum = await pool.query(
+          `SELECT objective, strand, substrand, curriculum_type, stage FROM curriculum
+           WHERE LOWER(subject) = LOWER($1)
+           AND (
+             grade = $2
+             OR grade = 0
+             OR stage ILIKE $3
+             OR stage ILIKE $4
+           )
+           ORDER BY
+             CASE WHEN grade = $2 THEN 0
+                  WHEN stage ILIKE $3 THEN 1
+                  WHEN stage ILIKE $4 THEN 2
+                  ELSE 3 END
+           LIMIT 12`,
+          [
+            detectedSubject,
+            gradeNum,
+            `Stage ${gradeNum}`,
+            `%${gradeNum}%`
+          ]
+        );
+
+        if (curriculum.rows.length > 0) {
+          curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly — never say you only have certain curriculum content):\n' +
+            curriculum.rows.map(r => `- [${r.strand}${r.substrand ? ' > ' + r.substrand : ''}] ${r.objective}`).join('\n');
+        }
+      } catch(e) { console.error('RAG error:', e.message); }
     }
 
     // Fetch recent chat history
@@ -290,12 +308,12 @@ CRITICAL FORMATTING RULES:
       ? `You are EduBot, a professional AI teaching assistant for Vietnamese teachers grades 1-12.
 You help teachers create lesson plans, exam questions, teaching activities, and classroom resources.
 Always give full, detailed, professional responses. Never hold back content.
-Auto-detect the subject and grade level from the student's question. Do not ask the user for subject or grade — figure it out yourself from context.
+Current subject: ${subject || 'General'}. Grade level: ${grade || 'unspecified'}.
 ${htmlFormatInstructions}
 ${curriculumContext}`
       : `You are EduBot, a friendly AI tutor for Vietnamese students grades 1-12.
 Always give complete, clear, step-by-step explanations. Never withhold the answer — guide students through the full solution.
-Auto-detect the subject and grade level from the question. Do not ask — figure it out from context.
+Current subject: ${subject || 'general'}. Student grade: ${grade || 'unknown'}.
 ${htmlFormatInstructions}
 ${curriculumContext}`;
 
