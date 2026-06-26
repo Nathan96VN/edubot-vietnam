@@ -1668,7 +1668,7 @@ app.post('/exam/:id/close', authenticate, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-});
+}); 
 
 // Add extra time
 app.post('/exam/:id/extend', authenticate, async (req, res) => {
@@ -1701,7 +1701,7 @@ app.delete('/exam/:id', authenticate, async (req, res) => {
 app.get('/exam/join/:code', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, title, subject, grade, instructions, time_limit, questions, total_points, status
+      `SELECT id, title, subject, grade, time_limit, questions, total_points, status
        FROM exams WHERE code=$1`,
       [req.params.code.toUpperCase()]
     );
