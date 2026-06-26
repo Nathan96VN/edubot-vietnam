@@ -1731,35 +1731,26 @@ async function scanExamFile(file) {
     examFileType = fileType;
 
     try {
-      var messages = [];
-      if (isPdf || isImg) {
-        messages = [{
-          role: 'user',
-          content: [
-            { type: isPdf ? 'document' : 'image', source: { type: 'base64', media_type: fileType, data: base64 } },
-            { type: 'text', text: 'Extract the key topics, concepts and learning objectives from this educational document. List them clearly and concisely so they can be used to generate exam questions. Format as a clear list of topics.' }
-          ]
-        }];
-      } else {
-        messages = [{ role: 'user', content: 'The teacher uploaded a Word document called: ' + file.name + '. Ask them to describe the key topics covered in it.' }];
-      }
-
-      var res = await fetch('https://api.anthropic.com/v1/messages', {
+      var res = await fetch(API+'/exam/scan-file', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...ah() },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages })
+        headers: {'Content-Type':'application/json',...ah()},
+        body: JSON.stringify({ fileData: base64, fileType: fileType, fileName: file.name })
       });
       var data = await res.json();
-      var topics = data.content && data.content[0] ? data.content[0].text : '';
+      if (!res.ok) throw new Error(data.error || 'Scan failed');
+      var topics = data.topics || '';
       if (topics) {
-        document.getElementById('ex-topics').value = topics;
+        var topicsEl = document.getElementById('exam-topics') || document.getElementById('ex-topics');
+        if(topicsEl) topicsEl.value = topics;
         status.textContent = '✅ Topics extracted! Review and edit if needed.';
-        document.getElementById('ex-upload-btn').style.borderColor = 'rgba(16,185,129,0.4)';
+        var uploadBtn = document.getElementById('ex-upload-btn');
+        if(uploadBtn) uploadBtn.style.borderColor = 'rgba(16,185,129,0.4)';
         txt.textContent = '✅ ' + file.name;
       }
     } catch(e) {
-      status.textContent = '❌ Could not scan file. Please type topics manually.';
-      document.getElementById('ex-upload-btn').style.borderColor = 'rgba(239,68,68,0.3)';
+      status.textContent = '❌ Could not scan: ' + e.message;
+      var uploadBtn = document.getElementById('ex-upload-btn');
+      if(uploadBtn) uploadBtn.style.borderColor = 'rgba(239,68,68,0.3)';
     }
   };
   reader.readAsDataURL(file);
