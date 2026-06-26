@@ -724,16 +724,42 @@ input[type=file]#cfi{display:none}
             <button onclick="exportExamWord('student')" style="padding:8px 16px;border-radius:var(--rs);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:rgba(147,197,253,0.9);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">📄 Export Student</button>
             <button onclick="exportExamWord('teacher')" style="padding:8px 16px;border-radius:var(--rs);background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);color:rgba(253,164,175,0.9);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">🔑 Export Answer Key</button>
           </div>
-          <div id="exam-assign-info" style="display:none;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--r);padding:14px;margin-bottom:14px">
-            <div style="font-size:13px;font-weight:700;color:rgba(110,231,183,0.9);margin-bottom:6px">✅ Exam is now LIVE!</div>
-            <div style="font-size:13px;color:var(--muted)">Share this code with your students:</div>
-            <div style="font-size:24px;font-weight:800;font-family:monospace;color:var(--text);letter-spacing:3px;margin:8px 0" id="exam-live-code"></div>
-            <div style="font-size:12px;color:var(--muted)">Students go to <strong style="color:var(--text)">edubot-vietnam.onrender.com/exam</strong> and enter this code</div>
-            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-              <button onclick="copyExamCode()" style="padding:6px 14px;border-radius:var(--rs);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📋 Copy Code</button>
-              <button onclick="viewLiveResults()" style="padding:6px 14px;border-radius:var(--rs);background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📊 View Live Results</button>
-              <button onclick="extendTime()" style="padding:6px 14px;border-radius:var(--rs);background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.2);color:rgba(253,186,116,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">⏱️ +5 min</button>
-              <button onclick="closeExam()" style="padding:6px 14px;border-radius:var(--rs);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:rgba(252,165,165,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🔒 Close Exam</button>
+          <!-- PRE-ASSIGN: Class selector + attempt limit -->
+          <div id="exam-pre-assign" style="background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:14px">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">📤 Assign Exam to Students</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Assign to Class</label>
+                <select id="assign-class-sel" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-family:var(--font);font-size:13px;outline:none">
+                  <option value="">Everyone with code</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Attempts allowed</label>
+                <select id="assign-attempts-sel" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-family:var(--font);font-size:13px;outline:none">
+                  <option value="1">1 attempt only</option>
+                  <option value="2">2 attempts</option>
+                  <option value="3">3 attempts</option>
+                  <option value="0">Unlimited</option>
+                </select>
+              </div>
+            </div>
+            <button id="btn-assign" onclick="assignExam()" style="padding:10px 20px;background:linear-gradient(135deg,rgba(16,185,129,0.7),rgba(5,150,105,0.6));border:1px solid rgba(16,185,129,0.3);border-radius:var(--rs);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">📤 Assign to Students</button>
+          </div>
+          <!-- POST-ASSIGN: Live code display -->
+          <div id="exam-assign-info" style="display:none;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--r);padding:16px;margin-bottom:14px">
+            <div style="font-size:13px;font-weight:700;color:rgba(110,231,183,0.9);margin-bottom:10px">✅ Exam is now LIVE!</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Share this code with your students:</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+              <div id="exam-live-code" style="font-size:28px;font-weight:800;font-family:monospace;color:var(--primary);letter-spacing:4px;padding:10px 20px;background:rgba(244,63,94,0.1);border:2px solid rgba(244,63,94,0.3);border-radius:var(--rs)">—</div>
+              <button onclick="copyExamCode()" style="padding:10px 18px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">📋 Copy Code</button>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Students go to <strong style="color:var(--text)">edubot-vietnam.onrender.com/exam</strong> and enter this code</div>
+            <div id="assigned-class-info" style="font-size:12px;color:rgba(110,231,183,0.7);margin-bottom:12px"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button onclick="viewLiveResults()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📊 Live Results</button>
+              <button onclick="extendTime()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.2);color:rgba(253,186,116,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">⏱️ +5 min</button>
+              <button onclick="closeExam()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:rgba(252,165,165,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🔒 Close Exam</button>
             </div>
           </div>
           <div id="exam-questions-preview"></div>
@@ -1021,6 +1047,7 @@ function showPanel(n){
   if(n===2)loadTClasses();
   if(n===1){if(urole==='student'||urole==='admin')loadSClasses();}
   if(n===6)loadMemory();
+  if(n===5) loadClassesIntoSelector();
 }
 
 function applyLang(){
@@ -1418,7 +1445,11 @@ async function loadSClasses(){
     var res=await fetch(API+'/classroom/my',{headers:ah()});var data=await res.json();
     var g=document.getElementById('sgrid');var list=data.classrooms||[];
     if(!list.length){g.innerHTML='<div class="ebox">'+L('sempty')+'</div>';return;}
-    g.innerHTML=list.map(function(c){return '<div class="ccard"><div class="csub">'+esc(c.subject)+' · '+c.grade+'</div><div class="cname">'+esc(c.name)+'</div><div class="ctch">👩‍🏫 '+esc(c.teacher_name||L('tch'))+'</div><div class="ccode">🔑 '+esc(c.code)+'</div></div>';}).join('');
+    g.innerHTML=list.map(function(c){return '<div class="ccard" id="sc-'+c.id+'"><div class="csub">'+esc(c.subject)+' · '+c.grade+'</div><div class="cname">'+esc(c.name)+'</div><div class="ctch">👩‍🏫 '+esc(c.teacher_name||L('tch'))+'</div><div class="ccode">🔑 '+esc(c.code)+'</div></div>';}).join('');
+    list.forEach(function(c){
+      var card = document.getElementById('sc-'+c.id);
+      if(card) loadClassroomExams(c.id, card);
+    });
   }catch(e){}
 }
 
@@ -1865,20 +1896,36 @@ async function assignExam(){
   if(classes.length > 0){
     classSelect = '<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:700;color:rgba(253,164,175,0.7);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Assign to classroom (optional)</label><select id="assign-class-sel" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(244,63,94,0.2);background:rgba(255,255,255,0.05);color:var(--text);font-family:var(--font);font-size:13px"><option value="">Everyone with code</option>'+classes.map(function(c){return'<option value="'+c.id+'">'+c.name+'</option>';}).join('')+'</select></div>';
   }
-  if(!confirm('Make this exam live? Students can join with the code.')) return;
+  async function assignExam(){
+  if(!currentExamId){ toast('Generate an exam first','err'); return; }
+  var classId = document.getElementById('assign-class-sel') ? document.getElementById('assign-class-sel').value : '';
+  var attempts = document.getElementById('assign-attempts-sel') ? document.getElementById('assign-attempts-sel').value : '1';
+  var btn = document.getElementById('btn-assign');
+  if(btn){ btn.disabled=true; btn.textContent='Assigning...'; }
   try{
-    var res = await fetch(API+'/exam/'+currentExamId+'/assign', {method:'POST',headers:{'Content-Type':'application/json',...ah()}});
+    var res = await fetch(API+'/exam/'+currentExamId+'/assign', {
+      method:'POST',
+      headers:{'Content-Type':'application/json',...ah()},
+      body:JSON.stringify({classId:classId||null, maxAttempts:parseInt(attempts)||1})
+    });
     var data = await res.json();
     if(!res.ok) throw new Error(data.error);
     currentExamCode = data.exam.code;
     var codeEl = document.getElementById('exam-live-code');
     if(codeEl) codeEl.textContent = currentExamCode;
+    var preAssign = document.getElementById('exam-pre-assign');
+    if(preAssign) preAssign.style.display='none';
     var assignInfo = document.getElementById('exam-assign-info');
-    if(assignInfo) assignInfo.style.display = 'block';
-    var btnAssign = document.getElementById('btn-assign');
-    if(btnAssign){ btnAssign.textContent = '✅ Assigned!'; btnAssign.style.background='rgba(16,185,129,0.2)'; }
-    toast('✅ Exam is LIVE! Code: '+currentExamCode, 'ok');
-  } catch(e){ toast('❌ '+e.message,'err'); }
+    if(assignInfo) assignInfo.style.display='block';
+    var classInfo = document.getElementById('assigned-class-info');
+    var selEl = document.querySelector('#assign-class-sel option:checked');
+    var className = classId ? (selEl ? selEl.textContent : 'Selected class') : 'All students with code';
+    if(classInfo) classInfo.textContent = '🏫 Assigned to: '+className+' · Max attempts: '+(attempts==='0'?'Unlimited':attempts);
+    toast('✅ Exam is LIVE! Code: '+currentExamCode,'ok');
+  } catch(e){
+    toast('❌ '+e.message,'err');
+    if(btn){ btn.disabled=false; btn.textContent='📤 Assign to Students'; }
+  }
 }
 
 async function getMyClasses(){
@@ -1890,9 +1937,59 @@ async function getMyClasses(){
 }
 
 function copyExamCode(){
-  if(currentExamCode) navigator.clipboard.writeText(currentExamCode).then(function(){ toast('Code copied!','ok'); });
+  if(!currentExamCode){ toast('No code yet','err'); return; }
+  var codeEl = document.getElementById('exam-live-code');
+  var code = (codeEl ? codeEl.textContent : '') || currentExamCode;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(function(){
+      toast('✅ Code copied: '+code,'ok');
+    }).catch(function(){ fallbackCopy(code); });
+  } else { fallbackCopy(code); }
 }
 
+function fallbackCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); toast('✅ Code copied: '+text,'ok'); }
+  catch(e){ toast('Code: '+text,'ok'); }
+  document.body.removeChild(ta);
+}
+async function loadClassesIntoSelector(){
+  try{
+    var res = await fetch(API+'/classroom/teacher',{headers:ah()});
+    var data = await res.json();
+    var sel = document.getElementById('assign-class-sel');
+    if(!sel) return;
+    while(sel.options.length > 1) sel.remove(1);
+    var classes = data.classrooms || data || [];
+    classes.forEach(function(c){
+      var opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name + (c.grade?' (Grade '+c.grade+')':'');
+      sel.appendChild(opt);
+    });
+  }catch(e){}
+}
+
+async function loadClassroomExams(classId, containerEl){
+  try{
+    var res = await fetch(API+'/exam/classroom/'+classId,{headers:ah()});
+    var data = await res.json();
+    if(!data.exams || !data.exams.length) return;
+    var html = '<div style="margin-top:12px;border-top:0.5px solid var(--border2);padding-top:12px">';
+    html += '<div style="font-size:11px;font-weight:700;color:rgba(244,63,94,0.6);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">📝 Active Exams</div>';
+    data.exams.forEach(function(e){
+      html += '<div style="background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.2);border-radius:var(--rs);padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">';
+      html += '<div><div style="font-size:13px;font-weight:700;color:var(--text)">'+esc(e.title)+'</div>';
+      html += '<div style="font-size:11px;color:var(--muted);margin-top:2px">'+e.total_points+' pts · '+e.time_limit+' min · Max '+(e.max_attempts===0?'unlimited':e.max_attempts)+' attempt(s)</div></div>';
+      html += '<button onclick="window.location.href=\'/exam?code='+e.code+'\'" style="padding:8px 16px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">Start Exam →</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+    containerEl.insertAdjacentHTML('beforeend', html);
+  }catch(e){}
+}
 async function extendTime(){
   if(!currentExamId) return;
   try{
