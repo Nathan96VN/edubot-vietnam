@@ -312,9 +312,39 @@ input[type=file]#cfi{display:none}
 /* ── MOBILE ── */
 @media(max-width:768px){
   #sidebar{display:none}
-  #topbar{padding:8px 12px}
+  #topbar{padding:8px 12px;flex-wrap:nowrap;gap:6px}
+  #uname{display:none}
   .plan-grid{grid-template-columns:1fr}
+  #mc{padding-bottom:64px}
+  .frow{flex-direction:column}
+  #sp2 .crcard > div[style*="grid-template-columns:1fr 1fr"]{display:flex!important;flex-direction:column!important}
+
+  /* BOTTOM NAV */
+  #bottom-nav{display:flex}
 }
+
+/* Bottom nav bar for mobile */
+#bottom-nav{
+  display:none;
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:rgba(21,8,16,0.95);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  z-index:200;
+  padding:6px 0 8px;
+  justify-content:space-around;
+  align-items:center;
+}
+.bnav-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  cursor:pointer;padding:4px 12px;border-radius:10px;
+  color:var(--muted2);font-size:10px;font-weight:600;
+  transition:all 0.2s;min-width:56px;text-align:center;
+}
+.bnav-item .bni{font-size:20px}
+.bnav-item.on{color:var(--primary)}
+.bnav-item:hover{color:var(--text)}
 </style>
 </head>
 <body>
@@ -614,6 +644,15 @@ input[type=file]#cfi{display:none}
 </div>
 
 <div id="toast"></div>
+
+<!-- MOBILE BOTTOM NAV -->
+<div id="bottom-nav">
+  <div class="bnav-item" id="bnav0" onclick="showPanel(0)"><span class="bni">💬</span><span id="bn0">AI Tutor</span></div>
+  <div class="bnav-item" id="bnav2" onclick="showPanel(2)" style="display:none"><span class="bni">👩‍🏫</span><span id="bn2">Dashboard</span></div>
+  <div class="bnav-item" id="bnav3" onclick="showPanel(3)"><span class="bni">📚</span><span id="bn3">Flashcards</span></div>
+  <div class="bnav-item" id="bnav4" onclick="showPanel(4)"><span class="bni">🎮</span><span id="bn4">Games</span></div>
+  <div class="bnav-item" id="bnav1" onclick="showPanel(1)"><span class="bni">🏫</span><span id="bn1">Classroom</span></div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 var _v='6.0';
@@ -728,6 +767,10 @@ function showPanel(n){
   document.querySelectorAll('.sideitem').forEach(function(el){el.classList.remove('on');});
   var active=document.getElementById('snav'+n);
   if(active)active.classList.add('on');
+  // Update bottom nav
+  document.querySelectorAll('.bnav-item').forEach(function(el){el.classList.remove('on');});
+  var bactive=document.getElementById('bnav'+n);
+  if(bactive)bactive.classList.add('on');
   [0,1,2,3,4].forEach(function(i){
     var p=document.getElementById('p'+i);
     if(p)p.className='panel'+(i===n?' on':'');
@@ -896,6 +939,7 @@ function showApp(){
   buildSidebar();
   if(urole==='teacher'||urole==='admin'){
     if(urole==='admin'){document.getElementById('stb2').style.display='inline-block';document.getElementById('stb3').style.display='inline-block';}
+    var bnav2=document.getElementById('bnav2');if(bnav2)bnav2.style.display='flex';
     showPanel(2);loadTClasses();
   } else {
     showPanel(0);loadSClasses();loadHistory();
