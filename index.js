@@ -1394,7 +1394,8 @@ async function startServer() {
       questions JSONB NOT NULL,
       total_points INTEGER DEFAULT 0,
       code VARCHAR(20) UNIQUE,
-      status VARCHAR(20) DEFAULT 'draft',
+      status VARCHAR(20) DEFAULT 'draft',classroom_id TEXT,
+      max_attempts INTEGER DEFAULT 1,
       created_at TIMESTAMP DEFAULT NOW()
     )`);
 
