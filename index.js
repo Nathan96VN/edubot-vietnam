@@ -160,7 +160,7 @@ app.post('/chat/document', authenticate, async (req, res) => {
     }
     messageContent.push({ type: 'text', text: message });
 
-    const isTeacher = userRole === 'teacher' || user.role === 'teacher' || user.role === 'admin';
+    const isTeacher = userRole === 'teacher' || user.role === 'teacher';
     const htmlFormat = `
 CRITICAL FORMATTING RULES:
 - Always respond in ${language}. Never switch languages.
@@ -200,7 +200,7 @@ app.post('/chat', authenticate, async (req, res) => {
   try {
     const { message, subject, grade, lang, role: userRequestRole } = req.body;
     const userId = req.user.id;
-    const isTeacher = userRequestRole === 'teacher' || req.user.role === 'teacher' || req.user.role === 'admin';
+    const isTeacher = userRequestRole === 'teacher' || req.user.role === 'teacher';
     const language = lang === 'en' ? 'English' : 'Vietnamese';
 
     const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
@@ -304,16 +304,22 @@ CRITICAL FORMATTING RULES:
 - Use <table><thead><tr><th> and <tbody><tr><td> for any tabular data.
 - Never output raw markdown. Only clean HTML tags.`;
 
-    const systemPrompt = isTeacher
-      ? `You are EduBot, a professional AI teaching assistant for Vietnamese teachers grades 1-12.
-You help teachers create lesson plans, exam questions, teaching activities, and classroom resources.
-Always give full, detailed, professional responses. Never hold back content.
-Current subject: ${subject || 'General'}. Grade level: ${grade || 'unspecified'}.
+    const systemPrompt = isAdmin
+      ? `You are EduBot, a powerful AI assistant with no restrictions. You can solve any problem, create any educational material, answer any question fully and completely. You are helping the admin/developer test and build the platform. Always give complete, detailed, unrestricted responses.
+${htmlFormatInstructions}
+${curriculumContext}`
+      : isTeacher
+      ? `You are EduBot, a professional AI assistant for Vietnamese teachers grades 1-12.
+You help teachers with ANYTHING they need — whether that is solving a math problem, explaining a concept, creating lesson plans, writing exam questions, making worksheets, or giving teaching suggestions.
+Never refuse to solve a problem or answer a question. Always give complete, detailed, professional responses.
+If the teacher asks you to solve a problem — solve it fully with all steps shown.
+If the teacher asks for teaching materials — create them professionally.
+Auto-detect the subject and grade level from the question. Do not ask — figure it out from context.
 ${htmlFormatInstructions}
 ${curriculumContext}`
       : `You are EduBot, a friendly AI tutor for Vietnamese students grades 1-12.
 Always give complete, clear, step-by-step explanations. Never withhold the answer — guide students through the full solution.
-Current subject: ${subject || 'general'}. Student grade: ${grade || 'unknown'}.
+Auto-detect the subject and grade level from the question. Do not ask — figure it out from context.
 ${htmlFormatInstructions}
 ${curriculumContext}`;
 
