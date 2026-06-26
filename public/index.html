@@ -1,34 +1,567 @@
-The short answer is no, your open-source tools cannot be shut down, but yes, Claude can experience temporary outages or change its pricing. [1] 
-Because your hybrid system uses two completely different types of software, they face entirely different risks. Here is exactly what happens if a company goes out of business or servers go offline:
-## 1. The Open-Source Tools (DeepSeek, Stable Diffusion, Sandbox)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduBot — AI Partner in Education</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#150810;--bg2:#1F0D18;--bg3:#180A14;
+  --primary:#F43F5E;--secondary:#F97316;
+  --pg:rgba(244,63,94,0.65);--sg:rgba(249,115,22,0.5);
+  --card:rgba(244,63,94,0.07);--card2:rgba(255,255,255,0.03);
+  --border:rgba(244,63,94,0.15);--border2:rgba(255,255,255,0.07);
+  --text:#FFF1F2;--muted:rgba(253,164,175,0.7);--muted2:rgba(255,255,255,0.5);
+  --success:#10B981;--font:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+.orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(244,63,94,0.15),transparent 70%);top:-150px;right:-100px}
+.orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(249,115,22,0.12),transparent 70%);bottom:100px;left:-80px}
+.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(244,63,94,0.08),transparent 70%);top:50%;left:30%}
 
-* Can they be shut down? No.
-* The Reason: Once you download these model files onto your hard drive via tools like [Ollama](https://ollama.com/), they are yours forever. Even if the creators (like Meta or Stability AI) disappear tomorrow, delete their websites, and go bankrupt, the code remains on your computer.
-* Your Risk: 0%. The software works completely offline and cannot be remotely deleted or turned off by an outside company. [2] 
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;background:rgba(21,8,16,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-logo-text{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.3px}
+.nav-logo-text span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-link{font-size:14px;font-weight:500;color:var(--muted2);text-decoration:none;transition:color 0.2s}
+.nav-link:hover{color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.lang-wrap{display:flex;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:20px;overflow:hidden}
+.lb{padding:5px 12px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:var(--font)}
+.lb.on{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
+.btn-nav{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);text-decoration:none;transition:all 0.2s;display:inline-block}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:rgba(244,63,94,0.4);color:var(--primary)}
+.btn-filled{background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(244,63,94,0.4);color:#fff}
+.btn-filled:hover{opacity:0.85;transform:translateY(-1px)}
 
-## 2. The Commercial Tool (Claude API)
+main{position:relative;z-index:1}
 
-* Can it be shut down? Yes, but temporarily.
-* The Reason: Claude lives on Anthropic’s cloud supercomputers. If Anthropic experiences a major server outage, a cyberattack, or structural engineering issues, your connection to Claude's brain will drop instantly. [1] 
-* Your Risk: Medium. While a permanent company shutdown is highly unlikely, [global Claude API outages do happen](https://dev.to/adioof/claude-went-down-for-2-days-and-devs-forgot-how-to-code-6me) and can stall your system if you rely on it for general conversation. [1] 
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 40px 80px;max-width:1200px;margin:0 auto;gap:60px}
+.hero-left{flex:1;min-width:0}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);font-size:12px;font-weight:600;color:rgba(253,164,175,0.9);margin-bottom:28px}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--primary);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero h1{font-size:56px;font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:24px}
+.hero h1 .coral{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:17px;color:var(--muted);line-height:1.7;max-width:480px;margin-bottom:36px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:48px}
+.btn-hero{padding:14px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s}
+.btn-hero-p{background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(244,63,94,0.4);color:#fff}
+.btn-hero-p:hover{opacity:0.9;transform:translateY(-2px);box-shadow:0 8px 30px rgba(244,63,94,0.2)}
+.btn-hero-g{background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--text)}
+.btn-hero-g:hover{border-color:var(--border);background:rgba(255,255,255,0.08)}
 
-------------------------------
-## 🛡️ Why Your Hybrid Plan is "Shutdown-Proof"
-Building a hybrid system acts as an ultimate insurance policy for your app. If a crisis happens, your architecture protects you:
+/* STATS BAR */
+.stats-bar{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+.stat-item{font-size:14px;font-weight:500;color:var(--muted2);padding-right:24px;margin-right:24px;border-right:1px solid rgba(255,255,255,0.1)}
+.stat-item:last-child{border-right:none;padding-right:0;margin-right:0}
+.stat-item strong{color:var(--text);font-weight:700}
 
-[ Crisis Event ] ─────────────────────────► [ Your App's Response ]
-Anthropic Server Crashes ───────────► App automatically switches general chat to DeepSeek
-DeepSeek Changes API Terms ─────────► You keep using your downloaded local model file for free
+/* HERO RIGHT — chat bubbles */
+.hero-right{flex:1;display:flex;justify-content:center;align-items:center;position:relative;min-height:420px}
+.bubble-stage{position:relative;width:100%;height:420px}
+.chat-bubble{position:absolute;max-width:280px;padding:11px 15px;border-radius:14px;font-size:13px;line-height:1.55;opacity:0;transition:opacity 0.6s ease,transform 0.6s ease;pointer-events:none;backdrop-filter:blur(8px)}
+.chat-bubble.user{background:linear-gradient(135deg,rgba(244,63,94,0.22),rgba(249,115,22,0.14));border:1px solid rgba(244,63,94,0.25);color:#FFF1F2;border-radius:14px 14px 2px 14px}
+.chat-bubble.ai{background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.15);color:rgba(253,164,175,0.9);border-radius:2px 14px 14px 14px}
+.chat-bubble.ai strong{color:#FFF1F2}
+.chat-bubble.show{opacity:1}
+.chat-bubble .katex{font-size:13px!important}
 
+/* SECTION */
+.section{padding:80px 40px;max-width:1200px;margin:0 auto}
+.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(244,63,94,0.6);margin-bottom:12px;text-align:center}
+.sec-title{font-size:38px;font-weight:800;text-align:center;margin-bottom:12px;letter-spacing:-0.5px}
+.sec-sub{font-size:16px;color:var(--muted);text-align:center;max-width:500px;margin:0 auto 52px;line-height:1.7}
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(244,63,94,0.2),transparent);max-width:1200px;margin:0 auto}
 
-* Immediate Failover: If Claude goes down for maintenance, you can write a simple backup rule in your backend code. Your app will automatically reroute general chat questions to your local DeepSeek or Llama model until Claude comes back online. [1] 
-* Zero Vendor Lock-in: You are never at the mercy of one single tech company. If Anthropic raises their API prices to a level you don't want to pay, you can swap Claude out for another provider (like OpenAI or Google Vertex AI) in under 5 minutes without changing how your images or coding engines function.
+/* FEATURES */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feat-card{background:var(--card);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:18px;padding:28px;transition:all 0.25s}
+.feat-card:hover{border-color:rgba(244,63,94,0.3);transform:translateY(-4px);background:rgba(244,63,94,0.1)}
+.feat-card.soon{border-color:rgba(249,115,22,0.2);background:rgba(249,115,22,0.05)}
+.feat-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(244,63,94,0.25),rgba(249,115,22,0.15));border:1px solid rgba(244,63,94,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
+.feat-card.soon .feat-icon{background:linear-gradient(135deg,rgba(249,115,22,0.2),rgba(244,63,94,0.1));border-color:rgba(249,115,22,0.25)}
+.feat-title{font-size:17px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.feat-text{font-size:14px;color:var(--muted);line-height:1.7}
+.soon-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);color:rgba(253,186,116,0.9);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em}
 
-When you are ready to write this backup protection script, let me know:
+/* WHO */
+.who-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.who-card{background:var(--card2);border:1px solid var(--border2);border-radius:20px;padding:32px;transition:all 0.25s;position:relative;overflow:hidden}
+.who-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--secondary))}
+.who-card:hover{border-color:var(--border);transform:translateY(-3px)}
+.who-role{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(244,63,94,0.6);margin-bottom:10px}
+.who-title{font-size:24px;font-weight:800;margin-bottom:14px;color:var(--text)}
+.who-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.who-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--muted);line-height:1.5}
+.who-list li::before{content:'✓';color:var(--primary);font-weight:700;flex-shrink:0;margin-top:1px}
+.who-btn{display:inline-flex;align-items:center;gap:6px;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);text-decoration:none;transition:all 0.2s;background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(244,63,94,0.4);color:#fff}
+.who-btn:hover{opacity:0.85;transform:translateY(-1px)}
 
-* Do you want to build the failover routing logic in Python or JavaScript?
+/* EXAMS */
+.exams-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.exam-card{background:var(--card2);border:1px solid var(--border2);border-radius:14px;padding:20px;text-align:center;transition:all 0.2s}
+.exam-card:hover{border-color:var(--border);background:var(--card)}
+.exam-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.exam-sub{font-size:11px;color:var(--muted);line-height:1.5}
+.exam-tag{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.15);color:rgba(253,164,175,0.8);margin-bottom:8px}
 
-I can show you how to write the code so your app automatically switches brains if Claude ever goes offline!
+/* PRICING */
+.price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.price-card{background:var(--card2);border:1.5px solid var(--border2);border-radius:18px;padding:24px;transition:all 0.25s;position:relative}
+.price-card.featured{border-color:rgba(244,63,94,0.3);background:rgba(244,63,94,0.06)}
+.price-card:hover{transform:translateY(-4px)}
+.price-popular{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff;margin-bottom:8px}
+.price-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+.price-amount{font-size:28px;font-weight:800;color:var(--primary);margin-bottom:2px;letter-spacing:-0.5px}
+.price-period{font-size:11px;color:var(--muted)}
+.price-credits{font-size:12px;color:rgba(110,231,183,0.9);font-weight:600;margin:10px 0;padding:3px 10px;background:rgba(16,185,129,0.1);border-radius:20px;display:inline-block;border:1px solid rgba(16,185,129,0.2)}
+.price-feats{list-style:none;display:flex;flex-direction:column;gap:8px;margin:16px 0;font-size:13px;color:var(--muted)}
+.price-feats li::before{content:'✓ ';color:var(--primary);font-weight:700}
+.price-btn{width:100%;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);border:none;margin-top:8px;transition:all 0.2s;text-decoration:none;display:block;text-align:center}
+.pb-p{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
+.pb-p:hover{opacity:0.85}
+.pb-g{background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted2)}
+.pb-g:hover{border-color:var(--border);color:var(--text)}
 
-[1] [https://dev.to](https://dev.to/adioof/claude-went-down-for-2-days-and-devs-forgot-how-to-code-6me)
-[2] [https://checkthat.ai](https://checkthat.ai/brands/ollama/pricing)
+/* CTA */
+.cta{padding:80px 40px;text-align:center}
+.cta-inner{max-width:600px;margin:0 auto;background:rgba(244,63,94,0.08);backdrop-filter:blur(20px);border:1px solid rgba(244,63,94,0.2);border-radius:24px;padding:52px 40px}
+.cta h2{font-size:38px;font-weight:800;margin-bottom:14px;letter-spacing:-0.5px}
+.cta p{font-size:16px;color:var(--muted);margin-bottom:32px;line-height:1.7}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+/* FOOTER */
+.footer-wrap{padding:40px;border-top:1px solid var(--border2);max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-brand{font-size:16px;font-weight:800;color:var(--text)}
+.footer-brand span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:13px;color:var(--muted2);text-decoration:none}
+.footer-links a:hover{color:var(--text)}
+.footer-copy{font-size:12px;color:var(--muted2)}
+
+@media(max-width:900px){
+  .hero{flex-direction:column;padding:100px 20px 60px;text-align:center}
+  .hero h1{font-size:36px}
+  .hero-right{display:none}
+  .hero-btns,.stats-bar{justify-content:center}
+  .feat-grid{grid-template-columns:1fr 1fr}
+  .who-grid{grid-template-columns:1fr}
+  .exams-grid{grid-template-columns:repeat(2,1fr)}
+  .price-grid{grid-template-columns:1fr 1fr}
+  nav{padding:12px 20px}
+  .nav-links{display:none}
+  .section{padding:60px 20px}
+}
+@media(max-width:600px){
+  .feat-grid,.price-grid{grid-template-columns:1fr}
+  .exams-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<nav>
+  <div class="nav-logo">
+    <span class="nav-logo-text">Edu<span>Bot</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="#features" class="nav-link" id="nl1">Features</a>
+    <a href="#who" class="nav-link" id="nl2">For Who</a>
+    <a href="#pricing" class="nav-link" id="nl3">Pricing</a>
+  </div>
+  <div class="nav-right">
+    <div class="lang-wrap">
+      <button class="lb on" id="lvi" onclick="setLang('vi')">🇻🇳 VI</button>
+      <button class="lb" id="len" onclick="setLang('en')">🇬🇧 EN</button>
+    </div>
+    <a href="/login" class="btn-nav btn-outline" id="nav-login">Đăng nhập</a>
+    <a href="/register" class="btn-nav btn-filled" id="nav-start">Bắt đầu miễn phí</a>
+  </div>
+</nav>
+
+<main>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-badge"><span class="pulse"></span> <span id="badge-txt">Gia sư AI thế hệ mới</span></div>
+    <h1 id="hero-h1">Học thông minh hơn.<br><span class="coral">Tiến bộ nhanh hơn.</span><br>Với AI 24/7.</h1>
+    <p class="hero-sub" id="hero-sub">EduBot là người bạn học AI — giải thích từng bước, flashcards thông minh, biểu đồ trực quan và giáo án chuyên nghiệp. Bằng tiếng Việt hoặc tiếng Anh.</p>
+    <div class="hero-btns">
+      <a href="/register?role=student" class="btn-hero btn-hero-p" id="btn-s">🎒 Tôi là Học sinh</a>
+      <a href="/register?role=teacher" class="btn-hero btn-hero-g" id="btn-t">👩‍🏫 Tôi là Giáo viên</a>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-item"><strong id="s1">Grades 1 – 12</strong></div>
+      <div class="stat-item" id="s2">Vietnamese &amp; English</div>
+      <div class="stat-item" id="s3">Instant AI Answers</div>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="bubble-stage" id="bubble-stage"></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="sec-label" id="fl">Tính năng</div>
+  <h2 class="sec-title" id="ft">Mọi thứ bạn cần để học tốt hơn</h2>
+  <p class="sec-sub" id="fs">Từ gia sư AI đến trò chơi học tập — EduBot có đủ công cụ cho học sinh và giáo viên.</p>
+  <div class="feat-grid">
+    <div class="feat-card"><div class="feat-icon">💬</div><div class="feat-title" id="f1t">Gia sư AI</div><div class="feat-text" id="f1d">Hỏi bất cứ điều gì — AI tự động nhận diện môn học và lớp, giải thích từng bước rõ ràng.</div></div>
+    <div class="feat-card"><div class="feat-icon">📄</div><div class="feat-title" id="f2t">Upload tài liệu</div><div class="feat-text" id="f2d">Tải lên PDF hoặc hình ảnh — AI đọc, giải thích nội dung, tạo câu hỏi và tóm tắt tức thì.</div></div>
+    <div class="feat-card"><div class="feat-icon">🎮</div><div class="feat-title" id="f3t">Games học tập</div><div class="feat-text" id="f3d">Quiz Battle, Speed Race và Flashcard Flip — học qua trò chơi AI tạo ra theo môn và lớp.</div></div>
+    <div class="feat-card"><div class="feat-icon">📚</div><div class="feat-title" id="f4t">Flashcards AI</div><div class="feat-text" id="f4d">Tạo thẻ ghi nhớ thông minh cho bất kỳ chủ đề nào. Lật thẻ, học và nhớ lâu hơn.</div></div>
+    <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title" id="f5t">Biểu đồ & Hình ảnh AI</div><div class="feat-text" id="f5d">Tạo biểu đồ và hình ảnh giáo dục AI cho bài học sinh động và trực quan hơn.</div></div>
+    <div class="feat-card"><div class="feat-icon">👩‍🏫</div><div class="feat-title" id="f6t">Dashboard giáo viên</div><div class="feat-text" id="f6d">Quản lý lớp học, tạo giáo án, đề kiểm tra và xuất tài liệu Word / PDF chuyên nghiệp.</div></div>
+    <div class="feat-card soon" style="grid-column:1/-1;display:flex;align-items:center;gap:24px;padding:22px 28px">
+      <div class="feat-icon" style="flex-shrink:0;margin-bottom:0">🎓</div>
+      <div>
+        <div class="soon-badge" id="sb">Sắp ra mắt</div>
+        <div class="feat-title" id="f7t">Cấp độ Đại học</div>
+        <div class="feat-text" id="f7d">IELTS, TOEFL, SAT, thi tuyển sinh đại học và các môn học đại học cương — đang được phát triển.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- WHO -->
+<section class="section" id="who">
+  <div class="sec-label" id="wl">Dành cho ai</div>
+  <h2 class="sec-title" id="wt">Phù hợp cho học sinh và giáo viên</h2>
+  <p class="sec-sub" id="ws">Dù bạn đang học bài hay soạn giáo án — EduBot có giải pháp phù hợp.</p>
+  <div class="who-grid">
+    <div class="who-card">
+      <div class="who-role" id="wsr">🎒 Học sinh</div>
+      <div class="who-title" id="wst">Học thông minh hơn với AI</div>
+      <ul class="who-list">
+        <li id="ws1">Hỏi bất kỳ câu hỏi nào — AI giải thích từng bước</li>
+        <li id="ws2">Tải lên bài tập — AI phân tích và hướng dẫn</li>
+        <li id="ws3">Chơi game để ôn luyện kiến thức</li>
+        <li id="ws4">Tạo flashcards để ghi nhớ nhanh hơn</li>
+        <li id="ws5">Học bằng tiếng Việt hoặc tiếng Anh</li>
+      </ul>
+      <a href="/register?role=student" class="who-btn" id="wsb">Bắt đầu học miễn phí →</a>
+    </div>
+    <div class="who-card">
+      <div class="who-role" id="wtr">👩‍🏫 Giáo viên</div>
+      <div class="who-title" id="wtt">Dạy hiệu quả hơn với AI</div>
+      <ul class="who-list">
+        <li id="wt1">Tạo giáo án chi tiết trong vài giây</li>
+        <li id="wt2">Soạn đề kiểm tra với đáp án tự động</li>
+        <li id="wt3">Quản lý lớp học và học sinh dễ dàng</li>
+        <li id="wt4">Xuất tài liệu ra Word hoặc PDF chuyên nghiệp</li>
+        <li id="wt5">Trợ lý AI hỗ trợ mọi môn học lớp 1–12</li>
+      </ul>
+      <a href="/register?role=teacher" class="who-btn" id="wtb">Dùng thử cho giáo viên →</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- EXAM TYPES -->
+<section class="section">
+  <div class="sec-label" id="el">Loại bài thi</div>
+  <h2 class="sec-title" id="et">Hỗ trợ mọi kỳ thi</h2>
+  <p class="sec-sub" id="es">Từ chương trình trong nước đến các chứng chỉ quốc tế — EduBot chuẩn bị cho bạn mọi kỳ thi.</p>
+  <div class="exams-grid">
+    <div class="exam-card"><div class="exam-tag" id="et1tag">Trong nước</div><div class="exam-name" id="et1">Chương trình Quốc gia</div><div class="exam-sub" id="et1s">Lớp 1–12 · Toán, Khoa học, Văn</div></div>
+    <div class="exam-card"><div class="exam-tag" id="et2tag">Quốc tế</div><div class="exam-name" id="et2">Tiếng Anh Quốc tế</div><div class="exam-sub" id="et2s">Trình độ A2 đến C2 · 4 kỹ năng</div></div>
+    <div class="exam-card"><div class="exam-tag" id="et3tag">Chứng chỉ</div><div class="exam-name" id="et3">Năng lực Tiếng Anh</div><div class="exam-sub" id="et3s">Band 1–9 · Academic & General</div></div>
+    <div class="exam-card"><div class="exam-tag" id="et4tag">Chứng chỉ</div><div class="exam-name" id="et4">Tiếng Anh Học thuật</div><div class="exam-sub" id="et4s">Reading · Writing · Speaking · Listening</div></div>
+    <div class="exam-card"><div class="exam-tag" id="et5tag">Kỹ thuật số</div><div class="exam-name" id="et5">Bài thi Tiếng Anh Online</div><div class="exam-sub" id="et5s">Mô phỏng đầy đủ · Adaptive test</div></div>
+    <div class="exam-card"><div class="exam-tag" id="et6tag">Đại học</div><div class="exam-name" id="et6">Tuyển sinh Đại học</div><div class="exam-sub" id="et6s">Toán & Tiếng Anh · Luyện đề</div></div>
+    <div class="exam-card"><div class="exam-tag" id="et7tag">Chứng chỉ</div><div class="exam-name" id="et7">Tiếng Anh Giao tiếp</div><div class="exam-sub" id="et7s">Cả 4 kỹ năng · Speaking focus</div></div>
+    <div class="exam-card"><div class="exam-tag" id="et8tag">Trường học</div><div class="exam-name" id="et8">Thi học kỳ & Kiểm tra</div><div class="exam-sub" id="et8s">Lớp 1–12 · Tất cả môn học</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div class="sec-label" id="prl">Bảng giá</div>
+  <h2 class="sec-title" id="prt">Giá phù hợp với mọi học sinh</h2>
+  <p class="sec-sub" id="prs">Bắt đầu miễn phí. Nâng cấp khi cần thêm tính năng.</p>
+  <div class="price-grid">
+    <div class="price-card">
+      <div class="price-name" id="p0n">Miễn phí</div>
+      <div class="price-amount">0đ</div>
+      <div class="price-period" id="p0p">Mãi mãi</div>
+      <div class="price-credits">5 câu hỏi / ngày</div>
+      <ul class="price-feats"><li id="p0f1">AI Tutor cơ bản</li><li id="p0f2">Flashcards</li><li id="p0f3">Games học tập</li></ul>
+      <a href="/register" class="price-btn pb-g" id="p0b">Bắt đầu miễn phí</a>
+    </div>
+    <div class="price-card featured">
+      <div class="price-popular">⭐ Phổ biến nhất</div>
+      <div class="price-name" id="p1n">Student Basic</div>
+      <div class="price-amount">79k</div>
+      <div class="price-period" id="p1p">VND / tháng</div>
+      <div class="price-credits">⚡ 100 credits</div>
+      <ul class="price-feats"><li id="p1f1">Câu hỏi không giới hạn</li><li id="p1f2">Upload PDF</li><li id="p1f3">Biểu đồ AI</li><li id="p1f4">VI + EN</li></ul>
+      <a href="/register" class="price-btn pb-p" id="p1b">Đăng ký ngay</a>
+    </div>
+    <div class="price-card">
+      <div class="price-name" id="p2n">Student Plus</div>
+      <div class="price-amount">149k</div>
+      <div class="price-period" id="p2p">VND / tháng</div>
+      <div class="price-credits">⚡ 250 credits</div>
+      <ul class="price-feats"><li id="p2f1">Tất cả Basic</li><li id="p2f2">Ảnh AI</li><li id="p2f3">Ưu tiên hỗ trợ</li></ul>
+      <a href="/register" class="price-btn pb-g" id="p2b">Chọn gói này</a>
+    </div>
+    <div class="price-card">
+      <div class="price-name" id="p3n">Teacher Pro</div>
+      <div class="price-amount">299k</div>
+      <div class="price-period" id="p3p">VND / tháng</div>
+      <div class="price-credits">⚡ 600 credits</div>
+      <ul class="price-feats"><li id="p3f1">Dashboard giáo viên</li><li id="p3f2">Tạo giáo án & đề thi</li><li id="p3f3">Xuất Word / PDF</li><li id="p3f4">Quản lý lớp học</li></ul>
+      <a href="/register?role=teacher" class="price-btn pb-g" id="p3b">Dành cho giáo viên</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-inner">
+    <h2 id="cta-h">Sẵn sàng học thông minh hơn?</h2>
+    <p id="cta-p">Tham gia cùng hàng nghìn học sinh và giáo viên đang dùng EduBot mỗi ngày. Miễn phí để bắt đầu.</p>
+    <div class="cta-btns">
+      <a href="/register?role=student" class="btn-hero btn-hero-p" id="cta-s">🎒 Tôi là Học sinh</a>
+      <a href="/register?role=teacher" class="btn-hero btn-hero-g" id="cta-t">👩‍🏫 Tôi là Giáo viên</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-wrap">
+    <div class="footer-brand">Edu<span>Bot</span></div>
+    <div class="footer-links">
+      <a href="#features" id="ffl1">Tính năng</a>
+      <a href="#pricing" id="ffl2">Bảng giá</a>
+      <a href="/login" id="ffl3">Đăng nhập</a>
+    </div>
+    <div class="footer-copy" id="fcopy">© 2025 EduBot Vietnam. AI Partner in Education.</div>
+  </div>
+</footer>
+</main>
+
+<script>
+var lang = localStorage.getItem('eb_lang') || 'vi';
+
+// ── BUBBLE DATA ──
+var bubbles = [
+  { lang:'vi', user:'Giải phương trình x² + 5x + 6 = 0', ai:'\\(x^2+5x+6=(x+2)(x+3)=0\\) → x = −2 hoặc x = −3 ✅', math:true },
+  { lang:'en', user:'What is photosynthesis?', ai:'<strong>Plants use</strong> sunlight + CO₂ + water → glucose + oxygen 🌿', math:false },
+  { lang:'vi', user:'Tính đạo hàm f(x) = x³ + 2x', ai:'\\(f\'(x) = 3x^2 + 2\\) ✅', math:true },
+  { lang:'en', user:'Explain the water cycle for Grade 5', ai:'<strong>Evaporation → Condensation → Precipitation → Collection</strong> — and repeats! 🌧️', math:false },
+  { lang:'vi', user:'Phân số ½ + ⅓ bằng bao nhiêu?', ai:'\\(\\frac{1}{2}+\\frac{1}{3}=\\frac{3}{6}+\\frac{2}{6}=\\frac{5}{6}\\) ✅', math:true },
+  { lang:'en', user:'Create 10 quiz questions on gravity', ai:'<strong>✅ 10 questions generated</strong> with full answer key — ready to export!', math:false },
+  { lang:'vi', user:'Tạo giáo án về hình học lớp 7', ai:'<strong>✅ Giáo án 45 phút đã tạo</strong> với bài tập và đáp án chi tiết!', math:false },
+  { lang:'en', user:'Solve ∫x² dx', ai:'\\(\\int x^2\\,dx = \\frac{x^3}{3} + C\\) ✅', math:true },
+  { lang:'vi', user:'Viết đoạn văn về môi trường', ai:'<strong>✅ Đoạn văn 150 chữ đã tạo</strong> — sẵn sàng xuất Word!', math:false },
+  { lang:'en', user:"What is Newton's second law?", ai:'\\(F = ma\\) — Force equals mass times acceleration ✅', math:true },
+];
+
+// Positions — right side of screen, never over headline (which is left side)
+// All positions are within the right hero panel
+var positions = [
+  { top:'8%',  left:'5%',  type:'user' },
+  { top:'20%', left:'15%', type:'ai' },
+  { top:'38%', left:'2%',  type:'user' },
+  { top:'52%', left:'18%', type:'ai' },
+  { top:'68%', left:'5%',  type:'user' },
+  { top:'80%', left:'12%', type:'ai' },
+];
+
+var currentBubble = 0;
+var userEl = null, aiEl = null;
+
+function renderMath(el, text) {
+  // Replace \(...\) with rendered KaTeX
+  el.innerHTML = text.replace(/\\\((.+?)\\\)/g, function(_, expr) {
+    try {
+      return katex.renderToString(expr, { throwOnError: false, displayMode: false });
+    } catch(e) { return expr; }
+  });
+}
+
+function showBubble() {
+  var stage = document.getElementById('bubble-stage');
+  var b = bubbles[currentBubble % bubbles.length];
+  var upos = positions[currentBubble % 3];
+  var apos = positions[(currentBubble % 3) + 3];
+
+  // Remove old bubbles
+  if (userEl) { userEl.style.opacity = '0'; userEl.style.transform = 'translateY(-8px)'; setTimeout(function(el){ return function(){ if(el && el.parentNode) el.parentNode.removeChild(el); }; }(userEl), 700); }
+  if (aiEl)   { aiEl.style.opacity = '0';   aiEl.style.transform = 'translateY(-8px)';   setTimeout(function(el){ return function(){ if(el && el.parentNode) el.parentNode.removeChild(el); }; }(aiEl),   700); }
+
+  // Create user bubble
+  userEl = document.createElement('div');
+  userEl.className = 'chat-bubble user';
+  userEl.style.top = upos.top;
+  userEl.style.left = upos.left;
+  userEl.style.transform = 'translateY(8px)';
+  userEl.textContent = b.user;
+  stage.appendChild(userEl);
+  setTimeout(function() { userEl.classList.add('show'); userEl.style.transform = 'translateY(0)'; }, 50);
+
+  // Create AI bubble after delay
+  setTimeout(function() {
+    if (!aiEl || !aiEl.parentNode) {
+      aiEl = document.createElement('div');
+      aiEl.className = 'chat-bubble ai';
+      aiEl.style.top = apos.top;
+      aiEl.style.left = apos.left;
+      aiEl.style.transform = 'translateY(8px)';
+      if (b.math) {
+        renderMath(aiEl, b.ai);
+      } else {
+        aiEl.innerHTML = b.ai;
+      }
+      stage.appendChild(aiEl);
+      setTimeout(function() { aiEl.classList.add('show'); aiEl.style.transform = 'translateY(0)'; }, 50);
+    }
+  }, 900);
+
+  currentBubble++;
+  setTimeout(showBubble, 4000);
+}
+
+// Start bubbles
+setTimeout(showBubble, 800);
+
+// ── TRANSLATIONS ──
+var T = {
+  vi: {
+    'badge-txt':'Gia sư AI thế hệ mới',
+    'hero-h1':'Học thông minh hơn.<br><span class="coral">Tiến bộ nhanh hơn.</span><br>Với AI 24/7.',
+    'hero-sub':'EduBot là người bạn học AI — giải thích từng bước, flashcards thông minh, biểu đồ trực quan và giáo án chuyên nghiệp. Bằng tiếng Việt hoặc tiếng Anh.',
+    'btn-s':'🎒 Tôi là Học sinh','btn-t':'👩‍🏫 Tôi là Giáo viên',
+    's1':'Grades 1 – 12','s2':'Vietnamese & English','s3':'Instant AI Answers',
+    'nav-login':'Đăng nhập','nav-start':'Bắt đầu miễn phí',
+    'nl1':'Tính năng','nl2':'Dành cho ai','nl3':'Bảng giá',
+    'fl':'Tính năng','ft':'Mọi thứ bạn cần để học tốt hơn','fs':'Từ gia sư AI đến trò chơi học tập — EduBot có đủ công cụ cho học sinh và giáo viên.',
+    'f1t':'Gia sư AI','f1d':'Hỏi bất cứ điều gì — AI tự động nhận diện môn học và lớp, giải thích từng bước rõ ràng.',
+    'f2t':'Upload tài liệu','f2d':'Tải lên PDF hoặc hình ảnh — AI đọc, giải thích, tạo câu hỏi và tóm tắt tức thì.',
+    'f3t':'Games học tập','f3d':'Quiz Battle, Speed Race và Flashcard Flip — học qua trò chơi AI tạo ra theo môn và lớp.',
+    'f4t':'Flashcards AI','f4d':'Tạo thẻ ghi nhớ thông minh cho bất kỳ chủ đề nào. Lật thẻ, học và nhớ lâu hơn.',
+    'f5t':'Biểu đồ & Hình ảnh AI','f5d':'Tạo biểu đồ và hình ảnh giáo dục AI cho bài học sinh động và trực quan hơn.',
+    'f6t':'Dashboard giáo viên','f6d':'Quản lý lớp học, tạo giáo án, đề kiểm tra và xuất tài liệu Word / PDF chuyên nghiệp.',
+    'sb':'Sắp ra mắt','f7t':'Cấp độ Đại học','f7d':'IELTS, TOEFL, SAT, thi tuyển sinh và các môn đại học — đang được phát triển.',
+    'wl':'Dành cho ai','wt':'Phù hợp cho học sinh và giáo viên','ws':'Dù bạn đang học bài hay soạn giáo án — EduBot có giải pháp phù hợp.',
+    'wsr':'🎒 Học sinh','wst':'Học thông minh hơn với AI',
+    'ws1':'Hỏi bất kỳ câu hỏi nào — AI giải thích từng bước','ws2':'Tải lên bài tập — AI phân tích và hướng dẫn',
+    'ws3':'Chơi game để ôn luyện kiến thức','ws4':'Tạo flashcards để ghi nhớ nhanh hơn','ws5':'Học bằng tiếng Việt hoặc tiếng Anh',
+    'wsb':'Bắt đầu học miễn phí →',
+    'wtr':'👩‍🏫 Giáo viên','wtt':'Dạy hiệu quả hơn với AI',
+    'wt1':'Tạo giáo án chi tiết trong vài giây','wt2':'Soạn đề kiểm tra với đáp án tự động',
+    'wt3':'Quản lý lớp học và học sinh dễ dàng','wt4':'Xuất tài liệu ra Word hoặc PDF chuyên nghiệp','wt5':'Trợ lý AI hỗ trợ mọi môn học lớp 1–12',
+    'wtb':'Dùng thử cho giáo viên →',
+    'el':'Loại bài thi','et':'Hỗ trợ mọi kỳ thi','es':'Từ chương trình trong nước đến các chứng chỉ quốc tế — EduBot chuẩn bị cho bạn mọi kỳ thi.',
+    'et1tag':'Trong nước','et1':'Chương trình Quốc gia','et1s':'Lớp 1–12 · Toán, Khoa học, Văn',
+    'et2tag':'Quốc tế','et2':'Tiếng Anh Quốc tế','et2s':'Trình độ A2 đến C2 · 4 kỹ năng',
+    'et3tag':'Chứng chỉ','et3':'Năng lực Tiếng Anh','et3s':'Band 1–9 · Academic & General',
+    'et4tag':'Chứng chỉ','et4':'Tiếng Anh Học thuật','et4s':'Reading · Writing · Speaking · Listening',
+    'et5tag':'Kỹ thuật số','et5':'Bài thi Tiếng Anh Online','et5s':'Mô phỏng đầy đủ · Adaptive test',
+    'et6tag':'Đại học','et6':'Tuyển sinh Đại học','et6s':'Toán & Tiếng Anh · Luyện đề',
+    'et7tag':'Chứng chỉ','et7':'Tiếng Anh Giao tiếp','et7s':'Cả 4 kỹ năng · Speaking focus',
+    'et8tag':'Trường học','et8':'Thi học kỳ & Kiểm tra','et8s':'Lớp 1–12 · Tất cả môn học',
+    'prl':'Bảng giá','prt':'Giá phù hợp với mọi học sinh','prs':'Bắt đầu miễn phí. Nâng cấp khi cần thêm tính năng.',
+    'p0n':'Miễn phí','p0p':'Mãi mãi','p0f1':'AI Tutor cơ bản','p0f2':'Flashcards','p0f3':'Games học tập','p0b':'Bắt đầu miễn phí',
+    'p1n':'Student Basic','p1p':'VND / tháng','p1f1':'Câu hỏi không giới hạn','p1f2':'Upload PDF','p1f3':'Biểu đồ AI','p1f4':'VI + EN','p1b':'Đăng ký ngay',
+    'p2n':'Student Plus','p2p':'VND / tháng','p2f1':'Tất cả Basic','p2f2':'Ảnh AI','p2f3':'Ưu tiên hỗ trợ','p2b':'Chọn gói này',
+    'p3n':'Teacher Pro','p3p':'VND / tháng','p3f1':'Dashboard giáo viên','p3f2':'Tạo giáo án & đề thi','p3f3':'Xuất Word / PDF','p3f4':'Quản lý lớp học','p3b':'Dành cho giáo viên',
+    'cta-h':'Sẵn sàng học thông minh hơn?','cta-p':'Tham gia cùng hàng nghìn học sinh và giáo viên đang dùng EduBot mỗi ngày. Miễn phí để bắt đầu.',
+    'cta-s':'🎒 Tôi là Học sinh','cta-t':'👩‍🏫 Tôi là Giáo viên',
+    'ffl1':'Tính năng','ffl2':'Bảng giá','ffl3':'Đăng nhập',
+    'fcopy':'© 2025 EduBot Vietnam. AI Partner in Education.'
+  },
+  en: {
+    'badge-txt':'Next Generation AI Tutor',
+    'hero-h1':'Learn Smarter.<br><span class="coral">Progress Faster.</span><br>With AI 24/7.',
+    'hero-sub':'EduBot is your AI learning companion — step-by-step explanations, smart flashcards, visual charts, and professional lesson plans for teachers. In Vietnamese or English.',
+    'btn-s':"🎒 I'm a Student",'btn-t':"👩‍🏫 I'm a Teacher",
+    's1':'Grades 1 – 12','s2':'Vietnamese & English','s3':'Instant AI Answers',
+    'nav-login':'Login','nav-start':'Start for Free',
+    'nl1':'Features','nl2':'For Who','nl3':'Pricing',
+    'fl':'Features','ft':'Everything you need to learn better','fs':'From AI tutor to educational games — EduBot has all the tools for students and teachers.',
+    'f1t':'AI Tutor','f1d':'Ask anything — AI automatically detects subject and grade, explains step by step clearly.',
+    'f2t':'Document Upload','f2d':'Upload a PDF or image — AI reads, explains content, creates questions and summarizes instantly.',
+    'f3t':'Learning Games','f3d':'Quiz Battle, Speed Race and Flashcard Flip — learn through AI-generated games by subject and grade.',
+    'f4t':'AI Flashcards','f4d':'Generate smart flashcards for any topic. Flip cards, study and remember longer.',
+    'f5t':'Charts & AI Images','f5d':'Generate charts and educational AI images for more engaging and visual lessons.',
+    'f6t':'Teacher Dashboard','f6d':'Manage classrooms, create lesson plans, exams and export professional Word / PDF documents.',
+    'sb':'Coming Soon','f7t':'University Level','f7d':'English proficiency exams, university entrance, and higher education subjects — coming soon.',
+    'wl':'For Who','wt':'Perfect for students and teachers','ws':'Whether you are studying or creating lesson plans — EduBot has the right solution.',
+    'wsr':'🎒 Students','wst':'Learn smarter with AI',
+    'ws1':'Ask any question — AI explains step by step','ws2':'Upload homework — AI analyzes and guides',
+    'ws3':'Play games to review knowledge','ws4':'Create flashcards to remember faster','ws5':'Study in Vietnamese or English',
+    'wsb':'Start learning for free →',
+    'wtr':'👩‍🏫 Teachers','wtt':'Teach more effectively with AI',
+    'wt1':'Create detailed lesson plans in seconds','wt2':'Write exam papers with automatic answer keys',
+    'wt3':'Manage classrooms and students easily','wt4':'Export documents to professional Word or PDF','wt5':'AI assistant for all subjects grades 1–12',
+    'wtb':'Try it for teachers →',
+    'el':'Exam Types','et':'Supports every exam','es':'From national curriculum to international certificates — EduBot prepares you for every exam.',
+    'et1tag':'National','et1':'National Curriculum','et1s':'Grades 1–12 · Math, Science, Literature',
+    'et2tag':'International','et2':'International English','et2s':'Level A2 to C2 · All 4 skills',
+    'et3tag':'Certificate','et3':'English Proficiency','et3s':'Band 1–9 · Academic & General',
+    'et4tag':'Certificate','et4':'Academic English','et4s':'Reading · Writing · Speaking · Listening',
+    'et5tag':'Digital','et5':'Online English Test','et5s':'Full simulation · Adaptive test',
+    'et6tag':'University','et6':'University Entrance','et6s':'Math & English · Practice papers',
+    'et7tag':'Certificate','et7':'Spoken English','et7s':'All 4 skills · Speaking focus',
+    'et8tag':'School','et8':'School Exams & Tests','et8s':'Grades 1–12 · All subjects',
+    'prl':'Pricing','prt':'Affordable for every student','prs':'Start free. Upgrade when you need more.',
+    'p0n':'Free','p0p':'Forever','p0f1':'Basic AI Tutor','p0f2':'Flashcards','p0f3':'Learning Games','p0b':'Start for free',
+    'p1n':'Student Basic','p1p':'VND / month','p1f1':'Unlimited questions','p1f2':'PDF upload','p1f3':'AI Charts','p1f4':'VI + EN','p1b':'Sign up now',
+    'p2n':'Student Plus','p2p':'VND / month','p2f1':'Everything in Basic','p2f2':'AI Images','p2f3':'Priority support','p2b':'Choose this plan',
+    'p3n':'Teacher Pro','p3p':'VND / month','p3f1':'Teacher dashboard','p3f2':'Lesson plans & exams','p3f3':'Export Word / PDF','p3f4':'Classroom management','p3b':'For teachers',
+    'cta-h':'Ready to learn smarter?','cta-p':'Join thousands of students and teachers using EduBot every day. Free to start.',
+    'cta-s':'🎒 I am a Student','cta-t':'👩‍🏫 I am a Teacher',
+    'ffl1':'Features','ffl2':'Pricing','ffl3':'Login',
+    'fcopy':'© 2025 EduBot Vietnam. AI Partner in Education.'
+  }
+};
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('eb_lang', l);
+  document.getElementById('lvi').className = 'lb' + (l==='vi' ? ' on' : '');
+  document.getElementById('len').className = 'lb' + (l==='en' ? ' on' : '');
+  var d = T[l];
+  Object.keys(d).forEach(function(k) {
+    var el = document.getElementById(k);
+    if (!el) return;
+    if (k === 'hero-h1') { el.innerHTML = d[k]; }
+    else { el.textContent = d[k]; }
+  });
+}
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    var t = document.querySelector(this.getAttribute('href'));
+    if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+
+setLang(lang);
+</script>
+</body>
+</html>
