@@ -1,1481 +1,1767 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>EduBot</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet"/>
-<style>
-/* ── RESET ── */
-*{box-sizing:border-box;margin:0;padding:0}
-/* ── CORAL DUSK TOKENS ── */
-:root{
-  --bg:#150810;
-  --bg2:#1F0D18;
-  --bg3:#180A14;
-  --card:rgba(244,63,94,0.07);
-  --card2:rgba(255,255,255,0.03);
-  --card3:rgba(244,63,94,0.12);
-  --primary:#F43F5E;
-  --secondary:#F97316;
-  --primary-glass:rgba(244,63,94,0.65);
-  --secondary-glass:rgba(249,115,22,0.5);
-  --border:rgba(244,63,94,0.15);
-  --border2:rgba(255,255,255,0.07);
-  --border3:rgba(244,63,94,0.25);
-  --text:#FFF1F2;
-  --muted:rgba(253,164,175,0.7);
-  --muted2:rgba(255,255,255,0.4);
-  --success:#10B981;
-  --error:#EF4444;
-  --warn:#F59E0B;
-  --teacher:#10B981;
-  --blur:blur(20px);
-  --blur2:blur(12px);
-  --r:14px;
-  --rs:8px;
-  --font:'Plus Jakarta Sans',system-ui,sans-serif;
-}
-/* ── BASE ── */
-html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden}
-#app{display:flex;flex-direction:column;width:100%;height:100%;position:relative}
-/* ── BACKGROUND ORBS ── */
-#app::before{content:'';position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(244,63,94,0.18),transparent 70%);top:-100px;right:-80px;border-radius:50%;pointer-events:none;z-index:0}
-#app::after{content:'';position:fixed;width:300px;height:300px;background:radial-gradient(circle,rgba(249,115,22,0.14),transparent 70%);bottom:50px;left:-60px;border-radius:50%;pointer-events:none;z-index:0}
-/* ── TOPBAR ── */
-#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(255,255,255,0.04);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-shrink:0;gap:8px;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:8px}
-.logo img{height:36px;width:auto}
-.logo-text{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-0.3px}
-.logo-text span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.tr{display:flex;align-items:center;gap:8px}
-.lang-wrap{display:flex;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:20px;overflow:hidden}
-.lb{padding:5px 12px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:var(--font)}
-.lb.on{background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff}
-#btn-login{padding:7px 18px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
-#uinfo{display:none;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
-#uinfo strong{color:var(--text);font-weight:600}
-.rbadge{padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
-.rs{background:rgba(244,63,94,0.15);color:rgba(253,164,175,0.9);border:1px solid rgba(244,63,94,0.25)}
-.rt{background:rgba(16,185,129,0.15);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.25)}
-#btn-logout{padding:5px 12px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:12px;cursor:pointer;font-family:var(--font)}
-#btn-logout:hover{border-color:var(--border3);color:var(--primary)}
-#credit-badge{display:none;align-items:center;gap:4px;padding:4px 11px;border-radius:20px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:rgba(253,186,116,0.9);font-size:12px;font-weight:700;cursor:pointer}
+const express = require('express');
+const cors = require('cors');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');
+const Anthropic = require('@anthropic-ai/sdk');
+const crypto = require('crypto');
+const querystring = require('querystring');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const OpenAI = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let pdfParse; try { pdfParse = require("pdf-parse"); } catch(e) { console.log("pdf-parse not installed"); }
 
-/* ── LAYOUT ── */
-#layout{display:flex;flex:1;min-height:0;position:relative;z-index:1}
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: '150mb' }));
+app.use(express.urlencoded({ limit: '150mb', extended: true }));
+app.use(express.static('public'));
 
-/* ── SIDEBAR ── */
-#sidebar{width:220px;background:rgba(255,255,255,0.03);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;transition:width 0.3s ease;overflow:hidden}
-#sidebar.collapsed{width:56px}
-#sidebar-toggle{display:flex;align-items:center;justify-content:center;padding:13px;border-bottom:1px solid var(--border2);cursor:pointer;flex-shrink:0}
-#sidebar-toggle:hover{background:rgba(244,63,94,0.06)}
-#sidebar-toggle svg{width:18px;height:18px;stroke:rgba(244,63,94,0.6);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
-.sideitem{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-left:3px solid transparent;transition:all 0.2s;white-space:nowrap;text-decoration:none}
-.sideitem:hover{background:rgba(244,63,94,0.06);border-left-color:rgba(244,63,94,0.3)}
-.sideitem.on{background:rgba(244,63,94,0.1);border-left-color:var(--primary)}
-.sideitem .si{font-size:18px;flex-shrink:0;width:22px;text-align:center}
-.sideitem .sl{font-size:13px;font-weight:500;color:var(--muted2);overflow:hidden;white-space:nowrap}
-.sideitem.on .sl{color:var(--text)}
-.sidebar-bottom{margin-top:auto;border-top:1px solid var(--border2)}
-.side-section{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(244,63,94,0.4);padding:12px 16px 4px;white-space:nowrap;overflow:hidden}
-#sidebar.collapsed .side-section{opacity:0}
-#sidebar.collapsed .sl{opacity:0}
+// ─── DB + AI clients ──────────────────────────────────────────────────────────
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-/* ── MAIN ── */
-#mc{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
-.panel{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}.panel.on{display:flex}
-
-/* ── AI TUTOR PANEL ── */
-#msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
-#msgs::-webkit-scrollbar{width:4px}
-#msgs::-webkit-scrollbar-track{background:transparent}
-#msgs::-webkit-scrollbar-thumb{background:rgba(244,63,94,0.2);border-radius:2px}
-.m{display:flex;gap:10px;max-width:90%}
-.m.u{align-self:flex-end;flex-direction:row-reverse;max-width:72%}
-.m.a{align-self:flex-start;max-width:95%}
-.av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:4px}
-.m.a .av{background:linear-gradient(135deg,rgba(244,63,94,0.5),rgba(249,115,22,0.4))}
-.m.u .av{background:rgba(255,255,255,0.1)}
-.bub{padding:11px 15px;border-radius:var(--r);font-size:14px;line-height:1.65}
-.m.a .bub{background:var(--card);border:1px solid var(--border);width:100%;border-radius:4px 14px 14px 14px}
-.m.u .bub{background:linear-gradient(135deg,rgba(244,63,94,0.22),rgba(249,115,22,0.14));border:1px solid rgba(244,63,94,0.22);color:#fff;white-space:pre-wrap;border-radius:14px 4px 14px 14px}
-.ai-out table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
-.ai-out th{background:linear-gradient(135deg,rgba(244,63,94,0.4),rgba(249,115,22,0.3));color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:12px}
-.ai-out td{padding:7px 12px;border:1px solid var(--border);vertical-align:top;line-height:1.5}
-.ai-out tr:nth-child(even) td{background:rgba(244,63,94,0.03)}
-.ai-out h2{font-size:15px;font-weight:700;color:var(--text);margin:14px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--border)}
-.ai-out h3{font-size:14px;font-weight:600;color:rgba(253,164,175,0.9);margin:10px 0 5px}
-.ai-out p{margin:5px 0;line-height:1.7}
-.ai-out ul,.ai-out ol{margin:5px 0 5px 20px;line-height:1.8}
-.ai-out li{margin-bottom:3px}
-.ai-out strong{color:var(--text);font-weight:600}
-
-/* welcome card */
-.wcard{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 24px;text-align:center;margin:auto;max-width:420px;width:100%;backdrop-filter:var(--blur2)}
-.wcard .ic img{width:80px;height:80px;border-radius:16px;object-fit:cover;margin-bottom:14px}
-.wcard h3{font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text)}
-.wcard p{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:20px}
-.wcard button{padding:11px 28px;border-radius:var(--r);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)}
-
-/* input area */
-#fbar{display:none;align-items:center;gap:8px;padding:6px 20px;background:rgba(16,185,129,0.06);border-top:1px solid rgba(16,185,129,0.15);font-size:12px;font-weight:600;flex-shrink:0;color:rgba(110,231,183,0.9)}
-#fbar.on{display:flex}
-#ciarea{padding:10px 16px;background:rgba(255,255,255,0.02);backdrop-filter:var(--blur2);border-top:1px solid var(--border2);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
-input[type=file]#cfi{display:none}
-#battach{padding:8px 10px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:16px;cursor:pointer;flex-shrink:0}
-#battach:hover{color:var(--primary);border-color:var(--border3)}
-#battach.on{color:var(--success);border-color:rgba(16,185,129,0.35);background:rgba(16,185,129,0.08)}
-#cinput{flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:14px;font-family:var(--font);resize:none;outline:none;line-height:1.5;min-height:42px;max-height:120px}
-#cinput:focus{border-color:rgba(244,63,94,0.35)}
-#cinput::placeholder{color:var(--muted2)}
-#bimg,#bgraph{padding:9px 11px;border-radius:var(--r);background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--text);font-size:15px;cursor:pointer;height:42px}
-#bimg:hover{border-color:rgba(249,115,22,0.35)}
-#bgraph:hover{border-color:rgba(16,185,129,0.35)}
-#bimg:disabled,#bgraph:disabled{opacity:.4}
-#bsend{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;height:42px;font-family:var(--font)}
-#bsend:disabled{opacity:.5}
-
-/* export bar — BELOW input */
-#export-bar{display:none;align-items:center;gap:8px;padding:7px 16px;background:rgba(244,63,94,0.06);backdrop-filter:var(--blur2);border-top:1px solid rgba(244,63,94,0.1);flex-shrink:0;flex-wrap:wrap}
-#export-bar.visible{display:flex}
-#export-bar span{font-size:11px;font-weight:600;color:rgba(244,63,94,0.5);letter-spacing:0.04em;margin-right:4px}
-.eb-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--rs);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);border:none;transition:all 0.2s}
-.eb-copy{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6)}
-.eb-word{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:rgba(147,197,253,0.9)}
-.eb-pdf{background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);color:rgba(253,164,175,0.9)}
-.eb-btn:hover{opacity:0.85;transform:translateY(-1px)}
-.eb-btn.copied{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.25);color:rgba(110,231,183,0.9)}
-
-/* ── CLASSROOM PANEL ── */
-#clpanel{flex:1;padding:20px;overflow-y:auto}
-.jcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:20px;backdrop-filter:var(--blur2)}
-.jhdr{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.jico{width:42px;height:42px;border-radius:var(--rs);background:linear-gradient(135deg,rgba(244,63,94,0.25),rgba(249,115,22,0.15));border:1px solid var(--border3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.jcard h3{font-size:15px;font-weight:700;margin:0;color:var(--text)}.jcard p{font-size:13px;color:var(--muted);margin:2px 0 0}
-.jirow{display:flex;gap:8px;flex-wrap:wrap}
-#codeinput{flex:1;min-width:160px;padding:10px 14px;background:rgba(255,255,255,0.05);border:2px solid var(--border);border-radius:var(--r);color:var(--text);font-size:15px;font-weight:700;font-family:monospace;letter-spacing:2px;text-transform:uppercase;outline:none}
-#codeinput:focus{border-color:rgba(244,63,94,0.35)}
-#bjoin{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--font)}
-#jfb{margin-top:10px;padding:9px 12px;border-radius:var(--rs);font-size:13px;display:none}
-#jfb.ok{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);display:block}
-#jfb.err{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:rgba(252,165,165,0.9);display:block}
-.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
-.ccard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;backdrop-filter:var(--blur2)}
-.csub{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(244,63,94,0.6);margin-bottom:6px}
-.cname{font-size:15px;font-weight:700;margin-bottom:4px;color:var(--text)}
-.ctch{font-size:13px;color:var(--muted)}
-.ccode{margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);font-family:monospace;font-size:13px;color:var(--muted2)}
-.ebox{color:var(--muted);font-size:14px;text-align:center;padding:28px;background:var(--card2);border:1px dashed var(--border);border-radius:var(--r)}
-
-/* ── TEACHER DASHBOARD ── */
-#tpanel{flex:1;padding:20px;overflow-y:auto}
-.ttabs{display:flex;gap:4px;margin-bottom:18px;background:rgba(255,255,255,0.03);padding:4px;border-radius:var(--r);width:fit-content;border:1px solid var(--border2)}
-.stb{padding:7px 16px;border-radius:10px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all 0.2s}
-.stb.on{background:linear-gradient(135deg,rgba(244,63,94,0.35),rgba(249,115,22,0.2));color:var(--text);border:1px solid var(--border3)}
-.sp{display:none}.sp.on{display:block}
-.crcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px;backdrop-filter:var(--blur2)}
-.frow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px}
-.fg label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.fg input,.fg select{padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)}
-.fg input:focus,.fg select:focus{border-color:rgba(244,63,94,0.35)}
-#bcreat{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)}
-.tccard{background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:10px;backdrop-filter:var(--blur2)}
-.tchdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.tcn{font-size:15px;font-weight:700;color:var(--text)}.tcm{font-size:13px;color:var(--muted)}
-.tcbadge{font-family:monospace;font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(16,185,129,0.12);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.2)}
-.tcst{display:flex;gap:14px;font-size:13px;color:var(--muted);border-top:1px solid var(--border2);padding-top:8px;flex-wrap:wrap;align-items:center}
-.tcst b{color:var(--text)}
-.tcvb{margin-left:auto;padding:4px 12px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:12px;cursor:pointer;font-family:var(--font)}
-.tcvb:hover{border-color:var(--border3);color:var(--primary)}
-.stitle{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)}
-
-/* teacher AI chat */
-#aimsg{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;height:380px;border:1px solid var(--border);border-radius:var(--r);background:rgba(255,255,255,0.02);margin-bottom:10px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
-.qrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.qb{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:var(--card2);color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--font);transition:all 0.2s}
-.qb:hover{border-color:rgba(16,185,129,0.35);color:rgba(110,231,183,0.9)}
-#tiarea{display:flex;gap:8px;align-items:flex-end}
-#tinput{flex:1;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:14px;font-family:var(--font);resize:none;outline:none;min-height:42px;max-height:120px}
-#tinput:focus{border-color:rgba(16,185,129,0.35)}
-#tinput::placeholder{color:var(--muted2)}
-#btsend{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;height:42px;font-family:var(--font)}
-#btsend:disabled{opacity:.5}
-
-/* promo / curriculum tabs */
-.sp#sp2,.sp#sp3{padding:4px 0}
-
-/* ── FLASHCARDS ── */
-#fcpanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
-.fc-gen-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px;backdrop-filter:var(--blur2)}
-.fc-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.fc-controls select,.fc-controls input{padding:8px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)}
-.fc-controls input{flex:1;min-width:160px}
-.fc-controls input::placeholder{color:var(--muted2)}
-#fcgen{padding:8px 18px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
-#fcgen:disabled{opacity:.5}
-#fcstatus{font-size:13px;color:var(--muted);min-height:16px}
-.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-.fc-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:0;cursor:pointer;min-height:160px;position:relative;transition:all 0.2s;backdrop-filter:var(--blur2)}
-.fc-card:hover{border-color:rgba(244,63,94,0.3);transform:translateY(-2px)}
-.fc-front,.fc-back{padding:20px;min-height:160px;display:flex;flex-direction:column;justify-content:center}
-.fc-back{display:none;border-top:2px solid rgba(244,63,94,0.3)}
-.fc-card.flipped .fc-front{display:none}
-.fc-card.flipped .fc-back{display:flex}
-.fc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(244,63,94,0.5);margin-bottom:8px}
-.fc-q{font-size:15px;font-weight:600;color:var(--text);line-height:1.5}
-.fc-a{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:8px}
-.fc-hint{font-size:12px;color:var(--muted);font-style:italic;margin-top:6px}
-.fc-del{position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--muted2);font-size:14px;cursor:pointer;padding:4px;opacity:0;transition:opacity 0.2s}
-.fc-card:hover .fc-del{opacity:1}
-.fc-del:hover{color:var(--error)}
-.fc-flip-hint{font-size:11px;color:var(--muted2);text-align:center;margin-top:8px}
-
-/* ── GAMES ── */
-#gpanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
-.game-card{background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:24px;text-align:center;cursor:pointer;transition:all 0.25s;backdrop-filter:var(--blur2)}
-.game-card:hover{border-color:rgba(244,63,94,0.35);transform:translateY(-3px);background:rgba(244,63,94,0.1)}
-.game-badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.12);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.25)}
-
-/* ── MODALS ── */
-#overlay{position:fixed;inset:0;background:rgba(15,8,16,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
-#overlay.on{display:flex}
-#modal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
-#mcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;line-height:1;padding:4px 9px;font-family:var(--font)}
-.mlogo{text-align:center;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px}
-.mlogo img{height:36px}
-.mlogo-text{font-size:19px;font-weight:800;color:var(--text)}
-.mlogo-text span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-#msub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
-.rtog{display:flex;gap:6px;margin-bottom:12px}
-.rb{flex:1;padding:9px 6px;border-radius:var(--rs);border:1.5px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.2s;font-family:var(--font)}
-.rb.on{border-color:rgba(244,63,94,0.35);color:var(--primary);background:rgba(244,63,94,0.08)}
-.rb.ton.on{border-color:rgba(16,185,129,0.35);color:rgba(110,231,183,0.9);background:rgba(16,185,129,0.08)}
-.atabs{display:flex;gap:4px;margin-bottom:14px;background:rgba(255,255,255,0.03);padding:3px;border-radius:var(--rs);border:1px solid var(--border2)}
-.at{flex:1;padding:7px;text-align:center;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;font-family:var(--font);transition:all 0.2s}
-.at.on{background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff}
-.af{margin-bottom:11px}
-.af label{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-.af input,.af select{width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px;outline:none;font-family:var(--font)}
-.af input:focus,.af select:focus{border-color:rgba(244,63,94,0.35)}
-#asubmit{width:100%;padding:12px;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);border-radius:var(--r);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;font-family:var(--font)}
-#asubmit:disabled{opacity:.5;cursor:not-allowed}
-#aerr{color:rgba(252,165,165,0.9);font-size:13px;text-align:center;margin-top:8px;min-height:16px}
-
-/* upgrade modal */
-#upgoverlay{position:fixed;inset:0;background:rgba(15,8,16,0.92);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
-#upgoverlay.on{display:flex}
-#upgmodal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;position:relative;max-height:90vh;overflow-y:auto}
-#upgcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;padding:4px 9px;font-family:var(--font)}
-.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
-.plan-card{background:rgba(255,255,255,0.03);border:1.5px solid var(--border2);border-radius:14px;padding:16px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
-.plan-card:hover{border-color:rgba(244,63,94,0.3);transform:translateY(-2px);background:rgba(244,63,94,0.05)}
-.plan-card.featured{border-color:rgba(244,63,94,0.25);background:rgba(244,63,94,0.06)}
-.plan-name{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--text)}
-.plan-price{font-size:22px;font-weight:800;color:var(--primary);margin-bottom:4px;letter-spacing:-0.5px}
-.plan-price span{font-size:11px;color:var(--muted);font-weight:400}
-.plan-credits{font-size:11px;color:rgba(110,231,183,0.9);font-weight:600;margin-bottom:10px;padding:2px 8px;background:rgba(16,185,129,0.1);border-radius:20px;display:inline-block;border:1px solid rgba(16,185,129,0.2)}
-.plan-feat{font-size:11px;color:var(--muted);line-height:1.9;margin-bottom:10px;list-style:none}
-.plan-feat li{display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.04);padding:3px 0}
-.plan-feat li:last-child{border:none}
-.plan-feat li:before{content:'✓';color:var(--primary);font-weight:700;flex-shrink:0}
-.plan-btn{width:100%;padding:8px;border-radius:var(--rs);border:none;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px;font-family:var(--font);transition:all 0.2s}
-.plan-btn.stripe{background:linear-gradient(135deg,rgba(244,63,94,0.6),rgba(249,115,22,0.5));color:#fff;border:1px solid var(--border3)}
-.plan-btn.stripe:hover{opacity:0.85}
-.plan-btn.vnpay{background:rgba(230,29,36,0.3);color:#fff;margin-top:5px;border:1px solid rgba(230,29,36,0.4)}
-.plan-btn.vnpay:hover{background:rgba(230,29,36,0.5)}
-
-/* ── TOAST ── */
-#toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;font-size:14px;color:var(--text);transform:translateY(60px);opacity:0;transition:all .25s;z-index:99999;max-width:300px;backdrop-filter:var(--blur2)}
-#toast.on{transform:translateY(0);opacity:1}
-#toast.ok{border-color:rgba(16,185,129,0.35)}
-#toast.err{border-color:rgba(239,68,68,0.35)}
-
-/* ── UTILITIES ── */
-.dots{display:flex;gap:4px;padding:2px 0}
-.dots span{width:6px;height:6px;border-radius:50%;background:rgba(244,63,94,0.5);animation:bn .9s infinite}
-.dots span:nth-child(2){animation-delay:.15s}
-.dots span:nth-child(3){animation-delay:.3s}
-@keyframes bn{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
-.sp2{width:16px;height:16px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:rn .7s linear infinite;display:inline-block;vertical-align:middle}
-@keyframes rn{to{transform:rotate(360deg)}}
-.hide{display:none!important}
-.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:8px}
-.chart-title{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text)}
-.chart-desc{font-size:12px;color:var(--muted);margin-bottom:12px}
-.chart-canvas{width:100%;max-height:300px}
-
-/* ── PROMO / CURRICULUM (inside dashboard) ── */
-.sp#sp2 .crcard,.sp#sp3 .crcard{margin-bottom:14px}
-
-/* ── MOBILE ── */
-@media(max-width:768px){
-  #sidebar{display:none}
-  #topbar{padding:8px 12px;flex-wrap:nowrap;gap:6px}
-  #uname{display:none}
-  .plan-grid{grid-template-columns:1fr}
-  #mc{padding-bottom:70px}
-  .frow{flex-direction:column}
-  .promo-grid{grid-template-columns:1fr!important}
-  #ciarea{padding:8px 10px;gap:6px}
-  #bimg,#bgraph{display:none}
-  #bsend{padding:10px 14px;font-size:13px}
-  #cinput{font-size:14px}
-  #fbar{padding:5px 10px;font-size:11px}
-  #export-bar{padding:6px 10px;gap:6px;flex-wrap:nowrap}
-  #export-bar span{display:none}
-  .eb-btn{padding:5px 10px;font-size:11px}
-  #tiarea{padding:0 10px 8px}
-  #tinput{font-size:14px}
-  #btsend{padding:10px 14px;font-size:13px}
-  .ttabs{flex-wrap:nowrap;overflow-x:auto;width:100%}
-  .stb{white-space:nowrap;padding:7px 12px;font-size:12px}
-
-  /* BOTTOM NAV */
-  #bottom-nav{display:flex}
-}
-
-/* Bottom nav bar for mobile */
-#bottom-nav{
-  display:none;
-  position:fixed;
-  bottom:0;left:0;right:0;
-  background:rgba(21,8,16,0.95);
-  backdrop-filter:blur(20px);
-  border-top:1px solid var(--border);
-  z-index:200;
-  padding:6px 0 8px;
-  justify-content:space-around;
-  align-items:center;
-}
-.bnav-item{
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  cursor:pointer;padding:4px 12px;border-radius:10px;
-  color:var(--muted2);font-size:10px;font-weight:600;
-  transition:all 0.2s;min-width:56px;text-align:center;
-}
-.bnav-item .bni{font-size:20px}
-.bnav-item.on{color:var(--primary)}
-.bnav-item:hover{color:var(--text)}
-</style>
-</head>
-<body>
-<div id="app">
-<div id="topbar">
-  <div class="logo">
-    <span class="logo-text">Edu<span>Bot</span></span>
-  </div>
-  <div class="tr">
-    <div class="lang-wrap"><button class="lb on" id="lvi">🇻🇳 VI</button><button class="lb" id="len">🇬🇧 EN</button></div>
-    <div id="guestbar"><button id="btn-login">Đăng nhập</button></div>
-    <div id="uinfo">
-      <strong id="uname"></strong>
-      <span class="rbadge" id="ubadge"></span>
-      <div id="credit-badge" onclick="openUpgrade()" title="Credits">⚡ <span id="credit-count">0</span></div>
-      <button id="btn-logout">Đăng xuất</button>
-    </div>
-  </div>
-</div>
-
-<div id="layout">
-  <!-- SIDEBAR -->
-  <div id="sidebar">
-    <div id="sidebar-toggle" onclick="toggleSidebar()">
-      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </div>
-    <div id="side-nav"></div>
-    <div class="sidebar-bottom" id="side-bottom">
-      <div class="sideitem" id="side-user"><span class="si">👤</span><span class="sl" id="side-uname"></span></div>
-      <div class="sideitem" onclick="doLogout()"><span class="si">🚪</span><span class="sl" id="side-logout">Đăng xuất</span></div>
-    </div>
-  </div>
-
-  <!-- MAIN CONTENT -->
-  <div id="mc">
-
-    <!-- TAB 0: AI TUTOR -->
-    <div class="panel on" id="p0">
-      <div id="cctrl" style="display:none!important;visibility:hidden;height:0;overflow:hidden">
-        <label id="lsub">Môn học:</label>
-        <select id="selsub"><option value="Math" id="om">Toán</option><option value="Science" id="os">Khoa học</option><option value="English" id="oe">Tiếng Anh</option></select>
-        <label id="lgrd">Lớp:</label>
-        <select id="selgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select>
-        <div id="dcnt">Hôm nay: <b id="drem">5</b>/5</div>
-      </div>
-      <div id="msgs">
-        <div class="wcard" id="wcard">
-          <div class="ic" style="font-size:48px;margin-bottom:14px">🤖</div>
-          <h3 id="wt">Chào mừng đến EduBot!</h3>
-          <p id="wd">Gia sư AI cá nhân cho học sinh lớp 1–12. Đăng nhập để bắt đầu học!</p>
-          <button id="wbtn">Đăng nhập / Đăng ký miễn phí</button>
-        </div>
-      </div>
-      <div id="fbar"><span id="ficon">📄</span><span id="fname" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button onclick="rmFile()" style="border:none;background:transparent;color:var(--muted2);cursor:pointer;font-size:13px">✕</button></div>
-      <div id="ciarea">
-        <input type="file" id="cfi" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" onchange="onFile(this.files[0])"/>
-        <button id="battach" onclick="document.getElementById('cfi').click()" title="Upload file">📎</button>
-        <textarea id="cinput" rows="1" placeholder="Hỏi tôi bất cứ điều gì..."></textarea>
-        <button id="bgraph" title="Generate chart">📊</button>
-        <button id="bimg" title="Generate AI image">🎨</button>
-        <button id="bsend">Gửi ✈️</button>
-      </div>
-      <div id="export-bar">
-        <span id="export-label">📤 Xuất:</span>
-        <button class="eb-btn eb-copy" id="eb-copy" onclick="barCopy()">📋 <span id="eb-copy-lbl">Sao chép</span></button>
-        <button class="eb-btn eb-word" onclick="barExportWord()">📄 Word</button>
-        <button class="eb-btn eb-pdf" onclick="barExportPDF()">🖨️ PDF</button>
-      </div>
-    </div>
-
-    <!-- TAB 1: CLASSROOM -->
-    <div class="panel" id="p1">
-      <div id="clpanel">
-        <div class="jcard">
-          <div class="jhdr"><div class="jico">🔑</div><div><h3 id="jt">Tham gia lớp học</h3><p id="jd">Nhập mã EDU-XXXX do giáo viên cung cấp</p></div></div>
-          <div class="jirow"><input type="text" id="codeinput" maxlength="8" placeholder="VD: EDU-4B2K" autocomplete="off"/><button id="bjoin">Tham gia lớp</button></div>
-          <div id="jfb"></div>
-        </div>
-        <div class="stitle" id="mct">🏫 Lớp học của tôi</div>
-        <div class="cgrid" id="sgrid"><div class="ebox">Bạn chưa tham gia lớp học nào.</div></div>
-      </div>
-    </div>
-
-    <!-- TAB 2: TEACHER DASHBOARD -->
-    <div class="panel" id="p2">
-      <div id="tpanel">
-        <div class="ttabs">
-          <button class="stb on" id="stb0">🏫 Lớp học</button>
-          <button class="stb" id="stb1">🤖 Trợ lý AI</button>
-          <button class="stb" id="stb2" style="display:none">🎟️ Promo</button>
-          <button class="stb" id="stb3" style="display:none">📚 Curriculum</button>
-        </div>
-        <!-- SP0: Classrooms -->
-        <div class="sp on" id="sp0">
-          <div class="crcard">
-            <div class="stitle" id="crt">➕ Tạo lớp học mới</div>
-            <div class="frow">
-              <div class="fg"><label id="fln">Tên lớp</label><input type="text" id="ncname" placeholder="VD: Toán 8A"/></div>
-              <div class="fg"><label id="fls">Môn học</label><select id="ncsub"><option value="Math" id="nm">Toán</option><option value="Science" id="ns">Khoa học</option><option value="English" id="ne">Tiếng Anh</option></select></div>
-              <div class="fg"><label id="flg">Lớp</label><select id="ncgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
-            </div>
-            <button id="bcreat">Tạo lớp học</button>
-          </div>
-          <div class="stitle" id="yct">📋 Lớp học của bạn</div>
-          <div id="tclist"><div class="ebox">Bạn chưa tạo lớp học nào.</div></div>
-        </div>
-        <!-- SP1: AI Assistant -->
-        <div class="sp" id="sp1">
-          <div class="qrow" id="qrow"></div>
-          <div id="aimsg"><div class="wcard" style="margin:0 auto;max-width:100%;border:none;background:transparent"><div class="ic">👩‍🏫</div><h3 id="ait">Trợ lý giáo viên AI</h3><p id="aid">Tạo giáo án, câu hỏi kiểm tra và gợi ý giảng dạy.</p></div></div>
-          <div id="tiarea"><textarea id="tinput" rows="1" placeholder="Yêu cầu giáo án, đề kiểm tra..."></textarea><button id="btsend">Gửi ✈️</button></div>
-        </div>
-        <!-- SP2: Promo (admin) -->
-        <div class="sp" id="sp2">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
-            <div class="crcard">
-              <div class="stitle">⚡ Credits Promo</div>
-              <div class="frow">
-                <div class="fg"><label>Credits Amount</label><input type="number" id="promo-credits" placeholder="e.g. 100" min="1"/></div>
-                <div class="fg"><label>Max Uses</label><input type="number" id="promo-uses" placeholder="1" min="1" value="1"/></div>
-              </div>
-              <button onclick="createPromo('credits')" style="background:linear-gradient(135deg,rgba(245,158,11,0.5),rgba(249,115,22,0.4));border:1px solid rgba(245,158,11,0.3);border-radius:var(--rs);color:#fff;padding:9px 18px;font-weight:600;cursor:pointer;font-family:var(--font)">⚡ Generate Credits Code</button>
-            </div>
-            <div class="crcard">
-              <div class="stitle">📦 Plan Upgrade Promo</div>
-              <div class="frow">
-                <div class="fg"><label>Plan</label><select id="promo-plan" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none"><option value="basic">Student Basic</option><option value="plus">Student Plus</option><option value="teacher">Teacher</option><option value="teacher_pro">Teacher Pro</option></select></div>
-                <div class="fg"><label>Max Uses</label><input type="number" id="promo-plan-uses" placeholder="1" min="1" value="1"/></div>
-              </div>
-              <button onclick="createPromo('plan')" style="background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);border-radius:var(--rs);color:#fff;padding:9px 18px;font-weight:600;cursor:pointer;font-family:var(--font)">📦 Generate Plan Code</button>
-            </div>
-          </div>
-          <div class="stitle">📋 All Promo Codes</div>
-          <div id="promolist"><div class="ebox">No promo codes yet.</div></div>
-        </div>
-        <!-- SP3: Curriculum (admin) -->
-        <div class="sp" id="sp3">
-          <div class="crcard">
-            <div class="stitle">📄 Upload Curriculum PDF</div>
-            <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Upload a textbook or curriculum PDF. AI will scan it and import automatically.</div>
-            <div id="curr-upload-zone" style="border:2px dashed rgba(244,63,94,0.2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;transition:all .25s;margin-bottom:14px" onclick="document.getElementById('curr-file-inp').click()">
-              <input type="file" id="curr-file-inp" accept=".pdf" style="display:none" onchange="scanCurrFile(this.files[0])"/>
-              <div style="font-size:36px;margin-bottom:8px">📄</div>
-              <div style="font-size:15px;font-weight:600;margin-bottom:4px;color:var(--text)" id="curr-upload-txt">Click to select PDF</div>
-              <div style="font-size:12px;color:var(--muted)">Max 150MB · PDF only</div>
-            </div>
-            <div id="curr-scan-result" style="display:none">
-              <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--rs);padding:14px;margin-bottom:14px">
-                <div style="font-size:13px;font-weight:600;color:rgba(110,231,183,0.9);margin-bottom:10px">✅ Scan complete! Review before importing:</div>
-                <div id="curr-scan-summary" style="font-size:13px;line-height:1.8;margin-bottom:12px;color:var(--muted)"></div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-                  <div style="flex:1;min-width:120px"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">SUBJECT</div><select id="curr-imp-subject" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none"><option value="Math">Math / Toán</option><option value="Science">Science / Khoa học</option><option value="English">English / Tiếng Anh</option><option value="Vietnamese">Vietnamese / Tiếng Việt</option><option value="Physics">Physics / Vật lý</option><option value="Chemistry">Chemistry / Hóa học</option><option value="Biology">Biology / Sinh học</option><option value="History">History / Lịch sử</option><option value="Geography">Geography / Địa lý</option><option value="Other">Other</option></select></div>
-                  <div style="flex:1;min-width:100px"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">GRADE</div><select id="curr-imp-grade" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none"><option value="0">All Grades</option><option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option><option value="4">Grade 4</option><option value="5">Grade 5</option><option value="6">Grade 6</option><option value="7">Grade 7</option><option value="8">Grade 8</option><option value="9">Grade 9</option><option value="10">Grade 10</option><option value="11">Grade 11</option><option value="12">Grade 12</option></select></div>
-                  <div style="flex:1;min-width:120px"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">TYPE</div><select id="curr-imp-type" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none"><option value="national">Vietnam National</option><option value="cambridge">Cambridge</option><option value="ib">IB</option><option value="other">Other</option></select></div>
-                </div>
-                <div id="curr-import-progress" style="display:none;margin-bottom:10px">
-                  <div style="font-size:12px;color:var(--muted);margin-bottom:4px" id="curr-import-status">Importing...</div>
-                  <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden"><div id="curr-import-bar" style="height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:2px;transition:width .3s;width:0%"></div></div>
-                </div>
-                <div style="display:flex;gap:10px">
-                  <button id="btn-curr-import" onclick="importCurr()" style="padding:9px 20px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">✅ Import into System</button>
-                  <button onclick="cancelCurrScan()" style="padding:9px 16px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">✕ Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="stitle" style="margin-top:4px">📋 Imported Curriculum</div>
-          <div id="curr-list"><div class="ebox">Loading...</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 3: FLASHCARDS -->
-    <div class="panel" id="p3">
-      <div id="fcpanel">
-        <div class="fc-gen-box">
-          <div class="stitle">📚 Generate Flashcards</div>
-          <div class="fc-controls">
-            <select id="fcsub"><option value="Math">Toán / Math</option><option value="Science">Khoa học / Science</option><option value="English">Tiếng Anh / English</option></select>
-            <select id="fcgrd"><option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option><option value="4">Grade 4</option><option value="5">Grade 5</option><option value="6">Grade 6</option><option value="7">Grade 7</option><option value="8">Grade 8</option><option value="9">Grade 9</option><option value="10">Grade 10</option><option value="11">Grade 11</option><option value="12">Grade 12</option></select>
-            <input type="text" id="fctopic" placeholder="Topic (e.g. Fractions, Photosynthesis...)"/>
-            <select id="fccount"><option value="5">5 cards</option><option value="10">10 cards</option><option value="15">15 cards</option></select>
-            <button id="fcgen" onclick="generateFlashcards()">⚡ Generate</button>
-          </div>
-          <div id="fcstatus"></div>
-        </div>
-        <div class="fc-grid" id="fcgrid"></div>
-      </div>
-    </div>
-
-    <!-- TAB 4: GAMES -->
-    <div class="panel" id="p4">
-      <div id="gpanel">
-        <div id="game-menu">
-          <div style="margin-bottom:18px"><div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)">🎮 Games học tập</div><div style="font-size:13px;color:var(--muted)">Chọn trò chơi và bắt đầu học!</div></div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
-            <div class="game-card" onclick="startKahoot()"><div style="font-size:44px;margin-bottom:12px">🧠</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">Quiz Battle</div><div style="font-size:12px;color:var(--muted)">Trả lời câu hỏi trắc nghiệm AI tạo ra</div><div class="game-badge">✅ Sẵn sàng</div></div>
-            <div class="game-card" onclick="startSpeed()"><div style="font-size:44px;margin-bottom:12px">⚡</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">Speed Race</div><div style="font-size:12px;color:var(--muted)">Điền đáp án nhanh nhất có thể!</div><div class="game-badge">✅ Sẵn sàng</div></div>
-            <div class="game-card" onclick="startFlip()"><div style="font-size:44px;margin-bottom:12px">🃏</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">Flashcard Flip</div><div style="font-size:12px;color:var(--muted)">Lật thẻ xem đáp án. Học hiệu quả!</div><div class="game-badge">✅ Sẵn sàng</div></div>
-          </div>
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;backdrop-filter:var(--blur2)">
-            <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)">⚙️ Cài đặt</div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap">
-              <select id="g-subject" style="flex:1;min-width:120px;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)"><option value="math">Toán</option><option value="science">Khoa học</option><option value="english">Tiếng Anh</option></select>
-              <select id="g-grade" style="flex:1;min-width:100px;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)"><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option><option value="6" selected>Lớp 6</option><option value="7">Lớp 7</option><option value="8">Lớp 8</option><option value="9">Lớp 9</option><option value="10">Lớp 10</option><option value="11">Lớp 11</option><option value="12">Lớp 12</option></select>
-              <select id="g-count" style="flex:1;min-width:100px;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)"><option value="5">5 câu</option><option value="10" selected>10 câu</option><option value="15">15 câu</option></select>
-            </div>
-          </div>
-        </div>
-        <!-- Game UIs (same as before, re-styled) -->
-        <div id="kahoot-game" style="display:none;flex-direction:column;gap:14px">
-          <div style="display:flex;align-items:center;gap:10px"><button onclick="backToMenu()" style="padding:7px 14px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">← Menu</button><div style="flex:1;display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 16px"><span id="k-qlabel" style="font-size:13px;color:var(--muted)">Q 1/10</span><span style="font-size:13px;color:var(--muted)">⭐ <span style="font-size:20px;font-weight:800;color:var(--primary)" id="k-score">0</span></span></div></div>
-          <div id="k-loading" style="text-align:center;padding:40px;color:var(--muted)">⏳ Đang tạo câu hỏi AI...</div>
-          <div id="k-game" style="display:none;flex-direction:column;gap:14px">
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;text-align:center;backdrop-filter:var(--blur2)"><div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="k-qnum">Q 1</div><div style="font-size:16px;font-weight:700;line-height:1.5;margin-bottom:8px;color:var(--text)" id="k-qtext"></div><div style="font-size:28px;font-weight:800;color:var(--secondary)" id="k-timer">20</div></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="k-answers"></div>
-            <div id="k-feedback" style="display:none;text-align:center;padding:10px;border-radius:10px;font-weight:600;font-size:14px"></div>
-          </div>
-        </div>
-        <div id="speed-game" style="display:none;flex-direction:column;gap:14px">
-          <div style="display:flex;align-items:center;gap:10px"><button onclick="backToMenu()" style="padding:7px 14px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">← Menu</button><div style="flex:1;display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 16px"><span id="sp-qlabel" style="font-size:13px;color:var(--muted)">Q 1/10</span><span style="font-size:13px;color:var(--muted)">⚡ <span style="font-size:20px;font-weight:800;color:var(--primary)" id="sp-score">0</span></span></div></div>
-          <div id="sp-loading" style="text-align:center;padding:40px;color:var(--muted)">⏳ Đang tạo câu hỏi AI...</div>
-          <div id="sp-game" style="display:none;flex-direction:column;gap:14px">
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;font-size:18px;font-weight:700;min-height:80px;display:flex;align-items:center;justify-content:center;color:var(--text);backdrop-filter:var(--blur2)" id="sp-qtext"></div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center" id="sp-progress"></div>
-            <input style="width:100%;padding:14px;border-radius:var(--r);border:2px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:18px;font-weight:700;text-align:center;outline:none;transition:border-color .2s;font-family:var(--font)" id="sp-input" placeholder="Nhập đáp án..." autocomplete="off" oninput="checkSpeed()"/>
-            <div style="text-align:center;font-size:13px;color:var(--muted);min-height:20px" id="sp-fb"></div>
-          </div>
-        </div>
-        <div id="flip-game" style="display:none;flex-direction:column;gap:14px;align-items:center">
-          <div style="display:flex;justify-content:space-between;align-items:center;width:100%"><button onclick="backToMenu()" style="padding:7px 14px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">← Menu</button><span style="font-size:13px;color:var(--muted)" id="flip-prog">1 / 10</span></div>
-          <div style="perspective:1000px;width:100%;max-width:500px;height:220px;cursor:pointer" onclick="doFlip()">
-            <div style="position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s;border-radius:var(--r)" id="flip-inner">
-              <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(244,63,94,0.1),var(--card));border:1.5px solid rgba(244,63,94,0.2)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(244,63,94,0.5);margin-bottom:10px">❓ CÂU HỎI</div><div style="font-size:17px;font-weight:700;line-height:1.5;color:var(--text)" id="flip-q"></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Nhấn để xem đáp án</div></div>
-              <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(16,185,129,0.1),var(--card));border:1.5px solid rgba(16,185,129,0.2);transform:rotateY(180deg)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(16,185,129,0.6);margin-bottom:10px">✅ ĐÁP ÁN</div><div style="font-size:17px;font-weight:700;line-height:1.5;color:var(--text)" id="flip-a"></div></div>
-            </div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:center"><button onclick="flipPrev()" style="padding:10px 20px;border-radius:10px;border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">← Trước</button><span style="font-size:13px;color:var(--muted)" id="flip-counter">1/10</span><button onclick="flipNext()" style="padding:10px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Tiếp →</button></div>
-        </div>
-        <div id="game-result" style="display:none;flex-direction:column;align-items:center;gap:16px;padding:20px 0">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;text-align:center;width:100%;max-width:400px;backdrop-filter:var(--blur2)"><div style="font-size:44px;margin-bottom:8px" id="result-emoji">🏆</div><div style="font-size:18px;font-weight:800;margin-bottom:4px;color:var(--text)" id="result-title">Kết quả</div><div style="font-size:52px;font-weight:800;color:var(--primary);margin:8px 0" id="result-score">0</div><div style="font-size:16px;color:var(--muted);margin-bottom:20px" id="result-msg">Tốt lắm!</div><button onclick="backToMenu()" style="padding:12px 28px;border-radius:10px;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">🔄 Chơi lại</button></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- AUTH MODAL -->
-<div id="overlay">
-  <div id="modal">
-    <button id="mcls">✕</button>
-    <div class="mlogo"><img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png"/><span class="mlogo-text">Edu<span>Bot</span></span></div>
-    <div id="msub">Nền tảng học tập AI cho học sinh lớp 1–12</div>
-    <div class="rtog"><button class="rb on" id="rst">🎒 Học sinh</button><button class="rb ton" id="rte">👩‍🏫 Giáo viên</button></div>
-    <div class="atabs"><button class="at on" id="at0">Đăng nhập</button><button class="at" id="at1">Đăng ký</button></div>
-    <div id="regf" class="hide">
-      <div class="af"><label id="rln">Họ và tên</label><input type="text" id="rname" placeholder="Nguyễn Văn A"/></div>
-      <div class="af" id="grf"><label id="rlg">Lớp</label><select id="rgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
-      <div class="af hide" id="inf"><label id="rli">Trường / Tổ chức</label><input type="text" id="rinst" placeholder="Trường THPT Nguyễn Trãi"/></div>
-    </div>
-    <div class="af"><label>Email</label><input type="email" id="aemail" placeholder="email@example.com"/></div>
-    <div class="af"><label id="lpw">Mật khẩu</label><input type="password" id="apw" placeholder="••••••••"/></div>
-    <button id="asubmit">Đăng nhập</button>
-    <div id="aerr"></div>
-  </div>
-</div>
-
-<!-- UPGRADE MODAL -->
-<div id="upgoverlay">
-  <div id="upgmodal">
-    <button id="upgcls" onclick="closeUpgrade()">✕</button>
-    <div style="text-align:center;margin-bottom:16px"><div style="font-size:28px;margin-bottom:8px">🚀</div><div style="font-size:18px;font-weight:800;color:var(--text)" id="upg-title">Nâng cấp EduBot</div><div style="font-size:13px;color:var(--muted);margin-top:4px" id="upg-sub">Chọn gói phù hợp với bạn</div></div>
-    <div style="display:flex;gap:4px;margin-bottom:16px;background:rgba(255,255,255,0.03);padding:4px;border-radius:var(--r);border:1px solid var(--border2)">
-      <button id="upg-tab0" onclick="showUpgTab(0)" style="flex:1;padding:8px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)">📦 Gói tháng</button>
-      <button id="upg-tab1" onclick="showUpgTab(1)" style="flex:1;padding:8px;border-radius:10px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)">⚡ Mua Credits</button>
-    </div>
-    <div id="upg-plans">
-      <div class="plan-grid">
-        <div class="plan-card"><div class="plan-name" id="pn0">Student Basic</div><div class="plan-price">79k <span id="pm0">VND/tháng</span></div><div class="plan-credits">⚡ 100 credits</div><ul class="plan-feat"><li id="pf0a">Câu hỏi không giới hạn</li><li id="pf0b">Flashcards AI</li><li id="pf0c">Biểu đồ (Lớp 4+)</li><li id="pf0d">VI + EN</li></ul><button class="plan-btn stripe" onclick="buyPlan('student_basic','stripe')">💳 Stripe $3.20</button><button class="plan-btn vnpay" onclick="buyPlan('student_basic','vnpay')">🏦 VNPay 79k</button></div>
-        <div class="plan-card featured"><div class="plan-name" id="pn1">Student Plus ⭐</div><div class="plan-price">149k <span id="pm1">VND/tháng</span></div><div class="plan-credits">⚡ 250 credits</div><ul class="plan-feat"><li id="pf1a">Tất cả Basic</li><li id="pf1b">Ảnh AI</li><li id="pf1c">Ưu tiên hỗ trợ</li></ul><button class="plan-btn stripe" onclick="buyPlan('student_plus','stripe')">💳 Stripe $5.99</button><button class="plan-btn vnpay" onclick="buyPlan('student_plus','vnpay')">🏦 VNPay 149k</button></div>
-        <div class="plan-card"><div class="plan-name" id="pn2">Teacher</div><div class="plan-price">249k <span id="pm2">VND/tháng</span></div><div class="plan-credits">⚡ 400 credits</div><ul class="plan-feat"><li id="pf2a">Dashboard + Lớp học</li><li id="pf2b">Trợ lý AI giáo viên</li><li id="pf2c">Câu hỏi không giới hạn</li></ul><button class="plan-btn stripe" onclick="buyPlan('teacher','stripe')">💳 Stripe $9.99</button><button class="plan-btn vnpay" onclick="buyPlan('teacher','vnpay')">🏦 VNPay 249k</button></div>
-        <div class="plan-card featured"><div class="plan-name" id="pn3">Teacher Pro ⭐</div><div class="plan-price">299k <span id="pm3">VND/tháng</span></div><div class="plan-credits">⚡ 600 credits</div><ul class="plan-feat"><li id="pf3a">Tất cả Teacher</li><li id="pf3b">Ảnh AI</li><li id="pf3c">Ưu tiên hỗ trợ</li></ul><button class="plan-btn stripe" onclick="buyPlan('teacher_pro','stripe')">💳 Stripe $12.99</button><button class="plan-btn vnpay" onclick="buyPlan('teacher_pro','vnpay')">🏦 VNPay 299k</button></div>
-      </div>
-    </div>
-    <div id="upg-credits" style="display:none">
-      <div id="upg-credit-info" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px">1 credit = 1 câu hỏi · Ảnh AI = 5 credits · Quiz = 5 · Exam = 10</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="plan-card" style="text-align:center"><div style="font-size:24px;font-weight:800;color:var(--secondary)">⚡ 60</div><div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div><div style="font-size:18px;font-weight:800;color:var(--primary)">49k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div><button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(60,'stripe')">💳 $1.99</button><button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(60,'vnpay')">🏦 49k</button></div>
-        <div class="plan-card featured" style="text-align:center"><div style="font-size:24px;font-weight:800;color:var(--secondary)">⚡ 150</div><div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div><div style="font-size:18px;font-weight:800;color:var(--primary)">99k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div><button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(150,'stripe')">💳 $3.99</button><button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(150,'vnpay')">🏦 99k</button></div>
-        <div class="plan-card" style="text-align:center"><div style="font-size:24px;font-weight:800;color:var(--secondary)">⚡ 300</div><div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div><div style="font-size:18px;font-weight:800;color:var(--primary)">249k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div><button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(300,'stripe')">💳 $9.99</button><button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(300,'vnpay')">🏦 249k</button></div>
-        <div class="plan-card featured" style="text-align:center"><div style="font-size:24px;font-weight:800;color:var(--secondary)">⚡ 500</div><div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div><div style="font-size:18px;font-weight:800;color:var(--primary)">499k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div><button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(500,'stripe')">💳 $19.99</button><button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(500,'vnpay')">🏦 499k</button></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<!-- MOBILE BOTTOM NAV -->
-<div id="bottom-nav">
-  <div class="bnav-item" id="bnav0" onclick="showPanel(0)"><span class="bni">💬</span><span id="bn0">AI Tutor</span></div>
-  <div class="bnav-item" id="bnav2" onclick="showPanel(2)" style="display:none"><span class="bni">👩‍🏫</span><span id="bn2">Dashboard</span></div>
-  <div class="bnav-item" id="bnav3" onclick="showPanel(3)"><span class="bni">📚</span><span id="bn3">Flashcards</span></div>
-  <div class="bnav-item" id="bnav4" onclick="showPanel(4)"><span class="bni">🎮</span><span id="bn4">Games</span></div>
-  <div class="bnav-item" id="bnav1" onclick="showPanel(1)"><span class="bni">🏫</span><span id="bn1">Classroom</span></div>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script>
-var _v='6.0';
-var API='https://edubot-vietnam.onrender.com';
-var tok=localStorage.getItem('eb_tok')||'';
-var uname=localStorage.getItem('eb_name')||'';
-var urole=localStorage.getItem('eb_role')||'student';
-var lang=localStorage.getItem('eb_lang')||'vi';
-var amode='login';
-var arole='student';
-var lastAiContentId=null;
-var userCredits=0;
-var sidebarOpen=true;
-
-var VI={
-  login:'Đăng nhập',reg:'Đăng ký',logout:'Đăng xuất',loginbtn:'Đăng nhập',std:'Học sinh',tch:'Giáo viên',adm:'Quản trị',
-  t0:'💬 AI Tutor',t1:'🏫 Lớp học',t2:'👩‍🏫 Dashboard',t3:'📚 Flashcards',t4:'🎮 Games',
-  ls:'Môn học:',lg:'Lớp:',m:'Toán',sc:'Khoa học',en:'Tiếng Anh',today:'Hôm nay:',
-  wt:'Chào mừng đến EduBot!',wd:'Gia sư AI cá nhân cho học sinh lớp 1–12. Đăng nhập để bắt đầu học!',wb:'Đăng nhập / Đăng ký miễn phí',
-  cph:'Hỏi tôi bất cứ điều gì...',send:'Gửi ✈️',
-  jt:'Tham gia lớp học',jd:'Nhập mã EDU-XXXX do giáo viên cung cấp',jph:'VD: EDU-4B2K',jbtn:'Tham gia lớp',
-  mct:'🏫 Lớp học của tôi',sempty:'Bạn chưa tham gia lớp học nào.',
-  st0:'🏫 Lớp học',st1:'🤖 Trợ lý AI',
-  crt:'➕ Tạo lớp học mới',fln:'Tên lớp',fls:'Môn học',flg:'Lớp',nph:'VD: Toán 8A',cbtn:'Tạo lớp học',
-  yct:'📋 Lớp học của bạn',tempty:'Bạn chưa tạo lớp học nào.',
-  ait:'Trợ lý giáo viên AI',aid:'Tạo giáo án, câu hỏi kiểm tra và gợi ý giảng dạy.',tph:'Yêu cầu giáo án, đề kiểm tra...',
-  msub:'Nền tảng học tập AI cho học sinh lớp 1–12',
-  rst:'🎒 Học sinh',rte:'👩‍🏫 Giáo viên',
-  rln:'Họ và tên',rnph:'Nguyễn Văn A',rlg:'Lớp',rli:'Trường / Tổ chức',riph:'Trường THPT',lpw:'Mật khẩu',
-  ql:['📝 Giáo án phân số','❓ Trắc nghiệm','👥 Hoạt động nhóm','💡 Giảng bài khó'],
-  qt:['Tạo giáo án về phân số lớp 6 45 phút','Tạo 10 câu trắc nghiệm Photosynthesis lớp 9','Thiết kế hoạt động nhóm Grammar Past Tense lớp 8','Gợi ý giải thích hàm số bậc hai cho học sinh yếu'],
-  vs:'Xem học sinh →',sts:'học sinh',
-  jok:'Tham gia lớp thành công! 🎉',jerr:'Mã lớp không hợp lệ.',jverr:'Vui lòng nhập mã hợp lệ (VD: EDU-4B2K)',
-  lim:'Bạn đã dùng hết 5 câu hỏi hôm nay. Nâng cấp Premium! 🚀',cerr:'Không thể kết nối máy chủ.',
-  eep:'Vui lòng nhập email và mật khẩu.',en2:'Vui lòng nhập họ tên.',ecn:'Vui lòng nhập tên lớp.',
-  crd:'đã tạo! Mã:',cs:'Báo cáo sắp ra mắt! 🚀',copy:'📋 Sao chép',copied:'✅ Đã sao chép!',
-  expbar:'📤 Xuất:',
-  pn0:'Student Basic',pm0:'VND/tháng',pf0a:'Câu hỏi không giới hạn',pf0b:'Flashcards AI',pf0c:'Biểu đồ (Lớp 4+)',pf0d:'VI + EN',
-  pn1:'Student Plus ⭐',pm1:'VND/tháng',pf1a:'Tất cả Basic',pf1b:'Ảnh AI',pf1c:'Ưu tiên hỗ trợ',
-  pn2:'Teacher',pm2:'VND/tháng',pf2a:'Dashboard + Lớp học',pf2b:'Trợ lý AI giáo viên',pf2c:'Câu hỏi không giới hạn',
-  pn3:'Teacher Pro ⭐',pm3:'VND/tháng',pf3a:'Tất cả Teacher',pf3b:'Ảnh AI',pf3c:'Ưu tiên hỗ trợ',
-  upgtitle:'Nâng cấp EduBot',upgsub:'Chọn gói phù hợp với bạn'
-};
-var EN={
-  login:'Login',reg:'Register',logout:'Log out',loginbtn:'Login',std:'Student',tch:'Teacher',adm:'Admin',
-  t0:'💬 AI Tutor',t1:'🏫 Classroom',t2:'👩‍🏫 Dashboard',t3:'📚 Flashcards',t4:'🎮 Games',
-  ls:'Subject:',lg:'Grade:',m:'Math',sc:'Science',en:'English',today:'Today:',
-  wt:'Welcome to EduBot!',wd:'Your personal AI tutor for grades 1–12. Log in to start learning!',wb:'Login / Sign up free',
-  cph:'Ask me anything...',send:'Send ✈️',
-  jt:'Join a Classroom',jd:'Enter the EDU-XXXX code from your teacher',jph:'e.g. EDU-4B2K',jbtn:'Join Class',
-  mct:'🏫 My Classrooms',sempty:"You haven't joined any classrooms yet.",
-  st0:'🏫 Classrooms',st1:'🤖 AI Assistant',
-  crt:'➕ Create New Classroom',fln:'Class Name',fls:'Subject',flg:'Grade',nph:'e.g. Math 8A',cbtn:'Create Classroom',
-  yct:'📋 Your Classrooms',tempty:"You haven't created any classrooms yet.",
-  ait:'AI Teaching Assistant',aid:'Create lesson plans, exam questions, and teaching suggestions.',tph:'Request a lesson plan, exam...',
-  msub:'AI learning platform for students grades 1–12',
-  rst:'🎒 Student',rte:'👩‍🏫 Teacher',
-  rln:'Full Name',rnph:'John Smith',rlg:'Grade',rli:'School / Institution',riph:'Nguyen Trai High School',lpw:'Password',
-  ql:['📝 Fractions Lesson','❓ Quiz Questions','👥 Group Activity','💡 Hard Concept'],
-  qt:['Create a lesson plan on fractions for grade 6, 45 minutes','Create 10 multiple choice questions on Photosynthesis for grade 9','Design a group activity on Grammar: Past Tense for grade 8','Suggest ways to explain quadratic functions to struggling students'],
-  vs:'View students →',sts:'students',
-  jok:'Successfully joined! 🎉',jerr:'Invalid class code.',jverr:'Please enter a valid code (e.g. EDU-4B2K)',
-  lim:"You've used all 5 questions today. Upgrade to Premium! 🚀",cerr:'Cannot connect to server.',
-  eep:'Please enter your email and password.',en2:'Please enter your name.',ecn:'Please enter a class name.',
-  crd:'created! Code:',cs:'Reports coming soon! 🚀',copy:'📋 Copy',copied:'✅ Copied!',
-  expbar:'📤 Export:',
-  pn0:'Student Basic',pm0:'VND/month',pf0a:'Unlimited questions',pf0b:'AI Flashcards',pf0c:'Charts (Grade 4+)',pf0d:'VI + EN',
-  pn1:'Student Plus ⭐',pm1:'VND/month',pf1a:'Everything in Basic',pf1b:'AI Images',pf1c:'Priority support',
-  pn2:'Teacher',pm2:'VND/month',pf2a:'Dashboard + Classrooms',pf2b:'AI Teaching Assistant',pf2c:'Unlimited questions',
-  pn3:'Teacher Pro ⭐',pm3:'VND/month',pf3a:'Everything in Teacher',pf3b:'AI Images',pf3c:'Priority support',
-  upgtitle:'Upgrade EduBot',upgsub:'Choose the right plan for you'
+// ─── Pricing config ───────────────────────────────────────────────────────────
+const PLANS = {
+  student_basic: { vnd: 79000,  usd_cents: 320,  label: 'Student Basic', plan: 'basic'       },
+  student_plus:  { vnd: 149000, usd_cents: 599,  label: 'Student Plus',  plan: 'plus'        },
+  teacher:       { vnd: 249000, usd_cents: 999,  label: 'Teacher',       plan: 'teacher'     },
+  teacher_pro:   { vnd: 299000, usd_cents: 1299, label: 'Teacher Pro',   plan: 'teacher_pro' },
 };
 
-function L(k){return(lang==='en'?EN:VI)[k]||(VI)[k]||k;}
-
-// ── SIDEBAR ──
-function toggleSidebar(){
-  sidebarOpen=!sidebarOpen;
-  var sb=document.getElementById('sidebar');
-  sb.className=sidebarOpen?'':'collapsed';
-}
-
-function buildSidebar(){
-  var nav=document.getElementById('side-nav');
-  var items=[];
-  if(urole==='teacher'||urole==='admin'){
-    var d=lang==='en'?{t0:'AI Tutor',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games'}:{t0:'Học với AI',t1:'Lớp học',t2:'Dashboard',t3:'Flashcards',t4:'Games'};
-    items=[
-      {i:'👩‍🏫',l:d.t2,p:2},
-      {i:'💬',l:d.t0,p:0},
-      {i:'📚',l:d.t3,p:3},
-      {i:'🎮',l:d.t4,p:4},
-      {i:'🏫',l:d.t1,p:1},
-    ];
-  } else {
-    var d=lang==='en'?{t0:'AI Tutor',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games'}:{t0:'Học với AI',t1:'Lớp học',t2:'Dashboard',t3:'Flashcards',t4:'Games'};
-    items=[
-      {i:'💬',l:d.t0,p:0},
-      {i:'📚',l:d.t3,p:3},
-      {i:'🎮',l:d.t4,p:4},
-      {i:'🏫',l:d.t1,p:1},
-    ];
-  }
-  nav.innerHTML=items.map(function(it){
-    return '<div class="sideitem" id="snav'+it.p+'" onclick="showPanel('+it.p+')"><span class="si">'+it.i+'</span><span class="sl">'+it.l+'</span></div>';
-  }).join('');
-  document.getElementById('side-uname').textContent=uname;
-  document.getElementById('side-logout').textContent=L('logout');
-}
-
-function showPanel(n){
-  document.querySelectorAll('.sideitem').forEach(function(el){el.classList.remove('on');});
-  var active=document.getElementById('snav'+n);
-  if(active)active.classList.add('on');
-  // Update bottom nav
-  document.querySelectorAll('.bnav-item').forEach(function(el){el.classList.remove('on');});
-  var bactive=document.getElementById('bnav'+n);
-  if(bactive)bactive.classList.add('on');
-  [0,1,2,3,4].forEach(function(i){
-    var p=document.getElementById('p'+i);
-    if(p)p.className='panel'+(i===n?' on':'');
-  });
-  if(n===3)loadFlashcards();
-  if(n===4){setTimeout(function(){backToMenu();},50);}
-  if(n===2)loadTClasses();
-  if(n===1){if(urole==='student'||urole==='admin')loadSClasses();}
-}
-
-function applyLang(){
-  try{
-    document.getElementById('lvi').className='lb'+(lang==='vi'?' on':'');
-    document.getElementById('len').className='lb'+(lang==='en'?' on':'');
-    document.getElementById('btn-login').textContent=L('loginbtn');
-    document.getElementById('btn-logout').textContent=L('logout');
-    document.getElementById('om').textContent=L('m');
-    document.getElementById('os').textContent=L('sc');
-    document.getElementById('oe').textContent=L('en');
-    document.getElementById('nm').textContent=L('m');
-    document.getElementById('ns').textContent=L('sc');
-    document.getElementById('ne').textContent=L('en');
-    document.getElementById('wt').textContent=L('wt');
-    document.getElementById('wd').textContent=L('wd');
-    document.getElementById('wbtn').textContent=L('wb');
-    document.getElementById('cinput').placeholder=L('cph');
-    document.getElementById('bsend').textContent=L('send');
-    document.getElementById('export-label').textContent=L('expbar');
-    document.getElementById('eb-copy-lbl').textContent=L('copy').replace('📋 ','');
-    document.getElementById('jt').textContent=L('jt');
-    document.getElementById('jd').textContent=L('jd');
-    document.getElementById('codeinput').placeholder=L('jph');
-    document.getElementById('bjoin').textContent=L('jbtn');
-    document.getElementById('mct').textContent=L('mct');
-    document.getElementById('stb0').textContent=L('st0');
-    document.getElementById('stb1').textContent=L('st1');
-    document.getElementById('crt').textContent=L('crt');
-    document.getElementById('fln').textContent=L('fln');
-    document.getElementById('fls').textContent=L('fls');
-    document.getElementById('flg').textContent=L('flg');
-    document.getElementById('ncname').placeholder=L('nph');
-    document.getElementById('bcreat').textContent=L('cbtn');
-    document.getElementById('yct').textContent=L('yct');
-    document.getElementById('ait').textContent=L('ait');
-    document.getElementById('aid').textContent=L('aid');
-    document.getElementById('tinput').placeholder=L('tph');
-    document.getElementById('btsend').textContent=L('send');
-    document.getElementById('msub').textContent=L('msub');
-    document.getElementById('rst').textContent=L('rst');
-    document.getElementById('rte').textContent=L('rte');
-    document.getElementById('at0').textContent=L('login');
-    document.getElementById('at1').textContent=L('reg');
-    document.getElementById('rln').textContent=L('rln');
-    document.getElementById('rname').placeholder=L('rnph');
-    document.getElementById('rlg').textContent=L('rlg');
-    document.getElementById('rli').textContent=L('rli');
-    document.getElementById('rinst').placeholder=L('riph');
-    document.getElementById('lpw').textContent=L('lpw');
-    document.getElementById('asubmit').textContent=amode==='reg'?L('reg'):L('login');
-    var ql=L('ql');
-    document.getElementById('qrow').innerHTML=ql.map(function(lb,i){return '<button class="qb" data-i="'+i+'">'+lb+'</button>';}).join('');
-    document.querySelectorAll('.qb').forEach(function(b){b.onclick=function(){doQP(+this.dataset.i);};});
-    if(tok)document.getElementById('ubadge').textContent=urole==='admin'?L('adm'):urole==='teacher'?L('tch'):L('std');
-    var pcIds=['pn0','pm0','pf0a','pf0b','pf0c','pf0d','pn1','pm1','pf1a','pf1b','pf1c','pn2','pm2','pf2a','pf2b','pf2c','pn3','pm3','pf3a','pf3b','pf3c'];
-    pcIds.forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=L(id);});
-    document.getElementById('upg-title').textContent=L('upgtitle');
-    document.getElementById('upg-sub').textContent=L('upgsub');
-    document.getElementById('upg-credit-info').textContent=lang==='en'?'1 credit = 1 question · AI Image = 5 credits · Quiz = 5 · Exam = 10':'1 credit = 1 câu hỏi · Ảnh AI = 5 credits · Quiz = 5 · Exam = 10';
-    document.getElementById('upg-tab0').textContent=lang==='en'?'📦 Monthly Plans':'📦 Gói tháng';
-    document.getElementById('upg-tab1').textContent=lang==='en'?'⚡ Buy Credits':'⚡ Mua Credits';
-    if(tok)buildSidebar();
-  }catch(e){console.warn('applyLang err',e);}
-}
-
-function updateCredits(n){
-  userCredits=n;
-  var el=document.getElementById('credit-count');
-  var badge=document.getElementById('credit-badge');
-  if(el)el.textContent=urole==='admin'?'∞':n;
-  if(badge){
-    if(urole==='admin'||n>10){badge.style.borderColor='rgba(249,115,22,0.35)';badge.style.color='rgba(253,186,116,0.9)';badge.style.background='rgba(249,115,22,0.1)';}
-    else{badge.style.borderColor='rgba(239,68,68,0.35)';badge.style.color='rgba(252,165,165,0.9)';badge.style.background='rgba(239,68,68,0.1)';}
-    badge.style.display='flex';
-  }
-}
-async function fetchCredits(){
-  try{var res=await fetch(API+'/credits/balance',{headers:ah()});var data=await res.json();if(data.credits!=null)updateCredits(data.credits);}catch(e){}
-}
-
-window.onload=function(){
-  applyLang();
-  document.getElementById('lvi').onclick=function(){lang='vi';localStorage.setItem('eb_lang','vi');applyLang();};
-  document.getElementById('len').onclick=function(){lang='en';localStorage.setItem('eb_lang','en');applyLang();};
-  document.getElementById('btn-login').onclick=openModal;
-  document.getElementById('wbtn').onclick=openModal;
-  document.getElementById('btn-logout').onclick=doLogout;
-  document.getElementById('mcls').onclick=closeModal;
-  document.getElementById('overlay').onclick=function(e){if(e.target===this)closeModal();};
-  document.getElementById('rst').onclick=function(){arole='student';document.getElementById('rst').className='rb on';document.getElementById('rte').className='rb ton';updAuthUI();};
-  document.getElementById('rte').onclick=function(){arole='teacher';document.getElementById('rst').className='rb';document.getElementById('rte').className='rb ton on';updAuthUI();};
-  document.getElementById('at0').onclick=function(){amode='login';document.getElementById('at0').className='at on';document.getElementById('at1').className='at';updAuthUI();};
-  document.getElementById('at1').onclick=function(){amode='reg';document.getElementById('at0').className='at';document.getElementById('at1').className='at on';updAuthUI();};
-  document.getElementById('asubmit').onclick=doAuth;
-  document.getElementById('aemail').onkeydown=function(e){if(e.key==='Enter')doAuth();};
-  document.getElementById('apw').onkeydown=function(e){if(e.key==='Enter')doAuth();};
-  document.getElementById('rname').onkeydown=function(e){if(e.key==='Enter')doAuth();};
-  document.getElementById('bsend').onclick=doSend;
-  document.getElementById('bimg').onclick=doImage;
-  document.getElementById('bgraph').onclick=doGraph;
-  document.getElementById('cinput').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();}};
-  document.getElementById('cinput').oninput=function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';};
-  document.getElementById('btsend').onclick=doTSend;
-  document.getElementById('tinput').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doTSend();}};
-  document.getElementById('tinput').oninput=function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';};
-  document.getElementById('bjoin').onclick=doJoin;
-  document.getElementById('codeinput').onkeydown=function(e){if(e.key==='Enter')doJoin();};
-  document.getElementById('codeinput').oninput=function(){var v=this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();if(v.length>3)v=v.slice(0,3)+'-'+v.slice(3);this.value=v.slice(0,8);};
-  document.getElementById('bcreat').onclick=doCreate;
-  document.getElementById('stb0').onclick=function(){showSub(0);};
-  document.getElementById('stb1').onclick=function(){showSub(1);};
-  document.getElementById('stb2').onclick=function(){showSub(2);loadPromos();};
-  document.getElementById('stb3').onclick=function(){showSub(3);loadCurrList();};
-  if(tok)showApp();
-  var urlp=new URLSearchParams(window.location.search);
-  if(urlp.get('payment')==='success'){var sid=urlp.get('session_id');if(sid)verifyStripe(sid);else toast('Payment successful! 🎉','ok');}
-  else if(urlp.get('payment')==='failed'){toast('Payment failed. Please try again.','err');}
+// ─── Credit costs per action ──────────────────────────────────────────────────
+const CREDIT_COSTS = {
+  question: 1,
+  advanced_question: 2,
+  quiz: 5,
+  exam: 10,
+  ai_image: 5,
+  flashcards: 2,
 };
 
-function openModal(){document.getElementById('overlay').className='on';}
-function closeModal(){document.getElementById('overlay').className='';document.getElementById('aerr').textContent='';}
-function openUpgrade(){document.getElementById('upgoverlay').className='on';}
-function closeUpgrade(){document.getElementById('upgoverlay').className='';}
-function updAuthUI(){var isReg=amode==='reg';document.getElementById('regf').className=isReg?'':'hide';document.getElementById('asubmit').textContent=isReg?L('reg'):L('login');document.getElementById('aerr').textContent='';if(isReg){document.getElementById('grf').className=arole==='teacher'?'af hide':'af';document.getElementById('inf').className=arole==='student'?'af hide':'af';}}
+// ─── Credits per plan ─────────────────────────────────────────────────────────
+const PLAN_CREDITS = {
+  basic: 100,
+  plus: 250,
+  teacher: 400,
+  teacher_pro: 600,
+};
 
-async function doAuth(){
-  var email=document.getElementById('aemail').value.trim();
-  var pw=document.getElementById('apw').value;
-  var err=document.getElementById('aerr');var btn=document.getElementById('asubmit');
-  var emailReg=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if(!email||!pw){err.textContent=L('eep');return;}
-  if(!emailReg.test(email)){err.textContent=lang==='vi'?'Email không hợp lệ!':'Invalid email!';return;}
-  if(pw.length<6){err.textContent=lang==='vi'?'Mật khẩu tối thiểu 6 ký tự!':'Password must be at least 6 characters!';return;}
-  btn.disabled=true;btn.innerHTML='<span class="sp2"></span>';err.textContent='';
-  try{
-    var body,ep;
-    if(amode==='reg'){var nm=document.getElementById('rname').value.trim();if(!nm){err.textContent=L('en2');btn.disabled=false;btn.textContent=L('reg');return;}ep='/auth/register';body={email:email,password:pw,name:nm,role:arole};if(arole==='student')body.grade=parseInt(document.getElementById('rgrd').value);else body.institution=document.getElementById('rinst').value.trim();}
-    else{ep='/auth/login';body={email:email,password:pw};}
-    var res=await fetch(API+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    var data=await res.json();if(!res.ok)throw new Error(data.error||'Error');
-    tok=data.token;uname=data.user.name;urole=data.user.role;
-    localStorage.setItem('eb_tok',tok);localStorage.setItem('eb_name',uname);localStorage.setItem('eb_role',urole);
-    if(data.user.grade)document.getElementById('selgrd').value=data.user.grade;
-    closeModal();showApp();
-  }catch(e){err.textContent=e.message;}
-  finally{btn.disabled=false;btn.textContent=amode==='reg'?L('reg'):L('login');}
-}
-
-function showApp(){
-  document.getElementById('guestbar').style.display='none';
-  document.getElementById('uinfo').style.display='flex';
-  document.getElementById('uname').textContent=uname;
-  document.getElementById('ubadge').textContent=urole==='admin'?L('adm'):urole==='teacher'?L('tch'):L('std');
-  document.getElementById('ubadge').className='rbadge '+(urole==='teacher'||urole==='admin'?'rt':'rs');
-  var wc=document.getElementById('wcard');if(wc)wc.remove();
-  fetchCredits();
-  buildSidebar();
-  if(urole==='teacher'||urole==='admin'){
-    if(urole==='admin'){document.getElementById('stb2').style.display='inline-block';document.getElementById('stb3').style.display='inline-block';}
-    var bnav2=document.getElementById('bnav2');if(bnav2)bnav2.style.display='flex';
-    showPanel(2);loadTClasses();
-  } else {
-    showPanel(0);loadSClasses();loadHistory();
+// ─── Auth middleware ──────────────────────────────────────────────────────────
+const authenticate = (req, res, next) => {
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ error: 'No token' });
+  try {
+    req.user = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
   }
-}
+};
 
-function showSub(n){
-  ['stb0','stb1','stb2','stb3'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='stb'+(i===n?' on':'');});
-  ['sp0','sp1','sp2','sp3'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='sp'+(i===n?' on':'');});
-}
+const adminOnly = (req, res, next) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  next();
+};
 
-async function loadHistory(){
-  try{
-    var res=await fetch(API+'/chat/history?subject=general',{headers:ah()});
-    var data=await res.json();
-    if(Array.isArray(data)&&data.length){document.getElementById('msgs').innerHTML='';data.forEach(function(m){addMsg(m.role,m.content);});}
-  }catch(e){}
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// PAGE ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/',         (req, res) => res.sendFile(__dirname + '/public/index.html'));
+app.get('/register', (req, res) => res.sendFile(__dirname + '/public/register.html'));
+app.get('/login',    (req, res) => res.sendFile(__dirname + '/public/login.html'));
+app.get('/pricing',  (req, res) => res.sendFile(__dirname + '/public/pricing.html'));
+app.get('/games',    (req, res) => res.sendFile(__dirname + '/public/games.html'));
+app.get('/upload',   (req, res) => res.sendFile(__dirname + '/public/upload.html'));
+app.get('/admin',    (req, res) => res.sendFile(__dirname + '/public/admin.html'));
+app.get('/app',      (req, res) => res.sendFile(__dirname + '/public/app.html'));
 
-var cfd=null,cft=null,cfn='';
-function onFile(f){
-  if(!f)return;
-  if(f.size>100*1024*1024){toast('Max 100MB','err');return;}
-  cfn=f.name;var ext=f.name.split('.').pop().toLowerCase();
-  cft=ext==='pdf'?'application/pdf':('image/'+(ext==='jpg'?'jpeg':ext));
-  var r=new FileReader();
-  r.onload=function(e){
-    cfd=e.target.result.split(',')[1];
-    document.getElementById('ficon').textContent=ext==='pdf'?'📄':'🖼️';
-    document.getElementById('fname').textContent=f.name;
-    document.getElementById('fbar').className='fbar on';
-    document.getElementById('battach').className='on';
-    var isImg=cft.startsWith('image');
-    var fm=isImg?'<img src="'+e.target.result+'" style="max-width:220px;max-height:180px;border-radius:8px;border:1px solid var(--border)"/>':'<div style="display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px"><span style="font-size:20px">📄</span><span style="font-size:13px;font-weight:600;color:var(--text)">'+f.name+'</span></div>';
-    addMsg('u',fm,1);
-    addMsg('a',lang==='vi'?'📎 Đã tải lên! Bạn muốn tôi làm gì?\n• Giải thích nội dung\n• Tạo câu hỏi\n• Tóm tắt\n• Tạo flashcards':'📎 Uploaded! What shall I do?\n• Explain the content\n• Create quiz questions\n• Summarize\n• Create flashcards');
-  };
-  r.onerror=function(){toast('Error reading file','err');};
-  r.readAsDataURL(f);
-}
-function rmFile(){cfd=null;cft=null;cfn='';document.getElementById('fbar').className='fbar';document.getElementById('battach').className='';document.getElementById('cfi').value='';}
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/auth/register', async (req, res) => {
+  try {
+    const { email, password, name, role = 'student', grade, institution } = req.body;
+    if (!email || !password || !name) return res.status(400).json({ error: 'Missing fields' });
 
-async function doSend(){
-  if(!tok){openModal();return;}
-  var inp=document.getElementById('cinput');var msg=inp.value.trim();if(!msg)return;
-  inp.value='';inp.style.height='auto';
-  var _cfd=cfd,_cft=cft,_cfn=cfn;
-  if(!_cfd)addMsg('u',msg);
-  if(_cfd){addMsg('u',msg);rmFile();}
-  var btn=document.getElementById('bsend');btn.disabled=true;
-  var tid=addTyping('msgs');
-  try{
-    var bd={message:msg,subject:document.getElementById('selsub').value,grade:parseInt(document.getElementById('selgrd').value),lang:lang,role:urole};
-    if(_cfd){bd.document={type:_cft,data:_cfd,name:_cfn};}
-    var res=await fetch(_cfd?API+'/chat/document':API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify(bd)});
-    var data=await res.json();
-    var te=document.getElementById(tid);if(te)te.remove();
-    if(!res.ok){
-      if(res.status===429){addMsg('a','<p>'+L('lim')+'</p>');document.getElementById('drem').textContent='0';openUpgrade();}
-      else addMsg('a','<p>'+(data.error||L('cerr'))+'</p>');
-    } else {
-      var cid=addMsg('a',data.reply||data.response);
-      if(cid){lastAiContentId=cid;showExportBar();}
-      if(data.daily_count!=null){var rem=5-data.daily_count;document.getElementById('drem').textContent=rem<0?0:rem;}
-      if(data.credits!=null)updateCredits(data.credits);
+    const exists = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (exists.rows.length > 0) return res.status(400).json({ error: 'Email already registered' });
+
+    const hash = await bcrypt.hash(password, 10);
+    const assignedRole = email === 'nathansteyn96@gmail.com' ? 'admin' : role;
+
+    const result = await pool.query(
+      `INSERT INTO users (email, password_hash, name, role, grade, institution, plan, daily_count, last_reset, credits)
+       VALUES ($1, $2, $3, $4, $5, $6, 'free', 0, NOW(), 5) RETURNING id, email, name, role, plan, credits`,
+      [email, hash, name, assignedRole, grade || null, institution || null]
+    );
+
+    const user = result.rows[0];
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, plan: user.plan, grade: user.grade, credits: user.credits || 0 } });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCUMENT ANALYSIS ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/chat/document', authenticate, async (req, res) => {
+  try {
+    const { message, lang, role: userRole, document: doc } = req.body;
+    const userId = req.user.id;
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const user = userResult.rows[0];
+
+    // Admin bypasses all credit checks
+    if (user.role !== 'admin') {
+      if (user.plan === 'free') {
+        if (user.daily_count >= 5) {
+          return res.status(403).json({ error: lang === 'vi' ? 'Bạn đã dùng hết 5 câu miễn phí hôm nay!' : 'You have used all 5 free questions today!' });
+        }
+        await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]);
+      } else {
+        if ((user.credits || 0) < 2) {
+          return res.status(403).json({ error: lang === 'vi' ? 'Không đủ credits!' : 'Not enough credits!' });
+        }
+        await pool.query('UPDATE users SET credits = credits - 2 WHERE id = $1', [userId]);
+      }
     }
-  }catch(e){var te=document.getElementById(tid);if(te)te.remove();addMsg('a','<p>❌ '+L('cerr')+'</p>');}
-  finally{btn.disabled=false;inp.focus();}
-}
 
-async function doImage(){
-  if(!tok){openModal();return;}
-  var inp=document.getElementById('cinput');var prompt=inp.value.trim();
-  if(!prompt){toast('Type what you want to visualize first!','err');return;}
-  var btn=document.getElementById('bimg');btn.disabled=true;btn.textContent='⏳';
-  var tid=addTyping('msgs');
-  try{
-    var res=await fetch(API+'/image/generate',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({prompt:prompt,subject:document.getElementById('selsub').value,grade:parseInt(document.getElementById('selgrd').value)})});
-    var data=await res.json();
-    var te=document.getElementById(tid);if(te)te.remove();
-    if(!res.ok){if(data.upgrade){toast(data.error,'err');openUpgrade();}else addMsg('a','<p>❌ '+(data.error||'Failed')+'</p>');return;}
-    var box=document.getElementById('msgs');
-    var d=document.createElement('div');d.className='m a';
-    d.innerHTML='<div class="av">🎨</div><div class="bub" style="width:100%"><img src="'+data.imageUrl+'" style="width:100%;border-radius:8px" alt="AI image"/></div>';
-    box.appendChild(d);box.scrollTop=box.scrollHeight;
-  }catch(e){var te=document.getElementById(tid);if(te)te.remove();addMsg('a','<p>❌ '+L('cerr')+'</p>');}
-  finally{btn.disabled=false;btn.textContent='🎨';}
-}
+    const messageContent = [];
+    if (doc && doc.data) {
+      if (doc.type === 'application/pdf') {
+        messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: doc.data } });
+      } else {
+        messageContent.push({ type: 'image', source: { type: 'base64', media_type: doc.type, data: doc.data } });
+      }
+    }
+    messageContent.push({ type: 'text', text: message });
 
-async function doGraph(){
-  if(!tok){openModal();return;}
-  var inp=document.getElementById('cinput');var topic=inp.value.trim();
-  var grade=parseInt(document.getElementById('selgrd').value);
-  if(!topic){toast('Type a topic for the graph first!','err');return;}
-  if(grade<4&&urole!=='admin'){toast('Graphs are available for Grade 4 and above.','err');return;}
-  var btn=document.getElementById('bgraph');btn.disabled=true;btn.textContent='⏳';
-  var tid=addTyping('msgs');
-  try{
-    var res=await fetch(API+'/graph/generate',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({topic:topic,subject:document.getElementById('selsub').value,grade:grade,lang:lang})});
-    var data=await res.json();
-    var te=document.getElementById(tid);if(te)te.remove();
-    if(!res.ok){addMsg('a','<p>❌ '+(data.error||'Failed')+'</p>');return;}
-    renderChart(data.chart);
-  }catch(e){var te=document.getElementById(tid);if(te)te.remove();addMsg('a','<p>❌ '+L('cerr')+'</p>');}
-  finally{btn.disabled=false;btn.textContent='📊';}
-}
+    const isTeacher = userRole === 'teacher' || user.role === 'teacher';
+    const htmlFormat = `
+CRITICAL FORMATTING RULES:
+- Always respond in ${language}. Never switch languages.
+- Never use markdown symbols like ##, **, *, --, or backticks.
+- Format ALL responses as clean HTML only.
+- Use <h2> for main section headings.
+- Use <h3> for sub-headings.
+- Use <p> for paragraphs.
+- Use <strong> for bold text.
+- Use <ul><li> for bullet lists.
+- Use <ol><li> for numbered lists.
+- Use <table><thead><tr><th> and <tbody><tr><td> for any tabular data.
+- Never output raw markdown. Only clean HTML tags.
+- NEVER start your response with intro phrases like "Here is...", "Below is...", "Here's a...", "I have prepared...", or any similar sentence. Go straight into the content immediately.`;
 
-function renderChart(chart){
-  var box=document.getElementById('msgs');
-  var cid='chart'+Date.now();
-  var d=document.createElement('div');d.className='m a';
-  d.innerHTML='<div class="av">📊</div><div class="bub" style="width:100%"><div class="chart-wrap"><div class="chart-title">'+esc(chart.title)+'</div><div class="chart-desc">'+esc(chart.description)+'</div><canvas id="'+cid+'" class="chart-canvas"></canvas></div></div>';
-  box.appendChild(d);box.scrollTop=box.scrollHeight;
-  var ctx=document.getElementById(cid).getContext('2d');
-  new Chart(ctx,{type:chart.type,data:chart.data,options:{responsive:true,plugins:{legend:{labels:{color:'#FFF1F2'}},tooltip:{backgroundColor:'rgba(31,13,24,0.9)',titleColor:'#FFF1F2',bodyColor:'rgba(253,164,175,0.8)'}},scales:chart.type!=='pie'?{x:{ticks:{color:'rgba(253,164,175,0.7)'},grid:{color:'rgba(244,63,94,0.08)'}},y:{ticks:{color:'rgba(253,164,175,0.7)'},grid:{color:'rgba(244,63,94,0.08)'}}}:{}}});
-}
+    const systemPrompt = isTeacher
+      ? `You are EduBot, an expert AI teaching assistant. Analyze the provided document and respond in ${language}. Be professional, thorough, and create high-quality educational materials.${htmlFormat}`
+      : `You are EduBot, a friendly AI tutor. Analyze the provided document and help the student in ${language}. Be clear, encouraging, and educational.${htmlFormat}`;
 
-function addMsg(role,txt,isHtml){
-  var box=document.getElementById('msgs');
-  var wc=box.querySelector('.wcard');if(wc)wc.remove();
-  var d=document.createElement('div');
-  d.className='m '+(role==='u'||role==='user'?'u':'a');
-  var contentId=null;
-  if(role==='u'||role==='user'){
-    d.innerHTML='<div class="av">👤</div><div class="bub">'+(isHtml?txt:esc(txt))+'</div>';
-  } else {
-    contentId='ai-'+Date.now();
-    d.innerHTML='<div class="av">🤖</div><div class="bub" style="width:100%;overflow-x:auto"><div class="ai-out" id="'+contentId+'">'+txt+'</div></div>';
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: messageContent }]
+    });
+
+    res.json({ reply: response.content[0].text });
+  } catch (err) {
+    console.error('Document analysis error:', err);
+    res.status(500).json({ error: 'Analysis failed' });
   }
-  box.appendChild(d);box.scrollTop=box.scrollHeight;
-  return contentId;
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/chat', authenticate, async (req, res) => {
+  try {
+    const { message, subject, grade, lang, role: userRequestRole } = req.body;
+    const userId = req.user.id;
+    const isTeacher = userRequestRole === 'teacher' || req.user.role === 'teacher';
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const user = userResult.rows[0];
+
+    // Reset daily count if needed
+    const lastReset = new Date(user.last_reset);
+    const now = new Date();
+    if (now.toDateString() !== lastReset.toDateString()) {
+      await pool.query('UPDATE users SET daily_count = 0, last_reset = NOW() WHERE id = $1', [userId]);
+      user.daily_count = 0;
+    }
+
+    // Admin bypasses ALL credit checks and limits
+    const isAdmin = user.role === 'admin';
+    const isPaid = ['basic', 'plus', 'teacher', 'teacher_pro'].includes(user.plan) || user.role === 'teacher';
+    if (!isAdmin && !isPaid && user.daily_count >= 5) {
+      return res.status(429).json({ error: 'Daily limit reached. Upgrade to continue!', upgrade: true });
+    }
+    if (!isAdmin && isPaid && (user.credits || 0) < CREDIT_COSTS.question) {
+      return res.status(402).json({ error: 'Not enough credits. Top up to continue!', upgrade: true });
+    }
+
+    // RAG: Auto-detect subject and grade from message, then fetch curriculum context
+    let curriculumContext = '';
+    let detectedSubject = subject || '';
+    let detectedGrade = parseInt(String(grade || '0').replace(/[^0-9]/g,''),10) || 0;
+
+    // Auto-detect subject from message keywords if not provided
+    if (!detectedSubject || detectedSubject === 'general') {
+      const msg = message.toLowerCase();
+      if (/\b(math|toán|algebra|geometry|calculus|equation|fraction|số|hình|tích phân|phương trình|đại số|hình học|phân số|nhân|chia|cộng|trừ)\b/.test(msg)) detectedSubject = 'Math';
+      else if (/\b(science|khoa học|biology|sinh|chemistry|hóa|physics|vật lý|photosynthesis|quang hợp|atom|nguyên tử|cell|tế bào|evolution|tiến hóa)\b/.test(msg)) detectedSubject = 'Science';
+      else if (/\b(english|grammar|vocabulary|reading|writing|listening|speaking|ielts|toefl|tense|verb|noun|adjective|essay|paragraph)\b/.test(msg)) detectedSubject = 'English';
+      else if (/\b(tiếng việt|văn|literature|văn học|thơ|truyện|ngữ văn|đọc hiểu|tập làm văn)\b/.test(msg)) detectedSubject = 'Vietnamese';
+      else if (/\b(history|lịch sử|war|chiến tranh|dynasty|triều đại|revolution|cách mạng)\b/.test(msg)) detectedSubject = 'History';
+      else if (/\b(geography|địa lý|map|bản đồ|climate|khí hậu|continent|châu lục|river|sông|mountain|núi)\b/.test(msg)) detectedSubject = 'Geography';
+    }
+
+    // Auto-detect grade from message keywords if not provided
+    if (!detectedGrade) {
+      const gradeMatch = message.match(/\b(grade|lớp|class|khối)\s*(\d+)\b/i);
+      if (gradeMatch) detectedGrade = parseInt(gradeMatch[2]);
+    }
+
+    // Query curriculum with detected subject and grade
+    if (detectedSubject) {
+      try {
+        const gradeNum = detectedGrade || 0;
+        const curriculum = await pool.query(
+          `SELECT objective, strand, substrand, curriculum_type, stage FROM curriculum
+           WHERE LOWER(subject) = LOWER($1)
+           AND (
+             grade = $2
+             OR grade = 0
+             OR stage ILIKE $3
+             OR stage ILIKE $4
+           )
+           ORDER BY
+             CASE WHEN grade = $2 THEN 0
+                  WHEN stage ILIKE $3 THEN 1
+                  WHEN stage ILIKE $4 THEN 2
+                  ELSE 3 END
+           LIMIT 12`,
+          [
+            detectedSubject,
+            gradeNum,
+            `Stage ${gradeNum}`,
+            `%${gradeNum}%`
+          ]
+        );
+
+        if (curriculum.rows.length > 0) {
+          curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly — never say you only have certain curriculum content):\n' +
+            curriculum.rows.map(r => `- [${r.strand}${r.substrand ? ' > ' + r.substrand : ''}] ${r.objective}`).join('\n');
+        }
+      } catch(e) { console.error('RAG error:', e.message); }
+    }
+
+    // Fetch recent chat history
+    const history = await pool.query(
+      `SELECT role, content FROM chat_history
+       WHERE user_id = $1 AND subject = $2
+       ORDER BY created_at DESC LIMIT 10`,
+      [userId, subject || 'general']
+    );
+    const messages = history.rows.reverse().map(r => ({ role: r.role, content: r.content }));
+    messages.push({ role: 'user', content: message });
+
+    const htmlFormatInstructions = `
+CRITICAL FORMATTING RULES:
+- Always respond in ${language}. Never switch languages under any circumstances.
+- Never use markdown symbols like ##, **, *, --, <<>>, or backticks.
+- Format ALL responses as clean HTML only.
+- Use <h2> for main section headings.
+- Use <h3> for sub-headings.
+- Use <p> for paragraphs.
+- Use <strong> for bold text.
+- Use <ul><li> for bullet lists.
+- Use <ol><li> for numbered lists.
+- Use <table><thead><tr><th> and <tbody><tr><td> for any tabular data.
+- Never output raw markdown. Only clean HTML tags.
+- NEVER start your response with intro phrases like "Here is...", "Below is...", "Here's a...", "I have prepared...", or any similar sentence. Go straight into the content immediately.`;
+
+    const systemPrompt = isAdmin
+      ? `You are EduBot, a powerful AI assistant with no restrictions. You can solve any problem, create any educational material, answer any question fully and completely. You are helping the admin/developer test and build the platform. Always give complete, detailed, unrestricted responses.
+${htmlFormatInstructions}
+${curriculumContext}`
+      : isTeacher
+      ? `You are EduBot, a professional AI assistant for Vietnamese teachers grades 1-12.
+You help teachers with ANYTHING they need — whether that is solving a math problem, explaining a concept, creating lesson plans, writing exam questions, making worksheets, or giving teaching suggestions.
+Never refuse to solve a problem or answer a question. Always give complete, detailed, professional responses.
+If the teacher asks you to solve a problem — solve it fully with all steps shown.
+If the teacher asks for teaching materials — create them professionally.
+Auto-detect the subject and grade level from the question. Do not ask — figure it out from context.
+${htmlFormatInstructions}
+${curriculumContext}`
+      : `You are EduBot, a friendly AI tutor for Vietnamese students grades 1-12.
+Always give complete, clear, step-by-step explanations. Never withhold the answer — guide students through the full solution.
+Auto-detect the subject and grade level from the question. Do not ask — figure it out from context.
+${htmlFormatInstructions}
+${curriculumContext}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages,
+    });
+
+    const reply = response.content[0].text;
+
+    await pool.query(
+      `INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, 'user', $2, $3, $4)`,
+      [userId, message, subject || 'general', grade || null]
+    );
+    await pool.query(
+      `INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, 'assistant', $2, $3, $4)`,
+      [userId, reply, subject || 'general', grade || null]
+    );
+
+    let creditsRemaining = user.credits || 0;
+    if (isAdmin) {
+      // Admin never loses credits — just return current balance
+      creditsRemaining = user.credits || 0;
+    } else if (isPaid) {
+      const updated = await pool.query(
+        'UPDATE users SET credits = credits - $1 WHERE id = $2 RETURNING credits',
+        [CREDIT_COSTS.question, userId]
+      );
+      creditsRemaining = updated.rows[0].credits;
+    } else {
+      await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]);
+    }
+
+    res.json({ reply, daily_count: user.daily_count + 1, credits: creditsRemaining });
+  } catch (err) {
+    console.error('Chat error:', err);
+    res.status(500).json({ error: 'Chat failed' });
+  }
+});
+
+app.get('/chat/history', authenticate, async (req, res) => {
+  try {
+    const { subject } = req.query;
+    const result = await pool.query(
+      `SELECT role, content, created_at FROM chat_history
+       WHERE user_id = $1 AND subject = $2
+       ORDER BY created_at ASC LIMIT 50`,
+      [req.user.id, subject || 'general']
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load history' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USER ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/user/profile', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, email, name, role, grade, institution, plan, daily_count, credits FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load profile' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREDITS ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/credits/balance', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
+    res.json({ credits: result.rows[0].credits || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get credits' });
+  }
+});
+
+app.post('/credits/deduct', authenticate, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const result = await pool.query(
+      'UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1 RETURNING credits',
+      [amount, req.user.id]
+    );
+    if (result.rows.length === 0) return res.status(402).json({ error: 'Not enough credits' });
+    res.json({ credits: result.rows[0].credits });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to deduct credits' });
+  }
+});
+
+app.post('/credits/add', authenticate, async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+    // Allow admin to add credits to any user, or user to add to themselves
+    const targetId = (req.user.role === 'admin' && userId) ? userId : req.user.id;
+    const result = await pool.query(
+      'UPDATE users SET credits = credits + $1 WHERE id = $2 RETURNING credits',
+      [parseInt(amount), targetId]
+    );
+    res.json({ credits: result.rows[0].credits });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add credits' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CLASSROOM ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/classroom/create', authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
+    const { name, subject, grade } = req.body;
+    const code = 'EDU-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    const result = await pool.query(
+      `INSERT INTO classrooms (teacher_id, name, subject, grade, code) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [req.user.id, name, subject, grade, code]
+    );
+    res.json({ classroom: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create classroom' });
+  }
+});
+
+app.get('/classroom/my', authenticate, async (req, res) => {
+  try {
+    let result;
+    if (req.user.role === 'teacher' || req.user.role === 'admin') {
+      result = await pool.query(
+        `SELECT c.*, (SELECT COUNT(*) FROM classroom_students cs WHERE cs.classroom_id = c.id) as student_count
+         FROM classrooms c WHERE teacher_id = $1`,
+        [req.user.id]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT c.*, u.name as teacher_name FROM classrooms c
+         JOIN classroom_students cs ON cs.classroom_id = c.id
+         JOIN users u ON u.id = c.teacher_id
+         WHERE cs.student_id = $1`,
+        [req.user.id]
+      );
+    }
+    res.json({ classrooms: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load classrooms' });
+  }
+});
+
+app.post('/classroom/join', authenticate, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const classroom = await pool.query('SELECT * FROM classrooms WHERE code = $1', [code]);
+    if (classroom.rows.length === 0) return res.status(404).json({ error: 'Classroom not found' });
+
+    const classroomId = classroom.rows[0].id;
+    await pool.query(
+      `INSERT INTO classroom_students (classroom_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [classroomId, req.user.id]
+    );
+    res.json({ message: 'Joined classroom', classroom: classroom.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to join classroom' });
+  }
+});
+
+app.get('/classroom/:id/students', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.name, u.email, u.grade FROM users u
+       JOIN classroom_students cs ON cs.student_id = u.id
+       WHERE cs.classroom_id = $1`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load students' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Dashboard stats
+app.get('/admin/stats', authenticate, adminOnly, async (req, res) => {
+  try {
+    const [users, chats, curriculum, promos] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM users'),
+      pool.query("SELECT COUNT(*) FROM chat_history WHERE role = 'user'"),
+      pool.query('SELECT COUNT(*) FROM curriculum'),
+      pool.query('SELECT COUNT(*) FROM promo_codes WHERE uses < max_uses'),
+    ]);
+    res.json({
+      total_users:     parseInt(users.rows[0].count),
+      total_chats:     parseInt(chats.rows[0].count),
+      curriculum_count: parseInt(curriculum.rows[0].count),
+      active_promos:   parseInt(promos.rows[0].count),
+    });
+  } catch (err) {
+    console.error('Stats error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List all users — FIXED: returns { users: [...] }
+app.get('/admin/users', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { search, role, plan } = req.query;
+    let query = 'SELECT id, email, name, role, grade, institution, plan, daily_count, credits, created_at FROM users WHERE 1=1';
+    const params = [];
+    if (search) { params.push(`%${search}%`); query += ` AND (name ILIKE $${params.length} OR email ILIKE $${params.length})`; }
+    if (role)   { params.push(role);           query += ` AND role = $${params.length}`; }
+    if (plan)   { params.push(plan);           query += ` AND plan = $${params.length}`; }
+    query += ' ORDER BY created_at DESC LIMIT 100';
+    const result = await pool.query(query, params);
+    res.json({ users: result.rows }); // ← FIXED: wrapped in { users: [] }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load users' });
+  }
+});
+
+app.patch('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { plan, role } = req.body;
+    const result = await pool.query(
+      'UPDATE users SET plan = COALESCE($1, plan), role = COALESCE($2, role) WHERE id = $3 RETURNING *',
+      [plan, role, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+app.delete('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+    res.json({ message: 'User deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// Payments list
+app.get('/admin/payments', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.*, u.name as user_name
+       FROM payments p
+       LEFT JOIN users u ON p.user_id::text = u.id::text
+       ORDER BY p.created_at DESC LIMIT 100`
+    );
+    res.json({ payments: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CURRICULUM ROUTES (Admin only) — single clean set, no duplicates
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Detect subject/grade from PDF filename
+app.post('/admin/curriculum/detect', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { fileName, fileData, fileSize } = req.body;
+
+    const prompt = `Analyze this curriculum PDF filename: "${fileName}"
+
+Based on the filename, detect:
+1. Subject (Math, Science, English, Vietnamese, Physics, Chemistry, Biology, History, Geography, IT, Civic, or Other)
+2. Grade level (1-12, or 0 for all grades)
+3. Language (vi for Vietnamese, en for English, both)
+4. Estimated curriculum type (national, cambridge, ib, other)
+
+Respond ONLY in JSON with no other text:
+{"subject":"Math","grade":6,"lang":"en","curriculum_type":"cambridge","preview":"Brief description of what this curriculum covers"}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 300,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const text = response.content[0].text.replace(/```json|```/g, '').trim();
+    const detected = JSON.parse(text);
+    detected.estimated_chunks = Math.ceil((fileSize || 0) / 1000);
+
+    res.json(detected);
+  } catch (err) {
+    console.error('Curriculum detect error:', err);
+    res.json({
+      subject: 'Other',
+      grade: 0,
+      lang: 'vi',
+      curriculum_type: 'general',
+      preview: 'Manual review needed',
+      estimated_chunks: 0
+    });
+  }
+});
+
+
+// Import curriculum from PDF
+app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { fileData, fileName, subject, grade, type, lang } = req.body;
+    // Bulletproof grade parser — rejects ANY non-numeric value
+    const safeGrade = (v) => { const n = parseInt(String(v).replace(/[^0-9]/g, ""), 10); return (isNaN(n) || n < 0 || n > 12) ? 0 : n; };
+    if (!fileData) return res.status(400).json({ error: 'No file data received' });
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    function parseItems(text) {
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      try { const r = JSON.parse(cleaned); if (Array.isArray(r)) return r; } catch(e) {}
+      const match = cleaned.match(/\[[\s\S]*\]/);
+      if (match) { try { const r = JSON.parse(match[0]); if (Array.isArray(r)) return r; } catch(e) {} }
+      return [];
+    }
+
+    let pdfText = '';
+    let usedPdfParse = false;
+
+    // Try pdf-parse first (fast, no token cost)
+    try {
+      const pdfBuffer = Buffer.from(fileData, 'base64');
+      let pp = pdfParse;
+      if (!pp) pp = require('pdf-parse');
+      const pdfData = await pp(pdfBuffer);
+      pdfText = (pdfData.text || '').trim();
+      if (pdfText.length > 100) {
+        usedPdfParse = true;
+        console.log(`pdf-parse: extracted ${pdfText.length} chars from "${fileName}"`);
+      }
+    } catch(e) {
+      console.log('pdf-parse unavailable, will use Claude PDF vision:', e.message);
+    }
+
+    let allItems = [];
+
+    if (usedPdfParse && pdfText.length > 100) {
+      // TEXT PATH: split into chunks and send text only to Claude
+      const CHUNK_SIZE = 3500;
+      const chunks = [];
+      for (let i = 0; i < pdfText.length; i += CHUNK_SIZE) chunks.push(pdfText.slice(i, i + CHUNK_SIZE));
+      console.log(`Processing ${chunks.length} text chunks`);
+
+      for (let i = 0; i < chunks.length; i++) {
+        try {
+          const response = await anthropic.messages.create({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 1500,
+            messages: [{ role: 'user', content:
+              `You are extracting ${subject} curriculum. CRITICAL RULE: Always prefix strand with the stage/grade label found above it in the text. Examples: "Stage 3: Number", "Grade 6: Algebra", "Lop 8: Hinh hoc". If you see Stage N, Grade N, Lop N or Year N as a heading, every item under it must have that prefix in strand.\n\nReturn ONLY a JSON array:\n[{"strand":"Stage N: topic","substrand":"sub-topic or empty","objective":"learning objective"}]\n\nIf no stage label visible, look earlier in the text chunk for the most recent stage heading.\nIf nothing educational found return [].\n\nTEXT:\n${chunks[i]}`
+            }]
+          });
+          const items = parseItems(response.content[0].text);
+          allItems = allItems.concat(items);
+          console.log(`Chunk ${i+1}/${chunks.length}: ${items.length} items`);
+        } catch(err) {
+          if (err.message && err.message.includes('rate_limit')) {
+            console.log('Rate limited, waiting 20s...');
+            await sleep(20000);
+            i--; // retry this chunk
+          } else {
+            console.warn(`Chunk ${i+1} failed:`, err.message);
+          }
+        }
+        // 2.5s between each chunk to stay under 30k tokens/min
+        if (i < chunks.length - 1) await sleep(2500);
+      }
+
+    } else {
+      // VISION PATH: send PDF directly to Claude but only ask for summary extraction
+      // Use haiku (cheaper, smaller context) and ask for structured output in 2 passes
+      console.log('Using Claude PDF vision for extraction');
+
+      const docSource = { type: 'base64', media_type: 'application/pdf', data: fileData };
+
+      // Pass 1: Get all chapter/topic names only (small output)
+      let topicNames = [];
+      try {
+        await sleep(3000); // wait before first call
+        const r1 = await anthropic.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: [
+            { type: 'document', source: docSource },
+            { type: 'text', text: 'List only the main chapter and unit titles from this PDF. Return ONLY a JSON array of strings: ["title1","title2",...]. Maximum 30 items.' }
+          ]}]
+        });
+        topicNames = parseItems(r1.content[0].text).filter(s => typeof s === 'string').slice(0, 30);
+        console.log(`Vision pass 1: ${topicNames.length} topics`);
+      } catch(e) { console.warn('Vision pass 1 failed:', e.message); }
+
+      // Pass 2: For each topic (batches of 8), extract objectives from text description
+      const BATCH = 8;
+      for (let i = 0; i < topicNames.length; i += BATCH) {
+        await sleep(5000);
+        const batch = topicNames.slice(i, i + BATCH);
+        try {
+          const r2 = await anthropic.messages.create({
+            model: 'claude-haiku-4-5',
+            max_tokens: 1500,
+            messages: [{ role: 'user', content: [
+              { type: 'document', source: docSource },
+              { type: 'text', text: `Extract all learning objectives for these topics from the PDF: ${batch.join(', ')}. Return ONLY JSON: [{"strand":"topic","substrand":"sub-topic or empty","objective":"specific learning objective"}]` }
+            ]}]
+          });
+          const items = parseItems(r2.content[0].text);
+          allItems = allItems.concat(items);
+          console.log(`Vision batch ${Math.ceil(i/BATCH)+1}: ${items.length} items`);
+        } catch(e) { console.warn(`Vision batch failed:`, e.message); }
+      }
+
+      // Fallback if topics empty — one general pass with haiku
+      if (allItems.length === 0) {
+        await sleep(5000);
+        try {
+          const rf = await anthropic.messages.create({
+            model: 'claude-haiku-4-5',
+            max_tokens: 2000,
+            messages: [{ role: 'user', content: [
+              { type: 'document', source: docSource },
+              { type: 'text', text: `Extract up to 50 key learning objectives from this ${subject} curriculum PDF. Return ONLY JSON: [{"strand":"topic","substrand":"","objective":"learning objective"}]` }
+            ]}]
+          });
+          allItems = parseItems(rf.content[0].text);
+          console.log(`Fallback pass: ${allItems.length} items`);
+        } catch(e) { console.warn('Fallback pass failed:', e.message); }
+      }
+    }
+
+    // Deduplicate
+    const seen = new Set();
+    const uniqueItems = allItems.filter(item => {
+      if (!item || typeof item.objective !== 'string' || !item.objective.trim()) return false;
+      const key = item.objective.trim().toLowerCase().slice(0, 120);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    console.log(`Unique items: ${uniqueItems.length} from ${allItems.length} raw`);
+
+    if (!uniqueItems.length) {
+      return res.status(400).json({ error: 'No curriculum content could be extracted. Try a different PDF or add pdf-parse to package.json.' });
+    }
+
+    // Insert into DB
+    // Helper: extract grade/stage number from item content
+    // Handles: "Stage 3", "Grade 3", "Lớp 3", strand names like "Stage 3 - Numbers"
+    function detectItemGrade(item, fallbackGrade, currType) {
+      // If we already have a specific grade, use it
+      if (fallbackGrade > 0) return fallbackGrade;
+
+      // Try to detect from strand, substrand, or objective text
+      const searchText = `${item.strand||''} ${item.substrand||''} ${item.objective||''}`;
+
+      // Cambridge: "Stage N"
+      const stageMatch = searchText.match(/stage\s*(\d+)/i);
+      if (stageMatch) return parseInt(stageMatch[1]);
+
+      // Vietnam: "Lớp N" or "lop N"
+      const lopMatch = searchText.match(/l[oớ]p\s*(\d+)/i);
+      if (lopMatch) return parseInt(lopMatch[1]);
+
+      // Generic: "Grade N"
+      const gradeMatch = searchText.match(/grade\s*(\d+)/i);
+      if (gradeMatch) return parseInt(gradeMatch[1]);
+
+      // Year: "Year N"
+      const yearMatch = searchText.match(/year\s*(\d+)/i);
+      if (yearMatch) return parseInt(yearMatch[1]);
+
+      return 0; // truly all grades
+    }
+
+    let imported = 0;
+    for (const item of uniqueItems) {
+      const baseGrade = safeGrade(grade);
+      const itemGrade = detectItemGrade(item, baseGrade, type);
+      const stageLabel = itemGrade === 0 ? '' :
+        type === 'cambridge' ? `Stage ${itemGrade}` :
+        type === 'national'  ? `Lớp ${itemGrade}` :
+        `${itemGrade}`;
+
+      await pool.query(
+        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file, stage) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [subject, itemGrade, item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, stageLabel]
+      );
+      imported++;
+    }
+
+    console.log(`✅ Imported ${imported} items from "${fileName}"`);
+    res.json({ imported, message: `Successfully imported ${imported} curriculum items from "${fileName}"` });
+
+  } catch (err) {
+    console.error('Curriculum import error:', err);
+    res.status(500).json({ error: 'Import failed: ' + err.message });
+  }
+});
+
+
+// List curriculum grouped by subject + grade
+app.get('/admin/curriculum/list', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT subject, grade, curriculum_type, lang, COUNT(*) as count
+       FROM curriculum
+       GROUP BY subject, grade, curriculum_type, lang
+       ORDER BY subject, grade`
+    );
+    res.json({ items: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete curriculum by subject + grade
+app.delete('/admin/curriculum/delete', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { subject, grade } = req.body;
+    const result = await pool.query(
+      'DELETE FROM curriculum WHERE subject = $1 AND grade = $2',
+      [subject, parseInt(String(grade).replace(/[^0-9]/g,""),10)||0]
+    );
+    res.json({ deleted: result.rowCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENT ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+async function upgradePlan(userId, planKey) {
+  const plan = PLANS[planKey];
+  if (!plan) throw new Error('Unknown plan: ' + planKey);
+  const credits = PLAN_CREDITS[plan.plan] || 0;
+  await pool.query('UPDATE users SET plan = $1, credits = credits + $2 WHERE id = $3', [plan.plan, credits, userId]);
 }
 
-function addTyping(bid){
-  var box=document.getElementById(bid);var id='ty'+Date.now();
-  var d=document.createElement('div');d.className='m a';d.id=id;
-  d.innerHTML='<div class="av">🤖</div><div class="bub"><div class="dots"><span></span><span></span><span></span></div></div>';
-  box.appendChild(d);box.scrollTop=box.scrollHeight;return id;
+app.post('/payment/create-vnpay', authenticate, async (req, res) => {
+  try {
+    const { planKey } = req.body;
+    const plan = PLANS[planKey];
+    if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+
+    const tmnCode    = process.env.VNPAY_TMN_CODE;
+    const hashSecret = process.env.VNPAY_HASH_SECRET;
+    const returnUrl  = `${process.env.APP_URL || 'https://edubot-vietnam.onrender.com'}/payment/vnpay-return`;
+
+    const date = new Date();
+    const pad  = n => String(n).padStart(2, '0');
+    const createDate = `${date.getFullYear()}${pad(date.getMonth()+1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+    const txnRef = `${req.user.id}-${Date.now()}`;
+
+    const params = {
+      vnp_Version:    '2.1.0',
+      vnp_Command:    'pay',
+      vnp_TmnCode:    tmnCode,
+      vnp_Amount:     plan.vnd * 100,
+      vnp_CurrCode:   'VND',
+      vnp_TxnRef:     txnRef,
+      vnp_OrderInfo:  `EduBot ${plan.label} - User ${req.user.id}`,
+      vnp_OrderType:  'other',
+      vnp_Locale:     'vn',
+      vnp_ReturnUrl:  returnUrl,
+      vnp_IpAddr:     req.ip || '127.0.0.1',
+      vnp_CreateDate: createDate,
+    };
+
+    const sorted   = Object.keys(params).sort().reduce((acc, k) => { acc[k] = params[k]; return acc; }, {});
+    const signData = querystring.stringify(sorted);
+    const hmac     = crypto.createHmac('sha512', hashSecret).update(signData, 'utf8').digest('hex');
+    sorted.vnp_SecureHash = hmac;
+
+    await pool.query(
+      `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
+       VALUES ($1, $2, 'vnpay', $3, 'VND', $4, 'pending', NOW())`,
+      [req.user.id, planKey, plan.vnd, txnRef]
+    );
+
+    res.json({ paymentUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?' + querystring.stringify(sorted) });
+  } catch (err) {
+    console.error('VNPay create error:', err);
+    res.status(500).json({ error: 'Failed to create VNPay payment' });
+  }
+});
+
+app.get('/payment/vnpay-return', async (req, res) => {
+  try {
+    const hashSecret   = process.env.VNPAY_HASH_SECRET;
+    const params       = { ...req.query };
+    const secureHash   = params.vnp_SecureHash;
+    const responseCode = params.vnp_ResponseCode;
+    const txnRef       = params.vnp_TxnRef;
+
+    delete params.vnp_SecureHash;
+    delete params.vnp_SecureHashType;
+
+    const sorted   = Object.keys(params).sort().reduce((acc, k) => { acc[k] = params[k]; return acc; }, {});
+    const signData = querystring.stringify(sorted);
+    const hmac     = crypto.createHmac('sha512', hashSecret).update(signData, 'utf8').digest('hex');
+
+    const appUrl = 'https://edubot-vietnam.onrender.com';
+
+    if (hmac !== secureHash) {
+      return res.redirect(`${appUrl}/app?payment=failed&reason=invalid_signature`);
+    }
+
+    if (responseCode === '00') {
+      const pending = await pool.query('SELECT * FROM payments WHERE txn_ref = $1', [txnRef]);
+      if (pending.rows.length > 0) {
+        const { user_id, plan } = pending.rows[0];
+        await upgradePlan(user_id, plan);
+        await pool.query('UPDATE payments SET status = $1 WHERE txn_ref = $2', ['success', txnRef]);
+      }
+      return res.redirect(`${appUrl}/app?payment=success`);
+    } else {
+      await pool.query('UPDATE payments SET status = $1 WHERE txn_ref = $2', ['failed', txnRef]);
+      return res.redirect(`${appUrl}/app?payment=failed&reason=declined`);
+    }
+  } catch (err) {
+    console.error('VNPay return error:', err);
+    res.redirect('https://edubot-vietnam.onrender.com/app?payment=failed&reason=server_error');
+  }
+});
+
+app.post('/payment/create-stripe-session', authenticate, async (req, res) => {
+  try {
+    const { planKey } = req.body;
+    const plan = PLANS[planKey];
+    if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+
+    const appUrl = 'https://edubot-vietnam.onrender.com';
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: `EduBot ${plan.label}` },
+          unit_amount: plan.usd_cents,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${appUrl}/app?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:  `${appUrl}/pricing?payment=cancelled`,
+      metadata: {
+        user_id:  String(req.user.id),
+        plan_key: planKey,
+      },
+    });
+
+    await pool.query(
+      `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
+       VALUES ($1, $2, 'stripe', $3, 'USD', $4, 'pending', NOW())`,
+      [req.user.id, planKey, plan.usd_cents, session.id]
+    );
+
+    res.json({ sessionUrl: session.url });
+  } catch (err) {
+    console.error('Stripe session error:', err);
+    res.status(500).json({ error: 'Failed to create Stripe session' });
+  }
+});
+
+app.post('/payment/verify-stripe', authenticate, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== 'paid') {
+      return res.status(402).json({ error: 'Payment not completed', status: session.payment_status });
+    }
+
+    if (session.metadata.user_id !== String(req.user.id)) {
+      return res.status(403).json({ error: 'Session does not belong to this user' });
+    }
+
+    const planKey  = session.metadata.plan_key;
+    const existing = await pool.query('SELECT status FROM payments WHERE txn_ref = $1', [sessionId]);
+
+    if (existing.rows.length === 0 || existing.rows[0].status !== 'success') {
+      await upgradePlan(req.user.id, planKey);
+      await pool.query(
+        `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
+         VALUES ($1, $2, 'stripe', $3, 'USD', $4, 'success', NOW())
+         ON CONFLICT (txn_ref) DO UPDATE SET status = 'success'`,
+        [req.user.id, planKey, PLANS[planKey].usd_cents, sessionId]
+      );
+    }
+
+    const user = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
+    res.json({ success: true, plan: user.rows[0].plan, credits: user.rows[0].credits });
+  } catch (err) {
+    console.error('Stripe verify error:', err);
+    res.status(500).json({ error: 'Failed to verify payment' });
+  }
+});
+
+app.get('/payment/status', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get payment status' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FLASHCARD ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/flashcards/generate', authenticate, async (req, res) => {
+  try {
+    const { subject, grade, topic, count = 5, lang } = req.body;
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    const prompt = `Generate exactly ${count} flashcards for a grade ${grade} student studying ${subject}.
+Topic: ${topic || subject}.
+Language: ${language}.
+
+Return ONLY a valid JSON array with no other text, no markdown, no code blocks.
+Each item must have exactly these fields:
+- "question": the question or prompt on the front of the card
+- "answer": the clear answer on the back of the card
+- "hint": a short hint to help the student
+
+Example format:
+[{"question":"What is 2+2?","answer":"4","hint":"Count on your fingers"}]`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    let raw = response.content[0].text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
+
+    let cards;
+    try {
+      cards = JSON.parse(raw);
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to generate flashcards' });
+    }
+
+    const saved = [];
+    for (const card of cards) {
+      const result = await pool.query(
+        `INSERT INTO flashcards (user_id, subject, grade, topic, question, answer, hint, lang, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW()) RETURNING *`,
+        [req.user.id, subject, grade, topic || subject, card.question, card.answer, card.hint || '', lang || 'vi']
+      );
+      saved.push(result.rows[0]);
+    }
+
+    res.json({ flashcards: saved });
+  } catch (err) {
+    console.error('Flashcard generate error:', err);
+    res.status(500).json({ error: 'Failed to generate flashcards' });
+  }
+});
+
+app.get('/flashcards/my', authenticate, async (req, res) => {
+  try {
+    const { subject, grade } = req.query;
+    let query = 'SELECT * FROM flashcards WHERE user_id = $1';
+    const params = [req.user.id];
+    if (subject) { params.push(subject); query += ` AND subject = $${params.length}`; }
+    if (grade)   { params.push(grade);   query += ` AND grade = $${params.length}`; }
+    query += ' ORDER BY created_at DESC LIMIT 100';
+    const result = await pool.query(query, params);
+    res.json({ flashcards: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load flashcards' });
+  }
+});
+
+app.delete('/flashcards/:id', authenticate, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM flashcards WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete flashcard' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IMAGE GENERATION ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/image/generate', authenticate, async (req, res) => {
+  try {
+    const { prompt, subject, grade } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+
+    const userResult = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
+    const user = userResult.rows[0];
+    const canGenerate = ['plus', 'teacher_pro'].includes(user.plan) || user.role === 'admin';
+    if (!canGenerate) {
+      return res.status(403).json({ error: 'Image generation requires Student Plus or Teacher Pro plan.', upgrade: true });
+    }
+    if ((user.credits || 0) < CREDIT_COSTS.ai_image) {
+      return res.status(402).json({ error: 'Not enough credits for image generation.', upgrade: true });
+    }
+
+    const safePrompt = `Educational illustration for grade ${grade || 'school'} students about ${subject || 'general science'}: ${prompt}. Clean, colorful, child-friendly educational diagram style. No text in image.`;
+
+    const response = await openai.images.generate({
+      model: 'gpt-image-1',
+      prompt: safePrompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'medium',
+    });
+
+    const imgData  = response.data[0];
+    const imageUrl = imgData.url ? imgData.url : `data:image/png;base64,${imgData.b64_json}`;
+
+    await pool.query('UPDATE users SET credits = credits - $1 WHERE id = $2', [CREDIT_COSTS.ai_image, req.user.id]);
+
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('Image generation error:', err?.message || err);
+    res.status(500).json({ error: err?.message || 'Failed to generate image' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GRAPH GENERATION ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/graph/generate', authenticate, async (req, res) => {
+  try {
+    const { topic, subject, grade, lang } = req.body;
+    if (!topic) return res.status(400).json({ error: 'Missing topic' });
+
+    const gradeNum = parseInt(grade) || 1;
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    if (gradeNum < 4) {
+      return res.status(400).json({ error: 'Graphs are available for Grade 4 and above.' });
+    }
+
+    const prompt = `You are an educational data visualization assistant.
+Generate a Chart.js compatible chart for a Grade ${gradeNum} ${subject} student.
+Topic: ${topic}
+Language for labels: ${language}
+
+Return ONLY a valid JSON object with no other text, no markdown, no code blocks.
+The JSON must have exactly this structure:
+{
+  "type": "line" or "bar" or "pie" or "scatter",
+  "title": "Chart title in ${language}",
+  "description": "One sentence explaining what this chart shows, in ${language}",
+  "data": {
+    "labels": ["label1", "label2", ...],
+    "datasets": [{
+      "label": "Dataset name in ${language}",
+      "data": [number1, number2, ...],
+      "backgroundColor": ["#00B4D8", "#E85D30", "#059669", "#F59E0B", "#EF4444"],
+      "borderColor": "#00B4D8",
+      "borderWidth": 2,
+      "fill": false
+    }]
+  },
+  "options": {
+    "xLabel": "X axis label in ${language}",
+    "yLabel": "Y axis label in ${language}"
+  }
+}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    let raw = response.content[0].text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
+
+    let chartData;
+    try {
+      chartData = JSON.parse(raw);
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to generate chart data' });
+    }
+
+    res.json({ chart: chartData });
+  } catch (err) {
+    console.error('Graph generation error:', err);
+    res.status(500).json({ error: 'Failed to generate graph' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROMO CODE ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/promo/create', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { type, credits, plan, max_uses, expires_at, custom_code } = req.body;
+    const code = custom_code || ('EDU' + Math.random().toString(36).substring(2, 8).toUpperCase());
+    const result = await pool.query(
+      `INSERT INTO promo_codes (code, credits, max_uses, uses, type, plan, expires_at)
+       VALUES ($1, $2, $3, 0, $4, $5, $6) RETURNING *`,
+      [code, credits || 0, max_uses || 1, type || 'credits', plan || null, expires_at || null]
+    );
+    res.json({ promo: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/promo/list', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM promo_codes ORDER BY created_at DESC');
+    res.json({ promos: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/promo/redeem', authenticate, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const promo = await pool.query(
+      `SELECT * FROM promo_codes WHERE code = $1 AND uses < max_uses AND (expires_at IS NULL OR expires_at > NOW())`,
+      [code.toUpperCase()]
+    );
+    if (!promo.rows.length) return res.status(404).json({ error: 'Invalid or expired promo code' });
+
+    const p = promo.rows[0];
+    await pool.query('UPDATE promo_codes SET uses = uses + 1 WHERE id = $1', [p.id]);
+
+    if (p.type === 'plan' && p.plan) {
+      const credits = PLAN_CREDITS[p.plan] || 0;
+      await pool.query('UPDATE users SET plan = $1, credits = credits + $2 WHERE id = $3', [p.plan, credits, req.user.id]);
+      res.json({ success: true, message: `Plan upgraded to ${p.plan}!`, type: 'plan', plan: p.plan });
+    } else {
+      await pool.query('UPDATE users SET credits = credits + $1 WHERE id = $2', [p.credits, req.user.id]);
+      res.json({ success: true, message: `${p.credits} credits added!`, type: 'credits', credits: p.credits });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SERVER START + DB SETUP
+// ─────────────────────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
+
+async function startServer() {
+  try {
+    // Users table columns
+    await Promise.all([
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0"),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'free'"),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_count INTEGER DEFAULT 0"),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reset TIMESTAMP"),
+    ]);
+
+    // Core tables
+    await pool.query(`CREATE TABLE IF NOT EXISTS payments (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      plan VARCHAR(50),
+      gateway VARCHAR(20),
+      amount INTEGER,
+      currency VARCHAR(10),
+      txn_ref VARCHAR(255) UNIQUE,
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS flashcards (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      subject VARCHAR(50),
+      grade INTEGER,
+      topic VARCHAR(200),
+      question TEXT,
+      answer TEXT,
+      hint TEXT,
+      lang VARCHAR(5) DEFAULT 'vi',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS promo_codes (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(20) UNIQUE,
+      credits INTEGER DEFAULT 0,
+      max_uses INTEGER DEFAULT 1,
+      uses INTEGER DEFAULT 0,
+      type VARCHAR(20) DEFAULT 'credits',
+      plan VARCHAR(50),
+      expires_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS curriculum (
+      id SERIAL PRIMARY KEY,
+      subject VARCHAR(100),
+      grade INTEGER,
+      strand VARCHAR(200),
+      substrand VARCHAR(200),
+      objective TEXT,
+      curriculum_type VARCHAR(50) DEFAULT 'general',
+      lang VARCHAR(10) DEFAULT 'vi',
+      source_file VARCHAR(255),
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS chat_history (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      role VARCHAR(20),
+      content TEXT,
+      subject VARCHAR(50),
+      grade INTEGER,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS classroom_students (
+      id SERIAL PRIMARY KEY,
+      classroom_id INTEGER,
+      student_id UUID,
+      UNIQUE(classroom_id, student_id)
+    )`);
+
+    // Safe column additions
+    await Promise.all([
+      pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'credits'"),
+      pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS plan VARCHAR(50)"),
+      pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS lang VARCHAR(10) DEFAULT 'vi'"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS curriculum_type VARCHAR(50) DEFAULT 'general'"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS source_file VARCHAR(255)"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS substrand VARCHAR(200)"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS strand VARCHAR(200)"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS stage VARCHAR(200) DEFAULT ''"),
+      pool.query("ALTER TABLE curriculum ALTER COLUMN stage TYPE VARCHAR(200) USING stage::VARCHAR"),
+    ]);
+
+    // Exam tables
+    await pool.query(`CREATE TABLE IF NOT EXISTS exams (
+      id SERIAL PRIMARY KEY,
+      teacher_id UUID REFERENCES users(id),
+      title VARCHAR(255) NOT NULL,
+      subject VARCHAR(100),
+      grade INTEGER,
+      context VARCHAR(20) DEFAULT 'local',
+      purpose VARCHAR(20) DEFAULT 'test',
+      difficulty VARCHAR(20) DEFAULT 'medium',
+      adapted_for_weak BOOLEAN DEFAULT false,
+      time_limit INTEGER DEFAULT 30,
+      show_answers BOOLEAN DEFAULT false,
+      questions JSONB NOT NULL,
+      total_points INTEGER DEFAULT 0,
+      code VARCHAR(20) UNIQUE,
+      status VARCHAR(20) DEFAULT 'draft',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS exam_submissions (
+      id SERIAL PRIMARY KEY,
+      exam_id INTEGER REFERENCES exams(id),
+      student_id UUID REFERENCES users(id),
+      guest_name VARCHAR(100),
+      answers JSONB DEFAULT '[]',
+      ai_scores JSONB DEFAULT '[]',
+      final_scores JSONB DEFAULT '[]',
+      total_score INTEGER DEFAULT 0,
+      max_score INTEGER DEFAULT 0,
+      status VARCHAR(20) DEFAULT 'in_progress',
+      started_at TIMESTAMP DEFAULT NOW(),
+      submitted_at TIMESTAMP,
+      time_extended INTEGER DEFAULT 0
+    )`);
+
+    console.log('✅ Database ready');
+  } catch (e) {
+    console.error('DB setup error:', e.message);
+  }
+
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 }
 
-function showExportBar(){document.getElementById('export-bar').classList.add('visible');}
+startServer();
 
-function barCopy(){
-  if(!lastAiContentId)return;
-  var btn=document.getElementById('eb-copy');
-  var lbl=document.getElementById('eb-copy-lbl');
-  var el=document.getElementById(lastAiContentId);if(!el)return;
-  var clone=el.cloneNode(true);
-  var plain=clone.innerText||clone.textContent||'';
-  navigator.clipboard.writeText(plain).then(function(){
-    lbl.textContent=L('copied').replace('✅ ','');
-    btn.className='eb-btn eb-copy copied';
-    setTimeout(function(){lbl.textContent=L('copy').replace('📋 ','');btn.className='eb-btn eb-copy';},2000);
-  });
-}
+// ─── EXAM ROUTES ──────────────────────────────────────────────────────────────
 
-function getRandomAccentColor(){
-  var colors=['#7b1f2e','#8b2800','#6b1a35','#7a2200','#5c1520','#6e2400'];
-  return colors[Math.floor(Math.random()*colors.length)];
-}
+// Generate exam with AI
+app.post('/exam/generate', authenticate, async (req, res) => {
+  try {
+    const { subject, topics, context, purpose, difficulty, questionTypes, questionCount, adaptForWeak, timeLimit, showAnswers, grade } = req.body;
+    const userId = req.user.id;
+    const user = await pool.query('SELECT * FROM users WHERE id=$1', [userId]);
+    if (!user.rows[0] || (user.rows[0].role !== 'teacher' && user.rows[0].role !== 'admin')) {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
 
-function buildExportHTML(contentId){
-  var el=document.getElementById(contentId);if(!el)return null;
-  var clone=el.cloneNode(true);
-  var title='EDUBOT DOCUMENT';
-  var h2=clone.querySelector('h2');if(h2){title=h2.textContent.toUpperCase();h2.remove();}
-  var css=[
-    'body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:1.5cm;color:#111;line-height:1.5;background:#fff}',
-    '.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #F43F5E}',
-    '.doc-brand{font-size:13pt;font-weight:bold;color:#F43F5E;letter-spacing:1px}',
-    '.doc-title{font-size:16pt;font-weight:bold;color:#F43F5E;text-transform:uppercase;margin:16px 0 24px;text-align:center;letter-spacing:1px}',
-    'h2{font-size:13pt;font-weight:bold;color:#F43F5E;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid #F43F5E}',
-    'h3{font-size:11pt;font-weight:bold;color:#F97316;margin:10px 0 4px}',
-    'p{margin:4px 0;line-height:1.5}',
-    'ul,ol{margin:4px 0 4px 20px;line-height:1.6}li{margin-bottom:2px}',
-    'table{border-collapse:collapse;width:100%;margin:10px 0;table-layout:fixed;word-wrap:break-word}',
-    'th{background:#F43F5E;color:#fff;padding:6px 8px;text-align:left;font-weight:bold;font-size:10pt;border:1px solid #F43F5E;word-wrap:break-word}',
-    'td{padding:6px 8px;border:1px solid #dee2e6;vertical-align:top;font-size:10pt;word-wrap:break-word}',
-    'tr:nth-child(even) td{background:#fef2f2}',
-    'strong{font-weight:bold}',
-    '.doc-footer{margin-top:30px;padding-top:10px;border-top:2px solid #F43F5E;font-size:8pt;color:#888;display:flex;justify-content:space-between}'
-  ].join('');
-  return {css:css,clone:clone,title:title,accent:'#F43F5E'};
-}
+    const contextLabel = context === 'international' ? 'International curriculum (Cambridge, IELTS style)' : 'Vietnamese national curriculum (MOET style)';
+    const purposeLabel = purpose === 'exam' ? 'formal end-of-term exam' : 'class test';
+    const adaptNote = adaptForWeak ? 'IMPORTANT: Adapt questions for underperforming students — simpler language, more scaffolding, clearer instructions.' : '';
+    const typesLabel = (questionTypes || ['mcq', 'truefalse', 'fillinblank']).join(', ');
 
-function barExportPDF(){
-  if(!lastAiContentId)return;
-  var b=buildExportHTML(lastAiContentId);if(!b)return;
-  var w=window.open('','_blank');
-  w.document.write('<html><head><title>EduBot Export</title><style>'+b.css+'</style></head><body>'+
-    '<div class="doc-header"><div class="doc-brand">EduBot</div><div style="font-size:9pt;color:#888">AI Teaching Platform</div></div>'+
-    '<div class="doc-title">'+b.title+'</div>'+b.clone.innerHTML+
-    '<div class="doc-footer"><span>EduBot — AI Teaching Assistant</span><span>edubot-vietnam.onrender.com</span></div>'+
-    '</body></html>');
-  w.document.close();w.focus();setTimeout(function(){w.print();w.close();},500);
-}
+    const prompt = `You are an expert ${contextLabel} exam creator for Grade ${grade} ${subject}.
 
-function barExportWord(){
-  if(!lastAiContentId)return;
-  var b=buildExportHTML(lastAiContentId);if(!b)return;
-  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">'+
-    '<head><meta charset="utf-8"><style>'+b.css+'</style></head><body>'+
-    '<div class="doc-header"><div class="doc-brand">EduBot</div><div style="font-size:9pt;color:#888">AI Teaching Platform</div></div>'+
-    '<div class="doc-title">'+b.title+'</div>'+b.clone.innerHTML+
-    '<div class="doc-footer"><span>EduBot — AI Teaching Assistant</span><span>edubot-vietnam.onrender.com</span></div>'+
-    '</body></html>';
-  var blob=new Blob([html],{type:'application/msword'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download='EduBot-Export.doc';a.click();
-  URL.revokeObjectURL(url);
-}
+Create a ${purposeLabel} covering these topics: ${topics}
+Difficulty: ${difficulty}
+Question types to include: ${typesLabel}
+Total questions: ${questionCount || 10}
+${adaptNote}
 
-function exportPDF(id){lastAiContentId=id;barExportPDF();}
-function exportWord(id){lastAiContentId=id;barExportWord();}
-function copyContent(id){lastAiContentId=id;barCopy();}
+Question type codes:
+- mcq: Multiple choice with 4 options (A,B,C,D), one correct answer
+- truefalse: True or False statement
+- fillinblank: Sentence with a blank to fill in
+- matching: Two columns to match (provide 4-5 pairs)
+- shortanswer: Question requiring 2-3 sentence answer
+- errorcorrection: Sentence with an error to find and correct
+- ordering: Steps/items to put in correct order (provide 4-5 items)
+- comprehension: Short passage followed by 2-3 questions about it
 
-async function doJoin(){
-  var inp=document.getElementById('codeinput');var fb=document.getElementById('jfb');var btn=document.getElementById('bjoin');
-  var code=inp.value.trim().toUpperCase();fb.className='';fb.textContent='';
-  if(code.length<7){fb.className='err';fb.textContent='⚠️ '+L('jverr');setTimeout(function(){fb.className='';fb.textContent='';},4000);return;}
-  btn.disabled=true;btn.innerHTML='<span class="sp2"></span>';
-  try{
-    var res=await fetch(API+'/classroom/join',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({code:code})});
-    var data=await res.json();
-    if(!res.ok){fb.className='err';fb.textContent='❌ '+(data.error||L('jerr'));}
-    else{fb.className='ok';fb.textContent='✅ '+L('jok');inp.value='';toast(L('jok'),'ok');await loadSClasses();}
-    setTimeout(function(){fb.className='';fb.textContent='';},5000);
-  }catch(e){fb.className='err';fb.textContent='❌ '+L('cerr');setTimeout(function(){fb.className='';fb.textContent='';},4000);}
-  finally{btn.disabled=false;btn.textContent=L('jbtn');}
-}
+Respond ONLY with valid JSON, no markdown, no explanation:
+{
+  "title": "exam title",
+  "instructions": "brief instructions for students",
+  "sections": [
+    {
+      "type": "mcq",
+      "label": "Section A: Multiple Choice",
+      "questions": [
+        {
+          "id": 1,
+          "question": "question text",
+          "options": ["A. option1", "B. option2", "C. option3", "D. option4"],
+          "answer": "A",
+          "points": 2,
+          "explanation": "brief explanation of correct answer"
+        }
+      ]
+    },
+    {
+      "type": "truefalse",
+      "label": "Section B: True or False",
+      "questions": [
+        {
+          "id": 5,
+          "question": "statement text",
+          "answer": "True",
+          "points": 1,
+          "explanation": "why this is true/false"
+        }
+      ]
+    }
+  ]
+}`;
 
-async function loadSClasses(){
-  try{
-    var res=await fetch(API+'/classroom/my',{headers:ah()});var data=await res.json();
-    var g=document.getElementById('sgrid');var list=data.classrooms||[];
-    if(!list.length){g.innerHTML='<div class="ebox">'+L('sempty')+'</div>';return;}
-    g.innerHTML=list.map(function(c){return '<div class="ccard"><div class="csub">'+esc(c.subject)+' · '+c.grade+'</div><div class="cname">'+esc(c.name)+'</div><div class="ctch">👩‍🏫 '+esc(c.teacher_name||L('tch'))+'</div><div class="ccode">🔑 '+esc(c.code)+'</div></div>';}).join('');
-  }catch(e){}
-}
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
+    });
 
-async function doCreate(){
-  var name=document.getElementById('ncname').value.trim();if(!name){toast(L('ecn'),'err');return;}
-  var btn=document.getElementById('bcreat');btn.disabled=true;btn.innerHTML='<span class="sp2"></span>';
-  try{
-    var res=await fetch(API+'/classroom/create',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({name:name,subject:document.getElementById('ncsub').value,grade:parseInt(document.getElementById('ncgrd').value)})});
-    var data=await res.json();if(!res.ok)throw new Error(data.error||'Error');
-    toast('"'+name+'" '+L('crd')+' '+data.classroom.code,'ok');
-    document.getElementById('ncname').value='';await loadTClasses();
-  }catch(e){toast(e.message,'err');}
-  finally{btn.disabled=false;btn.textContent=L('cbtn');}
-}
+    let text = response.content[0].text.replace(/```json|```/g, '').trim();
+    const examData = JSON.parse(text);
 
-async function loadTClasses(){
-  try{
-    var res=await fetch(API+'/classroom/my',{headers:ah()});var data=await res.json();
-    var el=document.getElementById('tclist');var list=data.classrooms||[];
-    if(!list.length){el.innerHTML='<div class="ebox">'+L('tempty')+'</div>';return;}
-    el.innerHTML=list.map(function(c){return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(c.name)+'</div><div class="tcm">'+esc(c.subject)+' · Grade '+c.grade+'</div></div><span class="tcbadge">'+esc(c.code)+'</span></div><div class="tcst"><span>👥 <b>'+(c.student_count||0)+'</b> '+L('sts')+'</span><button class="tcvb" onclick="toast(\''+L('cs')+'\',\'ok\')">'+L('vs')+'</button></div></div>';}).join('');
-  }catch(e){}
-}
+    // Calculate total points
+    let totalPoints = 0;
+    examData.sections.forEach(s => s.questions.forEach(q => { totalPoints += q.points || 1; }));
 
-function doQP(i){document.getElementById('tinput').value=L('qt')[i];doTSend();}
+    // Generate unique exam code
+    const code = 'EXAM-' + crypto.randomBytes(3).toString('hex').toUpperCase();
 
-async function doTSend(){
-  var inp=document.getElementById('tinput');var msg=inp.value.trim();if(!msg)return;
-  var box=document.getElementById('aimsg');var wc=box.querySelector('.wcard');if(wc)wc.remove();
-  var d=document.createElement('div');d.className='m u';d.innerHTML='<div class="av">👤</div><div class="bub">'+esc(msg)+'</div>';
-  box.appendChild(d);box.scrollTop=box.scrollHeight;inp.value='';inp.style.height='auto';
-  var btn=document.getElementById('btsend');btn.disabled=true;var tid=addTyping('aimsg');
-  try{
-    var res=await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({message:msg,subject:'General',grade:10,role:'teacher',lang:lang})});
-    var data=await res.json();var te=document.getElementById(tid);if(te)te.remove();
-    var r=document.createElement('div');r.className='m a';var copyId='cp'+Date.now();
-    r.innerHTML='<div class="av">🤖</div><div class="bub" style="width:100%"><div class="ai-out" id="'+copyId+'">'+(data.reply||data.response||'<p>'+esc(data.error||'Error')+'</p>')+'</div></div>';
-    box.appendChild(r);box.scrollTop=box.scrollHeight;
-    lastAiContentId=copyId;
-  }catch(e){var te=document.getElementById(tid);if(te)te.remove();var r=document.createElement('div');r.className='m a';r.innerHTML='<div class="av">🤖</div><div class="bub">❌ '+L('cerr')+'</div>';box.appendChild(r);}
-  finally{btn.disabled=false;}
-}
+    // Save to DB
+    const result = await pool.query(
+      `INSERT INTO exams (teacher_id, title, subject, grade, context, purpose, difficulty, adapted_for_weak, time_limit, show_answers, questions, total_points, code, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'draft') RETURNING *`,
+      [userId, examData.title, subject, grade, context, purpose, difficulty, adaptForWeak || false, timeLimit || 30, showAnswers || false, JSON.stringify(examData), totalPoints, code]
+    );
 
-async function buyPlan(planKey,gateway){
-  if(!tok){closeUpgrade();openModal();return;}
-  try{
-    if(gateway==='stripe'){var res=await fetch(API+'/payment/create-stripe-session',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({planKey:planKey})});var data=await res.json();if(data.sessionUrl)window.location.href=data.sessionUrl;}
-    else{var res=await fetch(API+'/payment/create-vnpay',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({planKey:planKey})});var data=await res.json();if(data.paymentUrl)window.location.href=data.paymentUrl;}
-  }catch(e){toast('Payment error. Try again.','err');}
-}
+    res.json({ exam: result.rows[0], examData });
+  } catch (e) {
+    console.error('Exam generate error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
 
-async function verifyStripe(sessionId){
-  try{var res=await fetch(API+'/payment/verify-stripe',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({sessionId:sessionId})});var data=await res.json();if(data.success)toast('Upgrade successful! 🎉 Plan: '+data.plan,'ok');}catch(e){}
-}
+// Get teacher's exams (Memory)
+app.get('/exam/my', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM exams WHERE teacher_id=$1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json({ exams: result.rows });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-async function generateFlashcards(){
-  if(!tok){openModal();return;}
-  var btn=document.getElementById('fcgen');var status=document.getElementById('fcstatus');
-  var subject=document.getElementById('fcsub').value;var grade=document.getElementById('fcgrd').value;
-  var topic=document.getElementById('fctopic').value.trim()||subject;var count=document.getElementById('fccount').value;
-  btn.disabled=true;btn.textContent='⏳ Generating...';status.textContent='Generating '+count+' flashcards on "'+topic+'"...';
-  try{
-    var res=await fetch(API+'/flashcards/generate',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({subject:subject,grade:parseInt(grade),topic:topic,count:parseInt(count),lang:lang})});
-    var data=await res.json();
-    if(!res.ok){status.textContent='❌ '+(data.error||'Failed');return;}
-    status.textContent='✅ '+data.flashcards.length+' flashcards generated!';
-    renderFlashcards(data.flashcards,true);
-  }catch(e){status.textContent='❌ Network error';}
-  finally{btn.disabled=false;btn.textContent='⚡ Generate';}
-}
+// Get single exam by ID (teacher)
+app.get('/exam/:id', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM exams WHERE id=$1', [req.params.id]);
+    if (!result.rows[0]) return res.status(404).json({ error: 'Exam not found' });
+    res.json({ exam: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-async function loadFlashcards(){
-  if(!tok)return;
-  try{
-    var res=await fetch(API+'/flashcards/my',{headers:ah()});var data=await res.json();
-    if(data.flashcards&&data.flashcards.length)renderFlashcards(data.flashcards,false);
-    else document.getElementById('fcgrid').innerHTML='<div class="ebox" style="grid-column:1/-1">No flashcards yet. Generate some above!</div>';
-  }catch(e){}
-}
+// Update exam (teacher edits questions/points)
+app.put('/exam/:id', authenticate, async (req, res) => {
+  try {
+    const { questions, title, timeLimit, showAnswers } = req.body;
+    let totalPoints = 0;
+    if (questions && questions.sections) {
+      questions.sections.forEach(s => s.questions.forEach(q => { totalPoints += q.points || 1; }));
+    }
+    const result = await pool.query(
+      `UPDATE exams SET questions=$1, title=$2, time_limit=$3, show_answers=$4, total_points=$5 WHERE id=$6 AND teacher_id=$7 RETURNING *`,
+      [JSON.stringify(questions), title, timeLimit, showAnswers, totalPoints, req.params.id, req.user.id]
+    );
+    res.json({ exam: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-function renderFlashcards(cards,prepend){
-  var grid=document.getElementById('fcgrid');
-  var html=cards.map(function(c){
-    return '<div class="fc-card" id="fc-'+c.id+'" onclick="flipCard(this)">'+
-      '<button class="fc-del" onclick="event.stopPropagation();deleteFlashcard(\''+c.id+'\')">✕</button>'+
-      '<div class="fc-front"><div class="fc-label">❓ Question</div><div class="fc-q">'+esc(c.question)+'</div><div class="fc-flip-hint">Tap to reveal answer</div></div>'+
-      '<div class="fc-back"><div class="fc-label">✅ Answer</div><div class="fc-a">'+esc(c.answer)+'</div>'+(c.hint?'<div class="fc-hint">💡 '+esc(c.hint)+'</div>':'')+'</div>'+
-    '</div>';
-  }).join('');
-  if(prepend){grid.innerHTML=html+grid.innerHTML;}else{grid.innerHTML=html;}
-}
+// Assign exam (change status to active)
+app.post('/exam/:id/assign', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE exams SET status='active' WHERE id=$1 AND teacher_id=$2 RETURNING *`,
+      [req.params.id, req.user.id]
+    );
+    res.json({ exam: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-function flipCard(el){el.classList.toggle('flipped');}
-async function deleteFlashcard(id){try{await fetch(API+'/flashcards/'+id,{method:'DELETE',headers:ah()});var el=document.getElementById('fc-'+id);if(el)el.remove();}catch(e){}}
+// Close exam
+app.post('/exam/:id/close', authenticate, async (req, res) => {
+  try {
+    await pool.query(`UPDATE exams SET status='closed' WHERE id=$1 AND teacher_id=$2`, [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-function showUpgTab(n){
-  document.getElementById('upg-plans').style.display=n===0?'block':'none';
-  document.getElementById('upg-credits').style.display=n===1?'block':'none';
-  document.getElementById('upg-tab0').style.background=n===0?'linear-gradient(135deg,rgba(244,63,94,0.65),rgba(249,115,22,0.5))':'transparent';
-  document.getElementById('upg-tab0').style.color=n===0?'#fff':'rgba(255,255,255,0.4)';
-  document.getElementById('upg-tab1').style.background=n===1?'linear-gradient(135deg,rgba(244,63,94,0.65),rgba(249,115,22,0.5))':'transparent';
-  document.getElementById('upg-tab1').style.color=n===1?'#fff':'rgba(255,255,255,0.4)';
-}
+// Add extra time
+app.post('/exam/:id/extend', authenticate, async (req, res) => {
+  try {
+    const { minutes } = req.body;
+    await pool.query(
+      `UPDATE exam_submissions SET time_extended=time_extended+$1 WHERE exam_id=$2 AND status='in_progress'`,
+      [minutes || 5, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-async function buyCreditPack(amount,gateway){if(!tok){closeUpgrade();openModal();return;}toast('Credit packs coming soon! 🚀','ok');}
+// Delete exam
+app.delete('/exam/:id', authenticate, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM exam_submissions WHERE exam_id=$1', [req.params.id]);
+    await pool.query('DELETE FROM exams WHERE id=$1 AND teacher_id=$2', [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-async function createPromo(type){
-  var body={};
-  if(type==='credits'){var credits=parseInt(document.getElementById('promo-credits').value);var maxUses=parseInt(document.getElementById('promo-uses').value)||1;if(!credits||credits<1){toast('Enter a valid credit amount','err');return;}body={credits,max_uses:maxUses,type:'credits'};}
-  else{var plan=document.getElementById('promo-plan').value;var maxUses=parseInt(document.getElementById('promo-plan-uses').value)||1;body={plan,max_uses:maxUses,type:'plan'};}
-  try{
-    var res=await fetch(API+'/promo/create',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify(body)});
-    var data=await res.json();if(!res.ok)throw new Error(data.error||'Error');
-    toast('Code created: '+data.promo.code,'ok');loadPromos();
-  }catch(e){toast(e.message,'err');}
-}
+// ── STUDENT EXAM ROUTES ──
 
-var currFileData2=null,currFileName2='';
-async function scanCurrFile(file){
-  if(!file)return;if(file.size>150*1024*1024){toast('Max 150MB','err');return;}
-  currFileName2=file.name;
-  document.getElementById('curr-upload-txt').textContent='📄 '+file.name;
-  document.getElementById('curr-scan-result').style.display='none';
-  document.getElementById('curr-scan-summary').innerHTML='<span class="sp2"></span> AI is scanning the PDF...';
-  document.getElementById('curr-scan-result').style.display='block';
-  var reader=new FileReader();
-  reader.onload=async function(e){
-    currFileData2=e.target.result.split(',')[1];
-    try{
-      var res=await fetch(API+'/admin/curriculum/detect',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({fileName:file.name,fileData:currFileData2,fileSize:file.size})});
-      var data=await res.json();
-      var ss=document.getElementById('curr-imp-subject');
-      for(var i=0;i<ss.options.length;i++){if(ss.options[i].value.toLowerCase()===(data.subject||'').toLowerCase()){ss.selectedIndex=i;break;}}
-      if(data.grade)document.getElementById('curr-imp-grade').value=data.grade;
-      document.getElementById('curr-scan-summary').innerHTML='<strong style="color:var(--text)">📖 Subject detected:</strong> '+esc(data.subject||'Unknown')+'<br><strong style="color:var(--text)">🎓 Grade detected:</strong> '+(data.grade?'Grade '+data.grade:'Multiple grades')+'<br><strong style="color:var(--text)">📝 Overview:</strong> '+esc(data.preview||'Curriculum content ready')+'<br><strong style="color:var(--text)">📦 Estimated items:</strong> ~'+data.estimated_chunks+' objectives';
-      toast('✅ Scan complete!','ok');
-    }catch(err){document.getElementById('curr-scan-summary').textContent='Could not auto-detect. Please select manually.';}
-  };
-  reader.readAsDataURL(file);
-}
+// Get exam by code (public — no auth needed)
+app.get('/exam/join/:code', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, title, subject, grade, instructions, time_limit, questions, total_points, status
+       FROM exams WHERE code=$1`,
+      [req.params.code.toUpperCase()]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: 'Exam not found' });
+    if (result.rows[0].status !== 'active') return res.status(403).json({ error: 'This exam is not active yet' });
 
-async function importCurr(){
-  if(!currFileData2){toast('No file selected','err');return;}
-  var subject=document.getElementById('curr-imp-subject').value;
-  var grade=parseInt(document.getElementById('curr-imp-grade').value);
-  var type=document.getElementById('curr-imp-type').value;
-  var btn=document.getElementById('btn-curr-import');
-  btn.disabled=true;btn.innerHTML='<span class="sp2"></span> Importing...';
-  document.getElementById('curr-import-progress').style.display='block';
-  var fill=document.getElementById('curr-import-bar');var status=document.getElementById('curr-import-status');
-  var pct=0;var iv=setInterval(function(){pct=Math.min(pct+3,90);fill.style.width=pct+'%';if(pct<30)status.textContent='Extracting content...';else if(pct<60)status.textContent='Processing objectives...';else status.textContent='Saving to database...';},300);
-  try{
-    var res=await fetch(API+'/admin/curriculum/import',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({fileData:currFileData2,fileName:currFileName2,subject,grade,type,lang:'vi'})});
-    var data=await res.json();clearInterval(iv);fill.style.width='100%';status.textContent='✅ Done!';
-    if(!res.ok)throw new Error(data.error||'Failed');
-    toast('✅ '+data.imported+' items imported!','ok');
-    setTimeout(function(){cancelCurrScan();loadCurrList();},1500);
-  }catch(e){clearInterval(iv);toast('❌ '+e.message,'err');btn.disabled=false;btn.textContent='✅ Import into System';document.getElementById('curr-import-progress').style.display='none';}
-}
+    // Return exam without answers
+    const exam = result.rows[0];
+    const questions = exam.questions;
+    // Strip answers from questions
+    if (questions.sections) {
+      questions.sections.forEach(s => {
+        s.questions.forEach(q => {
+          delete q.answer;
+          delete q.explanation;
+        });
+      });
+    }
+    res.json({ exam: { ...exam, questions } });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-function cancelCurrScan(){currFileData2=null;currFileName2='';document.getElementById('curr-scan-result').style.display='none';document.getElementById('curr-upload-txt').textContent='Click to select PDF';document.getElementById('curr-file-inp').value='';}
+// Start exam submission
+app.post('/exam/join/:code/start', async (req, res) => {
+  try {
+    const { guestName, studentId } = req.body;
+    const examResult = await pool.query('SELECT * FROM exams WHERE code=$1 AND status=$2', [req.params.code.toUpperCase(), 'active']);
+    if (!examResult.rows[0]) return res.status(404).json({ error: 'Exam not found or not active' });
+    const exam = examResult.rows[0];
 
-async function loadCurrList(){
-  try{
-    var res=await fetch(API+'/admin/curriculum/list',{headers:ah()});var data=await res.json();
-    var items=data.items||[];var el=document.getElementById('curr-list');
-    if(!items.length){el.innerHTML='<div class="ebox">No curriculum imported yet.</div>';return;}
-    el.innerHTML=items.map(function(c){return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(c.subject)+' — Grade '+(c.grade||'All')+'</div><div class="tcm">'+esc(c.curriculum_type)+' · '+c.count+' items</div></div><button class="tcvb" onclick="deleteCurr(this)" data-s="'+esc(c.subject)+'" data-g="'+c.grade+'">🗑️ Delete</button></div></div>';}).join('');
-  }catch(e){document.getElementById('curr-list').innerHTML='<div class="ebox">Failed to load</div>';}
-}
+    const result = await pool.query(
+      `INSERT INTO exam_submissions (exam_id, student_id, guest_name, max_score, status)
+       VALUES ($1,$2,$3,$4,'in_progress') RETURNING *`,
+      [exam.id, studentId || null, guestName || null, exam.total_points]
+    );
+    res.json({ submission: result.rows[0], timeLimit: exam.time_limit });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
-async function deleteCurr(btn){
-  var subject=btn.getAttribute('data-s');var grade=btn.getAttribute('data-g');
-  if(!confirm('Delete '+subject+' Grade '+grade+'?'))return;
-  try{await fetch(API+'/admin/curriculum/delete',{method:'DELETE',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({subject,grade})});toast('✅ Deleted','ok');loadCurrList();}
-  catch(e){toast('❌ Failed','err');}
-}
+// Submit exam answers
+app.post('/exam/submission/:id/submit', async (req, res) => {
+  try {
+    const { answers } = req.body;
+    const subResult = await pool.query('SELECT * FROM exam_submissions WHERE id=$1', [req.params.id]);
+    if (!subResult.rows[0]) return res.status(404).json({ error: 'Submission not found' });
+    const sub = subResult.rows[0];
 
-async function loadPromos(){
-  try{
-    var res=await fetch(API+'/promo/list',{headers:ah()});var data=await res.json();
-    var el=document.getElementById('promolist');
-    if(!data.promos||!data.promos.length){el.innerHTML='<div class="ebox">No promo codes yet.</div>';return;}
-    el.innerHTML=data.promos.map(function(p){return '<div class="tccard"><div class="tchdr"><div><div class="tcn" style="font-family:monospace;letter-spacing:2px;color:var(--primary)">'+p.code+'</div><div class="tcm">⚡ '+p.credits+' credits · '+p.uses+'/'+p.max_uses+' uses</div></div><button class="tcvb" onclick="navigator.clipboard.writeText(\''+p.code+'\').then(function(){toast(\'Copied!\',\'ok\')})">📋 Copy</button></div></div>';}).join('');
-  }catch(e){}
-}
+    const examResult = await pool.query('SELECT * FROM exams WHERE id=$1', [sub.exam_id]);
+    const exam = examResult.rows[0];
+    const examQuestions = exam.questions;
 
-// ── GAMES ──
-var gQ=[],gIdx=0,gScore=0,gTimer=null,flipIdx=0,flipped=false;
-function backToMenu(){
-  clearInterval(gTimer);
-  ['kahoot-game','speed-game','flip-game'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
-  var gr=document.getElementById('game-result');if(gr)gr.style.display='none';
-  var gm=document.getElementById('game-menu');if(gm)gm.style.display='block';
-}
-async function genQ(type){
-  var sub=document.getElementById('g-subject').value;
-  var grade=document.getElementById('g-grade').value;
-  var count=parseInt(document.getElementById('g-count').value)||10;
-  var subMap={math:'Math',science:'Science',english:'English'};
-  var p='';
-  if(type==='kahoot')p='Generate '+count+' multiple choice questions for grade '+grade+' '+subMap[sub]+'. JSON only: {"questions":[{"q":"question","options":["A","B","C","D"],"correct":0}]}';
-  else if(type==='speed')p='Generate '+count+' short answer questions for grade '+grade+' '+subMap[sub]+'. Answers 1-4 words. JSON only: {"questions":[{"q":"question","a":"answer"}]}';
-  else p='Generate '+count+' flashcard pairs for grade '+grade+' '+subMap[sub]+'. JSON only: {"questions":[{"q":"term","a":"definition"}]}';
-  var res=await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({message:p,subject:sub,grade:grade,lang:'en',role:'student'})});
-  var data=await res.json();
-  var text=(data.reply||'').replace(/```json|```/g,'').trim();
-  return JSON.parse(text).questions||[];
-}
-async function startKahoot(){
-  document.getElementById('game-menu').style.display='none';
-  var kg=document.getElementById('kahoot-game');kg.style.display='flex';kg.style.flexDirection='column';kg.style.gap='14px';
-  document.getElementById('k-loading').style.display='block';document.getElementById('k-game').style.display='none';
-  gScore=0;gIdx=0;document.getElementById('k-score').textContent='0';
-  try{gQ=await genQ('kahoot');document.getElementById('k-loading').style.display='none';document.getElementById('k-game').style.display='flex';document.getElementById('k-game').style.flexDirection='column';document.getElementById('k-game').style.gap='14px';showKQ();}
-  catch(e){document.getElementById('k-loading').textContent='❌ Lỗi! Thử lại.';}
-}
-function showKQ(){
-  if(gIdx>=gQ.length){endGame('kahoot');return;}clearInterval(gTimer);
-  var q=gQ[gIdx];
-  document.getElementById('k-qnum').textContent='Q '+(gIdx+1);
-  document.getElementById('k-qlabel').textContent='Q '+(gIdx+1)+'/'+gQ.length;
-  document.getElementById('k-qtext').textContent=q.q;
-  document.getElementById('k-feedback').style.display='none';
-  var shapes=['▲','◆','●','■'];
-  var colors=['rgba(244,63,94,0.15)','rgba(59,130,246,0.15)','rgba(249,115,22,0.15)','rgba(16,185,129,0.15)'];
-  var borders=['rgba(244,63,94,0.3)','rgba(59,130,246,0.3)','rgba(249,115,22,0.3)','rgba(16,185,129,0.3)'];
-  var textc=['rgba(253,164,175,0.9)','rgba(147,197,253,0.9)','rgba(253,186,116,0.9)','rgba(110,231,183,0.9)'];
-  var html='';
-  (q.options||[]).forEach(function(opt,i){html+='<button onclick="ansK('+i+')" style="padding:13px 12px;border-radius:var(--r);border:1.5px solid '+borders[i]+';background:'+colors[i]+';color:'+textc[i]+';font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;font-family:var(--font)"><span>'+shapes[i]+'</span>'+opt+'</button>';});
-  document.getElementById('k-answers').innerHTML=html;
-  var t=20;document.getElementById('k-timer').textContent=t;
-  gTimer=setInterval(function(){t--;document.getElementById('k-timer').textContent=t;if(t<=0){clearInterval(gTimer);timeoutK();}},1000);
-}
-function ansK(idx){
-  clearInterval(gTimer);var q=gQ[gIdx];
-  var btns=document.getElementById('k-answers').querySelectorAll('button');
-  btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.3)';else if(i===idx)b.style.background='rgba(244,63,94,0.3)';});
-  var tv=parseInt(document.getElementById('k-timer').textContent)||0;
-  var fb=document.getElementById('k-feedback');
-  if(idx===q.correct){var pts=Math.max(100,tv*10);gScore+=pts;document.getElementById('k-score').textContent=gScore;fb.style.cssText='display:block;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='✅ Đúng! +'+pts+' pts';}
-  else{fb.style.cssText='display:block;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.25);color:rgba(253,164,175,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='❌ Sai! Đáp án: '+(q.options[q.correct]);}
-  gIdx++;setTimeout(showKQ,1800);
-}
-function timeoutK(){var q=gQ[gIdx];var btns=document.getElementById('k-answers').querySelectorAll('button');btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.3)';});var fb=document.getElementById('k-feedback');fb.style.cssText='display:block;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:rgba(253,186,116,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='⏰ Hết giờ! Đáp án: '+(q.options[q.correct]);gIdx++;setTimeout(showKQ,1800);}
-async function startSpeed(){
-  document.getElementById('game-menu').style.display='none';
-  var sg=document.getElementById('speed-game');sg.style.display='flex';sg.style.flexDirection='column';sg.style.gap='14px';
-  document.getElementById('sp-loading').style.display='block';document.getElementById('sp-game').style.display='none';
-  gScore=0;gIdx=0;document.getElementById('sp-score').textContent='0';
-  try{gQ=await genQ('speed');document.getElementById('sp-loading').style.display='none';document.getElementById('sp-game').style.display='flex';document.getElementById('sp-game').style.flexDirection='column';document.getElementById('sp-game').style.gap='14px';
-  var ph='';gQ.forEach(function(q,i){ph+='<div style="width:10px;height:10px;border-radius:50%;background:'+(i===0?'var(--primary)':'rgba(255,255,255,0.1)')+';display:inline-block;transition:background .3s" id="spdot'+i+'"></div>';});
-  document.getElementById('sp-progress').innerHTML=ph;showSQ();}
-  catch(e){document.getElementById('sp-loading').textContent='❌ Lỗi!';}
-}
-function showSQ(){
-  if(gIdx>=gQ.length){endGame('speed');return;}
-  var q=gQ[gIdx];document.getElementById('sp-qtext').textContent=q.q;document.getElementById('sp-qlabel').textContent='Q '+(gIdx+1)+'/'+gQ.length;
-  var inp=document.getElementById('sp-input');inp.value='';inp.style.borderColor='var(--border)';inp.focus();document.getElementById('sp-fb').textContent='';
-  if(gIdx>0){var pd=document.getElementById('spdot'+(gIdx-1));if(pd)pd.style.background='rgba(16,185,129,0.5)';}
-  var cd=document.getElementById('spdot'+gIdx);if(cd)cd.style.background='var(--primary)';
-}
-function checkSpeed(){var q=gQ[gIdx];var inp=document.getElementById('sp-input');var val=inp.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');var ans=(q.a||'').toString().trim().toLowerCase().replace(/[^a-z0-9]/g,'');if(val===ans){inp.style.borderColor='rgba(16,185,129,0.5)';gScore+=100;document.getElementById('sp-score').textContent=gScore;document.getElementById('sp-fb').textContent='✅ Chính xác!';gIdx++;setTimeout(showSQ,700);}}
-async function startFlip(){
-  document.getElementById('game-menu').style.display='none';
-  var fg=document.getElementById('flip-game');fg.style.display='flex';fg.style.flexDirection='column';fg.style.gap='14px';fg.style.alignItems='center';
-  document.getElementById('flip-q').textContent='⏳ Đang tạo...';flipIdx=0;flipped=false;
-  try{gQ=await genQ('flip');showFC();}catch(e){document.getElementById('flip-q').textContent='❌ Lỗi!';}
-}
-function showFC(){if(!gQ.length)return;var q=gQ[flipIdx];document.getElementById('flip-q').textContent=q.q;document.getElementById('flip-a').textContent=q.a;document.getElementById('flip-counter').textContent=(flipIdx+1)+'/'+gQ.length;document.getElementById('flip-prog').textContent=(flipIdx+1)+' / '+gQ.length;document.getElementById('flip-inner').style.transform='';flipped=false;}
-function doFlip(){var fi=document.getElementById('flip-inner');flipped=!flipped;fi.style.transform=flipped?'rotateY(180deg)':'';}
-function flipNext(){if(flipIdx<gQ.length-1){flipIdx++;showFC();}else{endGame('flip');}}
-function flipPrev(){if(flipIdx>0){flipIdx--;showFC();}}
-function endGame(type){
-  clearInterval(gTimer);
-  ['kahoot-game','speed-game','flip-game'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
-  var res=document.getElementById('game-result');res.style.display='flex';res.style.flexDirection='column';res.style.alignItems='center';res.style.gap='16px';res.style.padding='20px 0';
-  var total=gQ.length;
-  if(type==='flip'){document.getElementById('result-emoji').textContent='🃏';document.getElementById('result-score').textContent=total+' thẻ';document.getElementById('result-msg').textContent='Bạn đã xem hết tất cả thẻ!';document.getElementById('result-title').textContent='Hoàn thành!';}
-  else{var pct=total>0?Math.round((gScore/(total*100))*100):0;document.getElementById('result-emoji').textContent=pct>=80?'🏆':pct>=60?'⭐':'💪';document.getElementById('result-score').textContent=gScore+' pts';document.getElementById('result-msg').textContent=pct>=80?'Xuất sắc!':pct>=60?'Tốt lắm!':'Cố lên!';document.getElementById('result-title').textContent='Kết quả';}
-}
+    // AI grades automatically where possible
+    let aiScores = [];
+    let autoTotal = 0;
 
-function doLogout(){['eb_tok','eb_name','eb_role'].forEach(function(k){localStorage.removeItem(k);});location.reload();}
-function ah(){return{'Authorization':'Bearer '+tok,'Content-Type':'application/json'};}
-function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-var tT;
-function toast(msg,type){var el=document.getElementById('toast');el.textContent=msg;el.className='on '+(type||'');clearTimeout(tT);tT=setTimeout(function(){el.className='';},3000);}
-</script>
-</body>
-</html>
+    examQuestions.sections.forEach(section => {
+      section.questions.forEach(q => {
+        const studentAnswer = answers.find(a => a.id === q.id);
+        const ans = studentAnswer ? studentAnswer.answer : '';
+        let score = 0;
+        let autoGraded = false;
+
+        if (['mcq', 'truefalse', 'matching'].includes(section.type)) {
+          // Auto-grade
+          autoGraded = true;
+          if (ans.toString().trim().toLowerCase() === q.answer.toString().trim().toLowerCase()) {
+            score = q.points || 1;
+          }
+        } else {
+          // AI will suggest grade — set to null for teacher review
+          autoGraded = false;
+          score = null;
+        }
+
+        aiScores.push({ id: q.id, score, maxScore: q.points || 1, autoGraded, studentAnswer: ans, correctAnswer: q.answer });
+        if (autoGraded && score !== null) autoTotal += score;
+      });
+    });
+
+    await pool.query(
+      `UPDATE exam_submissions SET answers=$1, ai_scores=$2, final_scores=$2, status='submitted', submitted_at=NOW()
+       WHERE id=$3`,
+      [JSON.stringify(answers), JSON.stringify(aiScores), req.params.id]
+    );
+
+    res.json({ success: true, message: 'Exam submitted successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Teacher updates grades
+app.put('/exam/submission/:id/grade', authenticate, async (req, res) => {
+  try {
+    const { finalScores } = req.body;
+    const total = finalScores.reduce((sum, s) => sum + (s.score || 0), 0);
+    await pool.query(
+      `UPDATE exam_submissions SET final_scores=$1, total_score=$2, status='graded' WHERE id=$3`,
+      [JSON.stringify(finalScores), total, req.params.id]
+    );
+    res.json({ success: true, totalScore: total });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get live results for teacher
+app.get('/exam/:id/results', authenticate, async (req, res) => {
+  try {
+    const exam = await pool.query('SELECT * FROM exams WHERE id=$1 AND teacher_id=$2', [req.params.id, req.user.id]);
+    if (!exam.rows[0]) return res.status(404).json({ error: 'Not found' });
+
+    const submissions = await pool.query(
+      `SELECT s.*, u.name as student_name FROM exam_submissions s
+       LEFT JOIN users u ON s.student_id=u.id
+       WHERE s.exam_id=$1 ORDER BY s.started_at ASC`,
+      [req.params.id]
+    );
+
+    const rows = submissions.rows;
+    const submitted = rows.filter(r => r.status !== 'in_progress');
+    const avgScore = submitted.length > 0
+      ? Math.round(submitted.reduce((sum, r) => sum + (r.total_score || 0), 0) / submitted.length)
+      : 0;
+
+    res.json({
+      exam: exam.rows[0],
+      submissions: rows,
+      stats: {
+        total: rows.length,
+        inProgress: rows.filter(r => r.status === 'in_progress').length,
+        submitted: submitted.length,
+        graded: rows.filter(r => r.status === 'graded').length,
+        avgScore,
+        maxScore: exam.rows[0].total_points
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
