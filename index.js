@@ -1607,12 +1607,51 @@ app.put('/exam/:id', authenticate, async (req, res) => {
 // Assign exam (change status to active)
 app.post('/exam/:id/assign', authenticate, async (req, res) => {
   try {
+    const { classId, maxAttempts } = req.body;
     const result = await pool.query(
-      `UPDATE exams SET status='active' WHERE id=$1 AND teacher_id=$2 RETURNING *`,
-      [req.params.id, req.user.id]
+      `UPDATE exams SET status='active', classroom_id=$3, max_attempts=$4 WHERE id=$1 AND teacher_id=$2 RETURNING *`,
+      [req.params.id, req.user.id, classId || null, maxAttempts || 1]
     );
     res.json({ exam: result.rows[0] });
   } catch (e) {
+    // Try without new columns if they don't exist yet
+    try {
+      await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS classroom_id INTEGER`);
+      await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 1`);
+      const result = await pool.query(
+        `UPDATE exams SET status='active', classroom_id=$3, max_attempts=$4 WHERE id=$1 AND teacher_id=$2 RETURNING *`,
+        [req.params.id, req.user.id, req.body.classId || null, req.body.maxAttempts || 1]
+      );
+      res.json({ exam: result.rows[0] });
+    } catch(e2) {
+      res.status(500).json({ error: e2.message });
+    }
+  }
+});
+
+// Get active exams for a classroom (student view)
+app.get('/exam/classroom/:classId', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, title, subject, grade, time_limit, total_points, code, status, max_attempts
+       FROM exams WHERE classroom_id=$1 AND status='active' ORDER BY created_at DESC`,
+      [req.params.classId]
+    );
+    res.json({ exams: result.rows });
+  } catch (e) {
+    res.status(500).json({ exams: [] });
+  }
+});
+
+// Get teacher classrooms
+app.get('/classroom/teacher', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM classrooms WHERE teacher_id=$1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json({ classrooms: result.rows });
+  } catch(e) {
     res.status(500).json({ error: e.message });
   }
 });
