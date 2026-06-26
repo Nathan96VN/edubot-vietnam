@@ -2151,23 +2151,7 @@ async function saveExamToMemory(){
   toast('✅ Exam saved to Memory!','ok');
 }
 
-async function assignExam(){
-  if(!currentExamId){toast('Generate an exam first','err');return;}
-  try{
-    var res = await fetch(API+'/exam/'+currentExamId+'/assign',{method:'POST',headers:ah()});
-    var data = await res.json();
-    if(!res.ok) throw new Error(data.error||'Failed');
-    currentExamCode = data.exam.code;
-    document.getElementById('ex-code-display').textContent = data.exam.code;
-    document.getElementById('ex-assign-panel').style.display='block';
-    document.getElementById('ex-live-results').style.display='block';
-    toast('✅ Exam is now live! Code: '+data.exam.code,'ok');
-    // Start polling for live results
-    if(liveResultsInterval) clearInterval(liveResultsInterval);
-    liveResultsInterval = setInterval(function(){ loadLiveResults(currentExamId); }, 5000);
-    loadLiveResults(currentExamId);
-  }catch(e){ toast('❌ '+e.message,'err'); }
-}
+// [removed duplicate assignExam]
 
 async function loadLiveResults(examId){
   try{
