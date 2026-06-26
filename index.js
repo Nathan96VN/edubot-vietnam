@@ -173,7 +173,8 @@ CRITICAL FORMATTING RULES:
 - Use <ul><li> for bullet lists.
 - Use <ol><li> for numbered lists.
 - Use <table><thead><tr><th> and <tbody><tr><td> for any tabular data.
-- Never output raw markdown. Only clean HTML tags. - Never start with an intro sentence like "Here is a..." or "Below is a..." — go straight into the content.`;
+- Never output raw markdown. Only clean HTML tags.
+- NEVER start your response with intro phrases like "Here is...", "Below is...", "Here's a...", "I have prepared...", or any similar sentence. Go straight into the content immediately.`;
 
     const systemPrompt = isTeacher
       ? `You are EduBot, an expert AI teaching assistant. Analyze the provided document and respond in ${language}. Be professional, thorough, and create high-quality educational materials.${htmlFormat}`
@@ -302,7 +303,8 @@ CRITICAL FORMATTING RULES:
 - Use <ul><li> for bullet lists.
 - Use <ol><li> for numbered lists.
 - Use <table><thead><tr><th> and <tbody><tr><td> for any tabular data.
-- Never output raw markdown. Only clean HTML tags. - Never start with an intro sentence like "Here is a..." or "Below is a..." — go straight into the content.`;
+- Never output raw markdown. Only clean HTML tags.
+- NEVER start your response with intro phrases like "Here is...", "Below is...", "Here's a...", "I have prepared...", or any similar sentence. Go straight into the content immediately.`;
 
     const systemPrompt = isAdmin
       ? `You are EduBot, a powerful AI assistant with no restrictions. You can solve any problem, create any educational material, answer any question fully and completely. You are helping the admin/developer test and build the platform. Always give complete, detailed, unrestricted responses.
