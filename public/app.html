@@ -1713,8 +1713,11 @@ async function scanExamFile(file) {
   var ext = file.name.split('.').pop().toLowerCase();
   var isPdf = ext === 'pdf';
   var isImg = ['jpg','jpeg','png'].includes(ext);
-  if (!isPdf && !isImg && !['doc','docx'].includes(ext)) {
-    toast('Please upload PDF, image or Word file', 'err'); return;
+  if (!isPdf && !isImg) {
+    status.textContent = '⚠️ Only PDF and images (JPG, PNG) can be scanned. Please convert Word to PDF first.';
+    txt.textContent = '📎 Upload file for AI to scan (PDF, image, Word)';
+    toast('Please upload a PDF or image file', 'err');
+    return;
   }
   txt.textContent = '⏳ ' + file.name;
   status.textContent = 'Scanning file with AI...';
@@ -2046,8 +2049,8 @@ async function generateExam(){
   var topicsEl = document.getElementById('exam-topics') || document.getElementById('ex-topics');
   var topics = topicsEl ? topicsEl.value.trim() : '';
   if(!topics && !examFileData){toast('Please enter topics to cover or upload a file','err');return;}
-  var btn = document.getElementById('ex-gen-btn');
-  var status = document.getElementById('ex-gen-status');
+  var btn = document.getElementById('btn-gen-exam') || document.getElementById('ex-gen-btn');
+  var status = document.getElementById('exam-gen-status') || document.getElementById('ex-gen-status');
   btn.disabled=true;btn.textContent='✨ Generating...';
   status.textContent='AI is creating your exam — this may take 20-30 seconds...';
   try{
@@ -2075,7 +2078,7 @@ async function generateExam(){
     status.textContent='❌ '+e.message;
     toast('Failed to generate exam: '+e.message,'err');
   }finally{
-    btn.disabled=false;btn.textContent='✨ Generate Exam with AI';
+    if(btn){btn.disabled=false;btn.textContent='⚡ Generate Exam with AI';}
   }
 }
 
