@@ -1869,7 +1869,7 @@ async function scanExamFile(file) {
   }
   txt.textContent = '⏳ ' + file.name;
   status.textContent = 'Scanning file with AI...';
-  document.getElementById('ex-upload-zone').style.borderColor = 'rgba(249,115,22,0.4)';
+  document.getElementById('ex-upload-btn').style.borderColor = 'rgba(249,115,22,0.4)';
 
   var reader = new FileReader();
   reader.onload = async function(e) {
@@ -1902,12 +1902,12 @@ async function scanExamFile(file) {
       if (topics) {
         document.getElementById('ex-topics').value = topics;
         status.textContent = '✅ Topics extracted! Review and edit if needed.';
-        document.getElementById('ex-upload-zone').style.borderColor = 'rgba(16,185,129,0.4)';
+        document.getElementById('ex-upload-btn').style.borderColor = 'rgba(16,185,129,0.4)';
         txt.textContent = '✅ ' + file.name;
       }
     } catch(e) {
       status.textContent = '❌ Could not scan file. Please type topics manually.';
-      document.getElementById('ex-upload-zone').style.borderColor = 'rgba(239,68,68,0.3)';
+      document.getElementById('ex-upload-btn').style.borderColor = 'rgba(239,68,68,0.3)';
     }
   };
   reader.readAsDataURL(file);
@@ -1918,50 +1918,7 @@ var currentExam = null;
 var currentExamId = null;
 var currentExamCode = null;
 
-async function generateExam(){
-  var topics = document.getElementById('exam-topics').value.trim();
-  if(!topics){ toast('Please describe the topics to cover','err'); return; }
-  var qTypes = Array.from(document.querySelectorAll('.qtype:checked')).map(function(el){return el.value;});
-  if(!qTypes.length){ toast('Please select at least one question type','err'); return; }
-
-  var btn = document.getElementById('btn-gen-exam');
-  var status = document.getElementById('exam-gen-status');
-  btn.disabled = true;
-  btn.textContent = '⏳ Generating exam...';
-  status.textContent = 'AI is creating your exam — this may take 20-30 seconds...';
-
-  try{
-    var res = await fetch(API+'/exam/generate', {
-      method:'POST', headers:{'Content-Type':'application/json',...ah()},
-      body: JSON.stringify({
-        subject: document.getElementById('exam-subject').value,
-        grade: parseInt(document.getElementById('exam-grade').value),
-        context: document.getElementById('exam-context').value,
-        purpose: document.getElementById('exam-purpose').value,
-        difficulty: document.getElementById('exam-difficulty').value,
-        questionTypes: qTypes,
-        questionCount: parseInt(document.getElementById('exam-count').value),
-        adaptForWeak: document.getElementById('exam-adapt').checked,
-        timeLimit: parseInt(document.getElementById('exam-time').value),
-        showAnswers: document.getElementById('exam-show-answers').checked,
-        topics: topics
-      })
-    });
-    var data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Failed');
-    currentExam = data.examData;
-    currentExamId = data.exam.id;
-    currentExamCode = data.exam.code;
-    showExamPreview(data.examData, data.exam);
-    toast('✅ Exam generated!', 'ok');
-  } catch(e){
-    toast('❌ '+e.message, 'err');
-    status.textContent = '';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '⚡ Generate Exam with AI';
-  }
-}
+// [removed duplicate generateExam]
 
 function showExamPreview(examData, exam){
   document.getElementById('exam-gen-form').style.display = 'none';
