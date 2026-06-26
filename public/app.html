@@ -1818,7 +1818,7 @@ function showExamPreview(examData, exam){
       html += '</div>';
       html += '<div style="display:flex;align-items:center;gap:8px;margin-top:6px">';
       html += '<span style="font-size:11px;color:rgba(244,63,94,0.5);font-weight:700">ANS: <span style="color:rgba(110,231,183,0.8)">'+esc(q.answer||'')+'</span></span>';
-      html += '<span style="font-size:11px;color:var(--muted2);margin-left:auto">Pts: <input type="number" min="1" max="10" value="'+(q.points||1)+'" onchange="updatePoints('+q.id+',this.value)" style="width:50px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:12px;text-align:center;font-family:var(--font)"/></span>';
+      html += '<span style="font-size:11px;color:var(--muted2);margin-left:auto">Points: <input type="number" min="1" max="10" value="'+(q.points||1)+'" onchange="updatePoints('+q.id+', this.value, currentExam)" style="width:50px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:12px;text-align:center;font-family:var(--font)"/></span>';
       html += '</div>';
       html += '</div></div>';
     });
@@ -1828,13 +1828,15 @@ function showExamPreview(examData, exam){
   document.getElementById('exam-questions-preview').innerHTML = html;
 }
 
-function updatePoints(qId, newPts){
-  if(!currentExam) return;
-  currentExam.sections.forEach(function(s){
+function updatePoints(qId, newPts, examData){
+  var data = examData || currentExam;
+  if(!data || !data.sections) return;
+  data.sections.forEach(function(s){
     s.questions.forEach(function(q){
-      if(q.id === qId) q.points = parseInt(newPts) || 1;
+      if(q.id === qId || q.id === parseInt(qId)) q.points = parseInt(newPts) || 1;
     });
   });
+  toast('Points updated!', 'ok');
 }
 
 function backToExamForm(){
@@ -1845,7 +1847,10 @@ function backToExamForm(){
 
 async function saveExamToMemory(){
   if(!currentExamId){ toast('Generate an exam first','err'); return; }
-  toast('✅ Saved to Memory!', 'ok');
+  toast('✅ Saved to Memory! View in Memory tab.', 'ok');
+  // Already saved in DB when generated - just notify
+  var saveBtn = document.querySelector('[onclick="saveExamToMemory()"]');
+  if(saveBtn){ saveBtn.style.background='rgba(16,185,129,0.15)'; saveBtn.style.borderColor='rgba(16,185,129,0.3)'; saveBtn.style.color='rgba(110,231,183,0.9)'; saveBtn.textContent='✅ Saved!'; }
 }
 
 async function assignExam(){
@@ -2198,15 +2203,53 @@ async function closeExam(){
 }
 
 function exportExamWord(type){
-  if(!currentExamId){toast('No exam to export','err');return;}
-  // Build Word document from exam preview
-  var title = (document.getElementById('exam-preview-title')||document.getElementById('ex-preview-title')||{textContent:''}).textContent;
-  var meta = (document.getElementById('exam-preview-meta')||document.getElementById('ex-preview-meta')||{textContent:''}).textContent;
-  var examContent = (document.getElementById('exam-questions-preview')||document.getElementById('ex-questions-preview')||{innerHTML:''}).innerHTML;
+  if(!currentExam){toast('No exam to export','err');return;}
   var isTeacher = type==='teacher';
-  var css = 'body{font-family:Calibri,sans-serif;font-size:11pt;margin:2cm;color:#111}h1{font-size:16pt;color:#F43F5E;text-align:center;margin-bottom:4px}h2{font-size:13pt;color:#F43F5E;margin:16px 0 8px}p,div{font-size:11pt;line-height:1.6}.meta{text-align:center;color:#666;margin-bottom:20px;font-size:10pt}.answer{color:#059669;font-weight:bold}.explanation{color:#D97706;font-style:italic}';
-  if(!isTeacher) css += '.answer,.explanation{display:none}';
-  var html = '<html><head><meta charset="utf-8"><style>'+css+'</style></head><body><h1>'+title+'</h1><div class="meta">'+meta+(isTeacher?' — ANSWER KEY':'')+'</div>'+examContent+'</body></html>';
+  var title = document.getElementById('exam-preview-title') ? document.getElementById('exam-preview-title').textContent : 'Exam';
+  var css = 'body{font-family:Calibri,sans-serif;font-size:11pt;margin:2cm;color:#111;line-height:1.6}'+
+    'h1{font-size:16pt;color:#F43F5E;text-align:center;margin-bottom:6px;border-bottom:2px solid #F43F5E;padding-bottom:6px}'+
+    '.subtitle{text-align:center;color:#666;font-size:10pt;margin-bottom:24px}'+
+    'h2{font-size:12pt;font-weight:bold;color:#333;margin:20px 0 10px;border-bottom:1px solid #ddd;padding-bottom:4px}'+
+    '.q{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #eee}'+
+    '.qn{font-weight:bold;color:#F43F5E}'+
+    '.opt{margin:2px 0 2px 16px;color:#333}'+
+    '.ans{color:#059669;font-weight:bold;margin-top:4px;font-size:10pt}'+
+    '.pts{color:#999;font-size:9pt}'+
+    '.instructions{font-style:italic;color:#555;margin-bottom:20px;padding:10px;border-left:3px solid #F43F5E}';
+  
+  var html = '<html><head><meta charset="utf-8"><style>'+css+'</style></head><body>';
+  html += '<h1>'+esc(title)+'</h1>';
+  html += '<div class="subtitle">'+(isTeacher?'— ANSWER KEY —':'Student Copy')+'</div>';
+  
+  if(currentExam.instructions){
+    html += '<div class="instructions">'+esc(currentExam.instructions)+'</div>';
+  }
+  
+  (currentExam.sections||[]).forEach(function(section){
+    html += '<h2>'+esc(section.label||section.type)+'</h2>';
+    (section.questions||[]).forEach(function(q){
+      html += '<div class="q">';
+      html += '<div><span class="qn">Q'+q.id+'.</span> '+esc(q.question)+'</div>';
+      if(q.options){ q.options.forEach(function(opt){ html += '<div class="opt">'+esc(opt)+'</div>'; }); }
+      if(section.type==='matching'&&q.pairs){
+        html += '<table style="margin-top:6px;border-collapse:collapse">';
+        q.pairs.forEach(function(p,i){ html += '<tr><td style="padding:3px 12px 3px 0;color:#333">'+(i+1)+'. '+esc(p.left)+'</td><td style="padding:3px 0;color:#666">_______________</td></tr>'; });
+        html += '</table>';
+        if(isTeacher){
+          html += '<div class="ans" style="margin-top:6px">Answers: ';
+          q.pairs.forEach(function(p,i){ html += (i+1)+'.'+esc(p.right)+' '; });
+          html += '</div>';
+        }
+      } else if(isTeacher && q.answer){
+        html += '<div class="ans">✓ Answer: '+esc(q.answer)+'</div>';
+      }
+      if(isTeacher && q.explanation){ html += '<div style="color:#D97706;font-size:10pt;margin-top:2px">💡 '+esc(q.explanation)+'</div>'; }
+      if(isTeacher){ html += '<div class="pts">Points: '+(q.points||1)+'</div>'; }
+      html += '</div>';
+    });
+  });
+  html += '</body></html>';
+  
   var blob = new Blob([html],{type:'application/msword'});
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
