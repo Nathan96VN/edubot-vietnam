@@ -1635,7 +1635,7 @@ app.get('/exam/classroom/:classId', authenticate, async (req, res) => {
     const result = await pool.query(
       `SELECT id, title, subject, grade, time_limit, total_points, code, status, max_attempts
        FROM exams WHERE classroom_id=$1 AND status='active' ORDER BY created_at DESC`,
-    [parseInt(req.params.classId)]
+    [req.params.classId]
     );
     res.json({ exams: result.rows });
   } catch (e) {
