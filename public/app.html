@@ -1773,10 +1773,18 @@ var currentExamCode = null;
 // [removed duplicate generateExam]
 
 function showExamPreview(examData, exam){
+  // examData could be the questions object or full exam data
+  if(!examData || !examData.sections) {
+    examData = exam && exam.questions ? exam.questions : examData;
+  }
+  if(!examData || !examData.sections) {
+    toast('Could not load exam data','err');
+    return;
+  }
   document.getElementById('exam-gen-form').style.display = 'none';
   document.getElementById('exam-preview').style.display = 'block';
   document.getElementById('exam-live-results').style.display = 'none';
-  document.getElementById('exam-preview-title').textContent = examData.title;
+  document.getElementById('exam-preview-title').textContent = examData.title || (exam && exam.title) || 'Exam';
 
   var html = '';
   if(examData.instructions){
@@ -2072,8 +2080,7 @@ async function generateExam(){
     currentExamId = data.exam.id;
     currentExamCode = null;
     status.textContent='✅ Exam generated!';
-    renderExamPreview(data.exam, data.examData);
-    document.getElementById('ex-preview').style.display='block';
+    showExamPreview(data.examData, data.exam);
   }catch(e){
     status.textContent='❌ '+e.message;
     toast('Failed to generate exam: '+e.message,'err');
@@ -2083,8 +2090,11 @@ async function generateExam(){
 }
 
 function renderExamPreview(exam, examData){
-  document.getElementById('ex-preview-title').textContent = examData.title || exam.title;
-  document.getElementById('ex-preview-meta').textContent = exam.subject+' · Grade '+exam.grade+' · '+exam.total_points+' points · '+exam.time_limit+' min';
+  var previewTitle = document.getElementById('exam-preview-title') || document.getElementById('ex-preview-title');
+  var previewMeta = document.getElementById('exam-preview-meta') || document.getElementById('ex-preview-meta');
+  var previewEl = document.getElementById('exam-preview') || document.getElementById('ex-preview');
+  if(previewTitle) previewTitle.textContent = examData.title || exam.title;
+  if(previewMeta) previewMeta.textContent = exam.subject+' · Grade '+exam.grade+' · '+exam.total_points+' points · '+exam.time_limit+' min';
   var html = '';
   if(examData.instructions){
     html += '<div class="crcard" style="background:rgba(249,115,22,0.06);border-color:rgba(249,115,22,0.15);margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:rgba(253,186,116,0.8);margin-bottom:6px">📋 INSTRUCTIONS</div><div style="font-size:13px;color:var(--muted)">'+esc(examData.instructions)+'</div></div>';
@@ -2121,7 +2131,7 @@ function renderExamPreview(exam, examData){
     });
     html += '</div>';
   });
-  document.getElementById('ex-questions-preview').innerHTML = html;
+  (document.getElementById('exam-questions-preview')||document.getElementById('ex-questions-preview')||{innerHTML:''}).innerHTML = html;
 }
 
 function updateQuestionPoints(examId, qId, val){ /* Points auto-update on export */ }
@@ -2190,9 +2200,9 @@ async function closeExam(){
 function exportExamWord(type){
   if(!currentExamId){toast('No exam to export','err');return;}
   // Build Word document from exam preview
-  var title = document.getElementById('ex-preview-title').textContent;
-  var meta = document.getElementById('ex-preview-meta').textContent;
-  var examContent = document.getElementById('ex-questions-preview').innerHTML;
+  var title = (document.getElementById('exam-preview-title')||document.getElementById('ex-preview-title')||{textContent:''}).textContent;
+  var meta = (document.getElementById('exam-preview-meta')||document.getElementById('ex-preview-meta')||{textContent:''}).textContent;
+  var examContent = (document.getElementById('exam-questions-preview')||document.getElementById('ex-questions-preview')||{innerHTML:''}).innerHTML;
   var isTeacher = type==='teacher';
   var css = 'body{font-family:Calibri,sans-serif;font-size:11pt;margin:2cm;color:#111}h1{font-size:16pt;color:#F43F5E;text-align:center;margin-bottom:4px}h2{font-size:13pt;color:#F43F5E;margin:16px 0 8px}p,div{font-size:11pt;line-height:1.6}.meta{text-align:center;color:#666;margin-bottom:20px;font-size:10pt}.answer{color:#059669;font-weight:bold}.explanation{color:#D97706;font-style:italic}';
   if(!isTeacher) css += '.answer,.explanation{display:none}';
@@ -2233,7 +2243,7 @@ async function deleteMemoryExam(id){
 async function viewLiveResults(id){
   currentExamId = id;
   showPanel(5);
-  document.getElementById('ex-preview').style.display='block';
+  (document.getElementById('exam-preview')||document.getElementById('ex-preview')||{style:{display:'none'}}).style.display='block';
   document.getElementById('ex-live-results').style.display='block';
   loadLiveResults(id);
 }
