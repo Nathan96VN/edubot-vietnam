@@ -1613,7 +1613,7 @@ app.post('/exam/:id/assign', authenticate, async (req, res) => {
   try {
     const { classId, maxAttempts } = req.body;
     const result = await pool.query(
-      `UPDATE exams SET status='active', classroom_id=$3::text, max_attempts=$4 WHERE id=$1 AND teacher_id=$2 RETURNING *`,
+      `UPDATE exams SET status='active', classroom_id=$3, max_attempts=$4 WHERE id=$1 AND teacher_id=$2 RETURNING *`,
       [req.params.id, req.user.id, classId || null, maxAttempts || 1]
     );
     res.json({ exam: result.rows[0] });
