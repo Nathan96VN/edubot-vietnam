@@ -367,45 +367,39 @@ var lang = localStorage.getItem('eb_lang') || 'vi';
 
 // ── BUBBLE DATA ──
 var bubbles = [
-  { lang:'vi', user:'Giải phương trình x² + 5x + 6 = 0', ai:'(x + 2)(x + 3) = 0 → x = −2 hoặc x = −3 ✅', math:false },
-  { lang:'en', user:'What is photosynthesis?', ai:'Sunlight + CO₂ + H₂O → Glucose + O₂ 🌿', math:false },
-  { lang:'vi', user:'Tính đạo hàm f(x) = x³ + 2x', ai:"f'(x) = 3x² + 2 ✅", math:false },
-  { lang:'en', user:'Explain the water cycle for Grade 5', ai:'Evaporation → Condensation → Precipitation → Collection 🌧️', math:false },
-  { lang:'vi', user:'Phân số ½ + ⅓ bằng bao nhiêu?', ai:'½ + ⅓ = 3⁄6 + 2⁄6 = 5⁄6 ✅', math:false },
-  { lang:'en', user:'Create 10 quiz questions on gravity', ai:'✅ 10 questions generated with full answer key!', math:false },
-  { lang:'vi', user:'Tạo giáo án về hình học lớp 7', ai:'✅ Giáo án 45 phút đã tạo với bài tập và đáp án!', math:false },
-  { lang:'en', user:'Solve ∫x² dx', ai:'∫x² dx = x³/3 + C ✅', math:false },
-  { lang:'vi', user:'Viết đoạn văn về môi trường', ai:'✅ Đoạn văn 150 chữ đã tạo — sẵn sàng xuất Word!', math:false },
-  { lang:'en', user:"What is Newton's second law?", ai:'F = ma — Force = mass × acceleration ✅', math:false },
+  { lang:'vi', user:'Giải thích quang hợp cho lớp 5', ai:'Cây dùng ánh sáng mặt trời để tạo ra thức ăn từ nước và CO₂ 🌿' },
+  { lang:'en', user:'Create a lesson plan on fractions', ai:'✅ 45-minute lesson plan created with activities and answer key!' },
+  { lang:'vi', user:'Tóm tắt tài liệu này cho tôi', ai:'✅ Đã tóm tắt! Tài liệu có 3 phần chính về địa lý Việt Nam.' },
+  { lang:'en', user:'Help me understand the water cycle', ai:'Water evaporates → forms clouds → falls as rain → collects → repeats! 🌧️' },
+  { lang:'vi', user:'Tạo 10 câu hỏi trắc nghiệm Tiếng Anh lớp 8', ai:'✅ Đã tạo 10 câu hỏi với đáp án — sẵn sàng xuất PDF!' },
+  { lang:'en', user:'Explain gravity for Grade 6', ai:"Gravity pulls everything toward Earth's center — it's why we don't float away! 🌍" },
+  { lang:'vi', user:'Viết đoạn văn về bảo vệ môi trường', ai:'✅ Đoạn văn 150 chữ đã tạo — sẵn sàng xuất Word!' },
+  { lang:'en', user:'Make flashcards on the solar system', ai:'✅ 10 flashcards generated — Sun, Mercury, Venus, Earth and more!' },
+  { lang:'vi', user:'Tạo giáo án tiếng Anh lớp 7', ai:'✅ Giáo án 45 phút đã tạo với bài tập và hoạt động nhóm!' },
+  { lang:'en', user:'What causes earthquakes?', ai:"Tectonic plates shift and release energy — that's what we feel as shaking! 🌋" },
 ];
 
 // Positions — right side of screen, never over headline (which is left side)
 // All positions are within the right hero panel
-var positions = [
-  { utop:'10%', uleft:'5%', atop:'28%', aleft:'5%' },
-  { utop:'20%', uleft:'8%', atop:'38%', aleft:'8%' },
-  { utop:'35%', uleft:'3%', atop:'53%', aleft:'3%' },
-  { utop:'50%', uleft:'6%', atop:'68%', aleft:'6%' },
-  { utop:'15%', uleft:'2%', atop:'33%', aleft:'2%' },
-  { utop:'42%', uleft:'5%', atop:'60%', aleft:'5%' },
-];
-
 var currentBubble = 0;
 var userEl = null, aiEl = null;
+var lastUTop = -1, lastATop = -1;
 
-function renderMath(el, text) {
-  // Replace \(...\) with rendered KaTeX
-  el.innerHTML = text.replace(/\\\((.+?)\\\)/g, function(_, expr) {
-    try {
-      return katex.renderToString(expr, { throwOnError: false, displayMode: false });
-    } catch(e) { return expr; }
-  });
+function randPos() {
+  // Generate random positions for user and AI bubbles
+  // Never in top 15% (headline area) or overlapping each other
+  var uTop, aTop, left;
+  do { uTop = Math.floor(Math.random() * 45) + 10; } while (Math.abs(uTop - lastUTop) < 15);
+  do { aTop = uTop + Math.floor(Math.random() * 15) + 18; } while (aTop > 88 || Math.abs(aTop - lastATop) < 15);
+  left = Math.floor(Math.random() * 15) + 2;
+  lastUTop = uTop; lastATop = aTop;
+  return { utop: uTop+'%', uleft: left+'%', atop: aTop+'%', aleft: (left+3)+'%' };
 }
 
 function showBubble() {
   var stage = document.getElementById('bubble-stage');
   var b = bubbles[currentBubble % bubbles.length];
-  var pos = positions[currentBubble % positions.length];
+  var pos = randPos();
   var upos = { top: pos.utop, left: pos.uleft };
   var apos = { top: pos.atop, left: pos.aleft };
 
@@ -431,11 +425,7 @@ function showBubble() {
       aiEl.style.top = apos.top;
       aiEl.style.left = apos.left;
       aiEl.style.transform = 'translateY(8px)';
-      if (b.math) {
-        renderMath(aiEl, b.ai);
-      } else {
-        aiEl.innerHTML = b.ai;
-      }
+      aiEl.innerHTML = b.ai;
       stage.appendChild(aiEl);
       setTimeout(function() { aiEl.classList.add('show'); aiEl.style.transform = 'translateY(0)'; }, 50);
     }
