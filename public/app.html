@@ -354,7 +354,7 @@ input[type=file]#cfi{display:none}
 
     <!-- TAB 0: AI TUTOR -->
     <div class="panel on" id="p0">
-      <div id="cctrl" style="display:none">
+      <div id="cctrl" style="display:none!important;visibility:hidden;height:0;overflow:hidden">
         <label id="lsub">Môn học:</label>
         <select id="selsub"><option value="Math" id="om">Toán</option><option value="Science" id="os">Khoa học</option><option value="English" id="oe">Tiếng Anh</option></select>
         <label id="lgrd">Lớp:</label>
@@ -700,19 +700,21 @@ function buildSidebar(){
   var nav=document.getElementById('side-nav');
   var items=[];
   if(urole==='teacher'||urole==='admin'){
+    var d=lang==='en'?{t0:'AI Tutor',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games'}:{t0:'Học với AI',t1:'Lớp học',t2:'Dashboard',t3:'Flashcards',t4:'Games'};
     items=[
-      {i:'👩‍🏫',l:L('t2'),p:2},
-      {i:'💬',l:L('t0'),p:0},
-      {i:'📚',l:L('t3'),p:3},
-      {i:'🎮',l:L('t4'),p:4},
-      {i:'🏫',l:L('t1'),p:1},
+      {i:'👩‍🏫',l:d.t2,p:2},
+      {i:'💬',l:d.t0,p:0},
+      {i:'📚',l:d.t3,p:3},
+      {i:'🎮',l:d.t4,p:4},
+      {i:'🏫',l:d.t1,p:1},
     ];
   } else {
+    var d=lang==='en'?{t0:'AI Tutor',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games'}:{t0:'Học với AI',t1:'Lớp học',t2:'Dashboard',t3:'Flashcards',t4:'Games'};
     items=[
-      {i:'💬',l:L('t0'),p:0},
-      {i:'📚',l:L('t3'),p:3},
-      {i:'🎮',l:L('t4'),p:4},
-      {i:'🏫',l:L('t1'),p:1},
+      {i:'💬',l:d.t0,p:0},
+      {i:'📚',l:d.t3,p:3},
+      {i:'🎮',l:d.t4,p:4},
+      {i:'🏫',l:d.t1,p:1},
     ];
   }
   nav.innerHTML=items.map(function(it){
