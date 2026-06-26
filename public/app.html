@@ -1,505 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduBot</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet"/>
 <style>
+/* ── RESET ── */
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0D1B2E;--card:#112240;--panel:#0A1628;--primary:#00B4D8;--accent:#00D4FF;--teacher:#059669;--text:#E2E8F0;--muted:#94A3B8;--border:#1A3A5C;--success:#10B981;--error:#EF4444;--warn:#F59E0B;--r:12px;--rs:8px}
-html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;overflow:hidden}
-#app{display:flex;flex-direction:column;width:100%;height:100%}
-#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;gap:8px;flex-wrap:wrap}
-.logo{font-size:18px;font-weight:800;white-space:nowrap}.logo span{color:var(--primary)}.logo em{color:var(--accent);font-style:normal}
-.logo img{height:28px;vertical-align:middle;margin-right:6px}
+/* ── CORAL DUSK TOKENS ── */
+:root{
+  --bg:#150810;
+  --bg2:#1F0D18;
+  --bg3:#180A14;
+  --card:rgba(244,63,94,0.07);
+  --card2:rgba(255,255,255,0.03);
+  --card3:rgba(244,63,94,0.12);
+  --primary:#F43F5E;
+  --secondary:#F97316;
+  --primary-glass:rgba(244,63,94,0.65);
+  --secondary-glass:rgba(249,115,22,0.5);
+  --border:rgba(244,63,94,0.15);
+  --border2:rgba(255,255,255,0.07);
+  --border3:rgba(244,63,94,0.25);
+  --text:#FFF1F2;
+  --muted:rgba(253,164,175,0.7);
+  --muted2:rgba(255,255,255,0.4);
+  --success:#10B981;
+  --error:#EF4444;
+  --warn:#F59E0B;
+  --teacher:#10B981;
+  --blur:blur(20px);
+  --blur2:blur(12px);
+  --r:14px;
+  --rs:8px;
+  --font:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+/* ── BASE ── */
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden}
+#app{display:flex;flex-direction:column;width:100%;height:100%;position:relative}
+/* ── BACKGROUND ORBS ── */
+#app::before{content:'';position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(244,63,94,0.18),transparent 70%);top:-100px;right:-80px;border-radius:50%;pointer-events:none;z-index:0}
+#app::after{content:'';position:fixed;width:300px;height:300px;background:radial-gradient(circle,rgba(249,115,22,0.14),transparent 70%);bottom:50px;left:-60px;border-radius:50%;pointer-events:none;z-index:0}
+/* ── TOPBAR ── */
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(255,255,255,0.04);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-shrink:0;gap:8px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px}
+.logo img{height:36px;width:auto}
+.logo-text{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-0.3px}
+.logo-text span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .tr{display:flex;align-items:center;gap:8px}
-.lang-wrap{display:flex;background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden}
-.lb{padding:5px 11px;font-size:12px;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer}.lb.on{background:var(--primary);color:#fff}
-#btn-login{padding:7px 16px;border-radius:var(--rs);background:var(--primary);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
-#uinfo{display:none;align-items:center;gap:8px;font-size:13px;color:var(--muted)}#uinfo strong{color:var(--text)}
-.rbadge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase}
-.rs{background:rgba(67,56,202,.25);color:#818CF8}.rt{background:rgba(5,150,105,.25);color:#34D399}
-#btn-logout{padding:5px 12px;border-radius:var(--rs);border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer}
-#credit-badge{display:none;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;background:rgba(245,158,11,.15);border:1px solid var(--warn);color:var(--warn);font-size:12px;font-weight:700;cursor:pointer}
-#credit-badge:hover{background:rgba(245,158,11,.25)}
-#tabs{display:flex;gap:2px;padding:8px 16px 0;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
-.tb{padding:8px 16px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
-.tb.on{color:var(--primary);border-bottom-color:var(--primary)}.tb.ton.on{color:var(--teacher);border-bottom-color:var(--teacher)}
+.lang-wrap{display:flex;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:20px;overflow:hidden}
+.lb{padding:5px 12px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:var(--font)}
+.lb.on{background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff}
+#btn-login{padding:7px 18px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
+#uinfo{display:none;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+#uinfo strong{color:var(--text);font-weight:600}
+.rbadge{padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
+.rs{background:rgba(244,63,94,0.15);color:rgba(253,164,175,0.9);border:1px solid rgba(244,63,94,0.25)}
+.rt{background:rgba(16,185,129,0.15);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.25)}
+#btn-logout{padding:5px 12px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:12px;cursor:pointer;font-family:var(--font)}
+#btn-logout:hover{border-color:var(--border3);color:var(--primary)}
+#credit-badge{display:none;align-items:center;gap:4px;padding:4px 11px;border-radius:20px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:rgba(253,186,116,0.9);font-size:12px;font-weight:700;cursor:pointer}
+
+/* ── LAYOUT ── */
+#layout{display:flex;flex:1;min-height:0;position:relative;z-index:1}
+
+/* ── SIDEBAR ── */
+#sidebar{width:220px;background:rgba(255,255,255,0.03);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;transition:width 0.3s ease;overflow:hidden}
+#sidebar.collapsed{width:56px}
+#sidebar-toggle{display:flex;align-items:center;justify-content:center;padding:13px;border-bottom:1px solid var(--border2);cursor:pointer;flex-shrink:0}
+#sidebar-toggle:hover{background:rgba(244,63,94,0.06)}
+#sidebar-toggle svg{width:18px;height:18px;stroke:rgba(244,63,94,0.6);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+.sideitem{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-left:3px solid transparent;transition:all 0.2s;white-space:nowrap;text-decoration:none}
+.sideitem:hover{background:rgba(244,63,94,0.06);border-left-color:rgba(244,63,94,0.3)}
+.sideitem.on{background:rgba(244,63,94,0.1);border-left-color:var(--primary)}
+.sideitem .si{font-size:18px;flex-shrink:0;width:22px;text-align:center}
+.sideitem .sl{font-size:13px;font-weight:500;color:var(--muted2);overflow:hidden;white-space:nowrap}
+.sideitem.on .sl{color:var(--text)}
+.sidebar-bottom{margin-top:auto;border-top:1px solid var(--border2)}
+.side-section{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(244,63,94,0.4);padding:12px 16px 4px;white-space:nowrap;overflow:hidden}
+#sidebar.collapsed .side-section{opacity:0}
+#sidebar.collapsed .sl{opacity:0}
+
+/* ── MAIN ── */
 #mc{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 .panel{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}.panel.on{display:flex}
-#cctrl{display:flex;gap:8px;align-items:center;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
-#cctrl label{font-size:12px;color:var(--muted)}
-#cctrl select{padding:6px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none}
-#dcnt{margin-left:auto;font-size:12px;color:var(--muted);background:var(--card);padding:4px 10px;border-radius:20px;border:1px solid var(--border)}#dcnt b{color:var(--warn)}
-#msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-.m{display:flex;gap:8px;max-width:90%}.m.u{align-self:flex-end;flex-direction:row-reverse;max-width:70%}.m.a{align-self:flex-start;max-width:95%}
+
+/* ── AI TUTOR PANEL ── */
+#msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
+#msgs::-webkit-scrollbar{width:4px}
+#msgs::-webkit-scrollbar-track{background:transparent}
+#msgs::-webkit-scrollbar-thumb{background:rgba(244,63,94,0.2);border-radius:2px}
+.m{display:flex;gap:10px;max-width:90%}
+.m.u{align-self:flex-end;flex-direction:row-reverse;max-width:72%}
+.m.a{align-self:flex-start;max-width:95%}
 .av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:4px}
-.m.a .av{background:var(--primary)}.m.u .av{background:var(--accent)}
-.bub{padding:12px 16px;border-radius:var(--r);font-size:14px;line-height:1.6}
-.m.a .bub{background:var(--card);border:1px solid var(--border);width:100%}.m.u .bub{background:var(--primary);color:#fff;white-space:pre-wrap}
+.m.a .av{background:linear-gradient(135deg,rgba(244,63,94,0.5),rgba(249,115,22,0.4))}
+.m.u .av{background:rgba(255,255,255,0.1)}
+.bub{padding:11px 15px;border-radius:var(--r);font-size:14px;line-height:1.65}
+.m.a .bub{background:var(--card);border:1px solid var(--border);width:100%;border-radius:4px 14px 14px 14px}
+.m.u .bub{background:linear-gradient(135deg,rgba(244,63,94,0.22),rgba(249,115,22,0.14));border:1px solid rgba(244,63,94,0.22);color:#fff;white-space:pre-wrap;border-radius:14px 4px 14px 14px}
 .ai-out table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
-.ai-out th{background:var(--primary);color:#fff;padding:9px 12px;text-align:left;font-weight:700}
-.ai-out td{padding:8px 12px;border:1px solid var(--border);vertical-align:top;line-height:1.5}
-.ai-out tr:nth-child(even) td{background:rgba(255,255,255,.03)}
-.ai-out h2{font-size:15px;font-weight:800;color:var(--text);margin:16px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--primary)}
-.ai-out h3{font-size:14px;font-weight:700;color:#818CF8;margin:12px 0 6px}
-.ai-out p{margin:6px 0;line-height:1.7}.ai-out ul,.ai-out ol{margin:6px 0 6px 20px;line-height:1.8}.ai-out li{margin-bottom:4px}.ai-out strong{color:var(--text);font-weight:700}
-.copy-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--rs);background:rgba(67,56,202,.2);border:1px solid var(--primary);color:#818CF8;font-size:12px;font-weight:600;cursor:pointer}
-.copy-btn:hover{background:var(--primary);color:#fff}.copy-btn.copied{background:rgba(16,185,129,.2);border-color:var(--success);color:var(--success)}
-#export-bar{display:none;align-items:center;gap:8px;padding:8px 16px;background:var(--panel);border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
-#export-bar.visible{display:flex}
-#export-bar span{font-size:12px;color:var(--muted);font-weight:600;margin-right:4px}
-.eb-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--rs);background:rgba(67,56,202,.2);border:1px solid var(--primary);color:#818CF8;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-.eb-btn:hover{background:var(--primary);color:#fff}
-.eb-btn.copied{background:rgba(16,185,129,.2);border-color:var(--success);color:var(--success)}
-.wcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:28px 20px;text-align:center;margin:auto;max-width:440px;width:100%}
-.wcard .ic{font-size:44px;margin-bottom:12px}.wcard h3{font-size:18px;font-weight:700;margin-bottom:8px}
-.wcard p{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:18px}
-.wcard button{padding:11px 24px;border-radius:var(--r);background:var(--primary);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
-#ciarea{padding:12px 16px;background:var(--panel);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
-#battach{padding:8px 10px;border-radius:var(--rs);border:1px solid var(--border);background:transparent;color:var(--muted);font-size:16px;cursor:pointer;flex-shrink:0}
-#battach:hover{color:var(--primary);border-color:var(--primary)}
-#battach.on{color:var(--success);border-color:var(--success);background:rgba(16,185,129,0.1)}
-#fbar{display:none;align-items:center;gap:8px;padding:6px 16px;background:rgba(16,185,129,0.06);border-top:1px solid rgba(16,185,129,0.2);font-size:12px;font-weight:600;flex-shrink:0}
+.ai-out th{background:linear-gradient(135deg,rgba(244,63,94,0.4),rgba(249,115,22,0.3));color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:12px}
+.ai-out td{padding:7px 12px;border:1px solid var(--border);vertical-align:top;line-height:1.5}
+.ai-out tr:nth-child(even) td{background:rgba(244,63,94,0.03)}
+.ai-out h2{font-size:15px;font-weight:700;color:var(--text);margin:14px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.ai-out h3{font-size:14px;font-weight:600;color:rgba(253,164,175,0.9);margin:10px 0 5px}
+.ai-out p{margin:5px 0;line-height:1.7}
+.ai-out ul,.ai-out ol{margin:5px 0 5px 20px;line-height:1.8}
+.ai-out li{margin-bottom:3px}
+.ai-out strong{color:var(--text);font-weight:600}
+
+/* welcome card */
+.wcard{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 24px;text-align:center;margin:auto;max-width:420px;width:100%;backdrop-filter:var(--blur2)}
+.wcard .ic img{width:80px;height:80px;border-radius:16px;object-fit:cover;margin-bottom:14px}
+.wcard h3{font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.wcard p{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:20px}
+.wcard button{padding:11px 28px;border-radius:var(--r);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)}
+
+/* input area */
+#fbar{display:none;align-items:center;gap:8px;padding:6px 20px;background:rgba(16,185,129,0.06);border-top:1px solid rgba(16,185,129,0.15);font-size:12px;font-weight:600;flex-shrink:0;color:rgba(110,231,183,0.9)}
 #fbar.on{display:flex}
-#cinput{flex:1;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:14px;font-family:inherit;resize:none;outline:none;line-height:1.5;min-height:42px;max-height:120px}
-#cinput:focus{border-color:var(--primary)}
-#bimg{padding:10px 12px;border-radius:var(--r);background:var(--card);border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer;height:42px;white-space:nowrap}
-#bimg:hover{border-color:var(--accent)}#bimg:disabled{opacity:.5}
-#bgraph{padding:10px 12px;border-radius:var(--r);background:var(--card);border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer;height:42px;white-space:nowrap}
-#bgraph:hover{border-color:var(--success)}#bgraph:disabled{opacity:.5}
-#bsend{padding:10px 18px;border-radius:var(--r);background:var(--primary);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;height:42px}#bsend:disabled{opacity:.5}
-#clpanel{flex:1;padding:20px 16px;overflow-y:auto}
-.stitle{font-size:15px;font-weight:700;margin-bottom:12px}
-.jcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:20px}
-.jhdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.jico{width:40px;height:40px;border-radius:var(--rs);background:rgba(67,56,202,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.jcard h3{font-size:15px;font-weight:700;margin:0}.jcard p{font-size:13px;color:var(--muted);margin:2px 0 0}
+#ciarea{padding:10px 16px;background:rgba(255,255,255,0.02);backdrop-filter:var(--blur2);border-top:1px solid var(--border2);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+input[type=file]#cfi{display:none}
+#battach{padding:8px 10px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:16px;cursor:pointer;flex-shrink:0}
+#battach:hover{color:var(--primary);border-color:var(--border3)}
+#battach.on{color:var(--success);border-color:rgba(16,185,129,0.35);background:rgba(16,185,129,0.08)}
+#cinput{flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:14px;font-family:var(--font);resize:none;outline:none;line-height:1.5;min-height:42px;max-height:120px}
+#cinput:focus{border-color:rgba(244,63,94,0.35)}
+#cinput::placeholder{color:var(--muted2)}
+#bimg,#bgraph{padding:9px 11px;border-radius:var(--r);background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--text);font-size:15px;cursor:pointer;height:42px}
+#bimg:hover{border-color:rgba(249,115,22,0.35)}
+#bgraph:hover{border-color:rgba(16,185,129,0.35)}
+#bimg:disabled,#bgraph:disabled{opacity:.4}
+#bsend{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;height:42px;font-family:var(--font)}
+#bsend:disabled{opacity:.5}
+
+/* export bar — BELOW input */
+#export-bar{display:none;align-items:center;gap:8px;padding:7px 16px;background:rgba(244,63,94,0.06);backdrop-filter:var(--blur2);border-top:1px solid rgba(244,63,94,0.1);flex-shrink:0;flex-wrap:wrap}
+#export-bar.visible{display:flex}
+#export-bar span{font-size:11px;font-weight:600;color:rgba(244,63,94,0.5);letter-spacing:0.04em;margin-right:4px}
+.eb-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--rs);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);border:none;transition:all 0.2s}
+.eb-copy{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6)}
+.eb-word{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:rgba(147,197,253,0.9)}
+.eb-pdf{background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);color:rgba(253,164,175,0.9)}
+.eb-btn:hover{opacity:0.85;transform:translateY(-1px)}
+.eb-btn.copied{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.25);color:rgba(110,231,183,0.9)}
+
+/* ── CLASSROOM PANEL ── */
+#clpanel{flex:1;padding:20px;overflow-y:auto}
+.jcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:20px;backdrop-filter:var(--blur2)}
+.jhdr{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.jico{width:42px;height:42px;border-radius:var(--rs);background:linear-gradient(135deg,rgba(244,63,94,0.25),rgba(249,115,22,0.15));border:1px solid var(--border3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.jcard h3{font-size:15px;font-weight:700;margin:0;color:var(--text)}.jcard p{font-size:13px;color:var(--muted);margin:2px 0 0}
 .jirow{display:flex;gap:8px;flex-wrap:wrap}
-#codeinput{flex:1;min-width:160px;padding:10px 14px;background:var(--panel);border:2px solid var(--border);border-radius:var(--r);color:var(--text);font-size:15px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:2px;text-transform:uppercase;outline:none}
-#codeinput::placeholder{font-family:inherit;font-size:13px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted)}
-#codeinput:focus{border-color:var(--primary)}
-#bjoin{padding:10px 20px;border-radius:var(--r);background:var(--primary);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}#bjoin:disabled{opacity:.5}
+#codeinput{flex:1;min-width:160px;padding:10px 14px;background:rgba(255,255,255,0.05);border:2px solid var(--border);border-radius:var(--r);color:var(--text);font-size:15px;font-weight:700;font-family:monospace;letter-spacing:2px;text-transform:uppercase;outline:none}
+#codeinput:focus{border-color:rgba(244,63,94,0.35)}
+#bjoin{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--font)}
 #jfb{margin-top:10px;padding:9px 12px;border-radius:var(--rs);font-size:13px;display:none}
-#jfb.ok{background:rgba(16,185,129,.15);border:1px solid var(--success);color:var(--success);display:block}
-#jfb.err{background:rgba(239,68,68,.12);border:1px solid var(--error);color:var(--error);display:block}
+#jfb.ok{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);display:block}
+#jfb.err{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:rgba(252,165,165,0.9);display:block}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
-.ccard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px}
-.csub{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);margin-bottom:6px}
-.cname{font-size:15px;font-weight:700;margin-bottom:4px}.ctch{font-size:13px;color:var(--muted)}
-.ccode{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-family:monospace;font-size:13px;color:var(--muted)}
-.ebox{color:var(--muted);font-size:14px;text-align:center;padding:28px;background:var(--card);border:1px dashed var(--border);border-radius:var(--r)}
-#tpanel{flex:1;padding:20px 16px;overflow-y:auto}
-.ttabs{display:flex;gap:4px;margin-bottom:16px;background:var(--card);padding:4px;border-radius:var(--r);width:fit-content}
-.stb{padding:7px 16px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer}.stb.on{background:var(--primary);color:#fff}
+.ccard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;backdrop-filter:var(--blur2)}
+.csub{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(244,63,94,0.6);margin-bottom:6px}
+.cname{font-size:15px;font-weight:700;margin-bottom:4px;color:var(--text)}
+.ctch{font-size:13px;color:var(--muted)}
+.ccode{margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);font-family:monospace;font-size:13px;color:var(--muted2)}
+.ebox{color:var(--muted);font-size:14px;text-align:center;padding:28px;background:var(--card2);border:1px dashed var(--border);border-radius:var(--r)}
+
+/* ── TEACHER DASHBOARD ── */
+#tpanel{flex:1;padding:20px;overflow-y:auto}
+.ttabs{display:flex;gap:4px;margin-bottom:18px;background:rgba(255,255,255,0.03);padding:4px;border-radius:var(--r);width:fit-content;border:1px solid var(--border2)}
+.stb{padding:7px 16px;border-radius:10px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all 0.2s}
+.stb.on{background:linear-gradient(135deg,rgba(244,63,94,0.35),rgba(249,115,22,0.2));color:var(--text);border:1px solid var(--border3)}
 .sp{display:none}.sp.on{display:block}
-.crcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px}
-.frow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.crcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px;backdrop-filter:var(--blur2)}
+.frow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px}
-.fg label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.fg input,.fg select{padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none}
-.fg input:focus,.fg select:focus{border-color:var(--teacher)}
-#bcreat{padding:10px 20px;border-radius:var(--r);background:var(--teacher);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
-.tccard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.fg label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg select{padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)}
+.fg input:focus,.fg select:focus{border-color:rgba(244,63,94,0.35)}
+#bcreat{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.tccard{background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:10px;backdrop-filter:var(--blur2)}
 .tchdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.tcn{font-size:15px;font-weight:700}.tcm{font-size:13px;color:var(--muted)}
-.tcbadge{font-family:monospace;font-size:12px;font-weight:700;padding:3px 8px;border-radius:5px;background:rgba(5,150,105,.15);color:var(--teacher)}
-.tcst{display:flex;gap:14px;font-size:13px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px;flex-wrap:wrap;align-items:center}
-.tcst b{color:var(--text)}.tcvb{margin-left:auto;padding:4px 12px;border-radius:var(--rs);border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer}
-#aimsg{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px;height:420px;border:1px solid var(--border);border-radius:var(--r);background:var(--panel);margin-bottom:10px}
+.tcn{font-size:15px;font-weight:700;color:var(--text)}.tcm{font-size:13px;color:var(--muted)}
+.tcbadge{font-family:monospace;font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(16,185,129,0.12);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.2)}
+.tcst{display:flex;gap:14px;font-size:13px;color:var(--muted);border-top:1px solid var(--border2);padding-top:8px;flex-wrap:wrap;align-items:center}
+.tcst b{color:var(--text)}
+.tcvb{margin-left:auto;padding:4px 12px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:12px;cursor:pointer;font-family:var(--font)}
+.tcvb:hover{border-color:var(--border3);color:var(--primary)}
+.stitle{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)}
+
+/* teacher AI chat */
+#aimsg{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;height:380px;border:1px solid var(--border);border-radius:var(--r);background:rgba(255,255,255,0.02);margin-bottom:10px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
 .qrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.qb{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;cursor:pointer}.qb:hover{border-color:var(--teacher);color:var(--teacher)}
+.qb{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:var(--card2);color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--font);transition:all 0.2s}
+.qb:hover{border-color:rgba(16,185,129,0.35);color:rgba(110,231,183,0.9)}
 #tiarea{display:flex;gap:8px;align-items:flex-end}
-#tinput{flex:1;padding:10px 14px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:14px;font-family:inherit;resize:none;outline:none;min-height:42px;max-height:120px}
-#tinput:focus{border-color:var(--teacher)}
-#btsend{padding:10px 18px;border-radius:var(--r);background:var(--teacher);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;height:42px}#btsend:disabled{opacity:.5}
-#overlay{position:fixed;inset:0;background:rgba(10,9,30,.9);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}#overlay.on{display:flex}
-#modal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
-#mcls{position:absolute;top:12px;right:14px;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:4px 8px}
-.mlogo{font-size:20px;font-weight:800;text-align:center;margin-bottom:4px}.mlogo span{color:var(--primary)}.mlogo em{color:var(--accent);font-style:normal}
-#msub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
-.rtog{display:flex;gap:6px;margin-bottom:12px}
-.rb{flex:1;padding:9px 6px;border-radius:var(--rs);border:2px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;text-align:center}
-.rb.on{border-color:var(--primary);color:var(--primary);background:rgba(67,56,202,.1)}.rb.ton.on{border-color:var(--teacher);color:var(--teacher);background:rgba(5,150,105,.1)}
-.atabs{display:flex;gap:4px;margin-bottom:14px}
-.at{flex:1;padding:8px;text-align:center;border:none;background:var(--panel);color:var(--muted);font-size:13px;font-weight:600;border-radius:var(--rs);cursor:pointer}.at.on{background:var(--primary);color:#fff}
-.af{margin-bottom:11px}.af label{display:block;font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-.af input,.af select{width:100%;padding:10px 12px;background:var(--panel);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px;outline:none}
-.af input:focus,.af select:focus{border-color:var(--primary)}
-#asubmit{width:100%;padding:12px;background:var(--primary);border:none;border-radius:var(--r);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
-#asubmit:disabled{opacity:.5;cursor:not-allowed}
-#aerr{color:var(--error);font-size:13px;text-align:center;margin-top:8px;min-height:16px}
-#toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;font-size:14px;color:var(--text);transform:translateY(60px);opacity:0;transition:all .25s;z-index:99999;max-width:300px}
-#toast.on{transform:translateY(0);opacity:1}#toast.ok{border-color:var(--success)}#toast.err{border-color:var(--error)}
-.dots{display:flex;gap:4px;padding:2px 0}.dots span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bn .9s infinite}
-.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
-@keyframes bn{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
-.sp2{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rn .7s linear infinite;display:inline-block;vertical-align:middle}
-@keyframes rn{to{transform:rotate(360deg)}}.hide{display:none!important}
-#fcpanel{flex:1;overflow-y:auto;padding:16px}
-.fc-gen-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px}
+#tinput{flex:1;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:14px;font-family:var(--font);resize:none;outline:none;min-height:42px;max-height:120px}
+#tinput:focus{border-color:rgba(16,185,129,0.35)}
+#tinput::placeholder{color:var(--muted2)}
+#btsend{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;height:42px;font-family:var(--font)}
+#btsend:disabled{opacity:.5}
+
+/* promo / curriculum tabs */
+.sp#sp2,.sp#sp3{padding:4px 0}
+
+/* ── FLASHCARDS ── */
+#fcpanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
+.fc-gen-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px;backdrop-filter:var(--blur2)}
 .fc-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.fc-controls select,.fc-controls input{padding:8px 12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none}
+.fc-controls select,.fc-controls input{padding:8px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)}
 .fc-controls input{flex:1;min-width:160px}
-#fcgen{padding:8px 18px;border-radius:var(--rs);background:var(--primary);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.fc-controls input::placeholder{color:var(--muted2)}
+#fcgen{padding:8px 18px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
 #fcgen:disabled{opacity:.5}
 #fcstatus{font-size:13px;color:var(--muted);min-height:16px}
 .fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-.fc-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:0;cursor:pointer;min-height:160px;position:relative;transition:border-color .2s}
-.fc-card:hover{border-color:var(--primary)}
+.fc-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:0;cursor:pointer;min-height:160px;position:relative;transition:all 0.2s;backdrop-filter:var(--blur2)}
+.fc-card:hover{border-color:rgba(244,63,94,0.3);transform:translateY(-2px)}
 .fc-front,.fc-back{padding:20px;min-height:160px;display:flex;flex-direction:column;justify-content:center}
-.fc-back{display:none;border-top:2px solid var(--primary)}
+.fc-back{display:none;border-top:2px solid rgba(244,63,94,0.3)}
 .fc-card.flipped .fc-front{display:none}
 .fc-card.flipped .fc-back{display:flex}
-.fc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
+.fc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(244,63,94,0.5);margin-bottom:8px}
 .fc-q{font-size:15px;font-weight:600;color:var(--text);line-height:1.5}
 .fc-a{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:8px}
 .fc-hint{font-size:12px;color:var(--muted);font-style:italic;margin-top:6px}
-.fc-del{position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px;opacity:0;transition:opacity .2s}
-.fc-card:hover .fc-del{opacity:1}.fc-del:hover{color:var(--error)}
-.fc-flip-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:8px}
-#upgoverlay{position:fixed;inset:0;background:rgba(10,9,30,.95);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
+.fc-del{position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--muted2);font-size:14px;cursor:pointer;padding:4px;opacity:0;transition:opacity 0.2s}
+.fc-card:hover .fc-del{opacity:1}
+.fc-del:hover{color:var(--error)}
+.fc-flip-hint{font-size:11px;color:var(--muted2);text-align:center;margin-top:8px}
+
+/* ── GAMES ── */
+#gpanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
+.game-card{background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:24px;text-align:center;cursor:pointer;transition:all 0.25s;backdrop-filter:var(--blur2)}
+.game-card:hover{border-color:rgba(244,63,94,0.35);transform:translateY(-3px);background:rgba(244,63,94,0.1)}
+.game-badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.12);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.25)}
+
+/* ── MODALS ── */
+#overlay{position:fixed;inset:0;background:rgba(15,8,16,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+#overlay.on{display:flex}
+#modal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
+#mcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;line-height:1;padding:4px 9px;font-family:var(--font)}
+.mlogo{text-align:center;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px}
+.mlogo img{height:36px}
+.mlogo-text{font-size:19px;font-weight:800;color:var(--text)}
+.mlogo-text span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#msub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
+.rtog{display:flex;gap:6px;margin-bottom:12px}
+.rb{flex:1;padding:9px 6px;border-radius:var(--rs);border:1.5px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.2s;font-family:var(--font)}
+.rb.on{border-color:rgba(244,63,94,0.35);color:var(--primary);background:rgba(244,63,94,0.08)}
+.rb.ton.on{border-color:rgba(16,185,129,0.35);color:rgba(110,231,183,0.9);background:rgba(16,185,129,0.08)}
+.atabs{display:flex;gap:4px;margin-bottom:14px;background:rgba(255,255,255,0.03);padding:3px;border-radius:var(--rs);border:1px solid var(--border2)}
+.at{flex:1;padding:7px;text-align:center;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;font-family:var(--font);transition:all 0.2s}
+.at.on{background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff}
+.af{margin-bottom:11px}
+.af label{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.af input,.af select{width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px;outline:none;font-family:var(--font)}
+.af input:focus,.af select:focus{border-color:rgba(244,63,94,0.35)}
+#asubmit{width:100%;padding:12px;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);border-radius:var(--r);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;font-family:var(--font)}
+#asubmit:disabled{opacity:.5;cursor:not-allowed}
+#aerr{color:rgba(252,165,165,0.9);font-size:13px;text-align:center;margin-top:8px;min-height:16px}
+
+/* upgrade modal */
+#upgoverlay{position:fixed;inset:0;background:rgba(15,8,16,0.92);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
 #upgoverlay.on{display:flex}
-#upgmodal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;width:100%;max-width:480px;position:relative;max-height:90vh;overflow-y:auto}
-#upgcls{position:absolute;top:12px;right:14px;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px}
+#upgmodal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;position:relative;max-height:90vh;overflow-y:auto}
+#upgcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;padding:4px 9px;font-family:var(--font)}
 .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
-.plan-card{background:var(--panel);border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
-.plan-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--primary),transparent);opacity:0;transition:opacity .3s}
-.plan-card:hover{border-color:rgba(0,180,216,0.4);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,180,216,0.1)}
-.plan-card:hover::before{opacity:1}
-.plan-card.featured{border-color:rgba(0,180,216,0.5);background:linear-gradient(135deg,rgba(0,180,216,0.07),var(--panel))}
-.plan-card.featured::before{opacity:1}
-.plan-popular{display:inline-block;background:linear-gradient(90deg,var(--primary),var(--accent));color:#0D1B2E;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;margin-bottom:6px}
-.plan-name{font-size:13px;font-weight:800;margin-bottom:4px;color:var(--text)}
-.plan-price{font-size:22px;font-weight:900;color:var(--primary);margin-bottom:4px;letter-spacing:-0.5px}
-.plan-price span{font-size:11px;color:var(--muted);font-weight:400;letter-spacing:0}
-.plan-credits{font-size:11px;color:var(--success);font-weight:700;margin-bottom:10px;padding:2px 8px;background:rgba(16,185,129,0.1);border-radius:20px;display:inline-block;border:1px solid rgba(16,185,129,0.2)}
-.plan-feat{font-size:11px;color:var(--muted);line-height:1.9;margin-bottom:10px}
-.plan-feat li{list-style:none;padding-left:0;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.04);padding:3px 0}
+.plan-card{background:rgba(255,255,255,0.03);border:1.5px solid var(--border2);border-radius:14px;padding:16px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.plan-card:hover{border-color:rgba(244,63,94,0.3);transform:translateY(-2px);background:rgba(244,63,94,0.05)}
+.plan-card.featured{border-color:rgba(244,63,94,0.25);background:rgba(244,63,94,0.06)}
+.plan-name{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--text)}
+.plan-price{font-size:22px;font-weight:800;color:var(--primary);margin-bottom:4px;letter-spacing:-0.5px}
+.plan-price span{font-size:11px;color:var(--muted);font-weight:400}
+.plan-credits{font-size:11px;color:rgba(110,231,183,0.9);font-weight:600;margin-bottom:10px;padding:2px 8px;background:rgba(16,185,129,0.1);border-radius:20px;display:inline-block;border:1px solid rgba(16,185,129,0.2)}
+.plan-feat{font-size:11px;color:var(--muted);line-height:1.9;margin-bottom:10px;list-style:none}
+.plan-feat li{display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.04);padding:3px 0}
 .plan-feat li:last-child{border:none}
 .plan-feat li:before{content:'✓';color:var(--primary);font-weight:700;flex-shrink:0}
-.plan-btn{width:100%;padding:9px;border-radius:var(--rs);border:none;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;transition:all .2s}
-.plan-btn.stripe{background:var(--primary);color:#0D1B2E}.plan-btn.stripe:hover{background:var(--accent)}
-.plan-btn.vnpay{background:#e61d24;color:#fff;margin-top:5px}.plan-btn.vnpay:hover{background:#c01018}
-.pack-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
-.pack-card{background:var(--panel);border:1.5px solid var(--border);border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:all .25s}
-.pack-card:hover{border-color:rgba(245,158,11,0.4);transform:translateY(-2px);box-shadow:0 6px 20px rgba(245,158,11,0.1)}
-.pack-credits{font-size:28px;font-weight:900;color:var(--warn);letter-spacing:-1px}
-.pack-label{font-size:11px;color:var(--muted);margin:2px 0 8px}
-.pack-price{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px}
-.pack-btn{width:100%;padding:8px;border-radius:var(--rs);border:none;font-size:12px;font-weight:700;cursor:pointer;background:rgba(245,158,11,0.15);color:var(--warn);border:1px solid rgba(245,158,11,0.3);transition:all .2s}
-.pack-btn:hover{background:var(--warn);color:#0D1B2E}
+.plan-btn{width:100%;padding:8px;border-radius:var(--rs);border:none;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px;font-family:var(--font);transition:all 0.2s}
+.plan-btn.stripe{background:linear-gradient(135deg,rgba(244,63,94,0.6),rgba(249,115,22,0.5));color:#fff;border:1px solid var(--border3)}
+.plan-btn.stripe:hover{opacity:0.85}
+.plan-btn.vnpay{background:rgba(230,29,36,0.3);color:#fff;margin-top:5px;border:1px solid rgba(230,29,36,0.4)}
+.plan-btn.vnpay:hover{background:rgba(230,29,36,0.5)}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;font-size:14px;color:var(--text);transform:translateY(60px);opacity:0;transition:all .25s;z-index:99999;max-width:300px;backdrop-filter:var(--blur2)}
+#toast.on{transform:translateY(0);opacity:1}
+#toast.ok{border-color:rgba(16,185,129,0.35)}
+#toast.err{border-color:rgba(239,68,68,0.35)}
+
+/* ── UTILITIES ── */
+.dots{display:flex;gap:4px;padding:2px 0}
+.dots span{width:6px;height:6px;border-radius:50%;background:rgba(244,63,94,0.5);animation:bn .9s infinite}
+.dots span:nth-child(2){animation-delay:.15s}
+.dots span:nth-child(3){animation-delay:.3s}
+@keyframes bn{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.sp2{width:16px;height:16px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:rn .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes rn{to{transform:rotate(360deg)}}
+.hide{display:none!important}
 .chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:8px}
 .chart-title{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text)}
 .chart-desc{font-size:12px;color:var(--muted);margin-bottom:12px}
 .chart-canvas{width:100%;max-height:300px}
+
+/* ── PROMO / CURRICULUM (inside dashboard) ── */
+.sp#sp2 .crcard,.sp#sp3 .crcard{margin-bottom:14px}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  #sidebar{display:none}
+  #topbar{padding:8px 12px}
+  .plan-grid{grid-template-columns:1fr}
+}
 </style>
+</head>
+<body>
 <div id="app">
 <div id="topbar">
   <div class="logo">
-    <img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" alt="EduBot Logo" style="height:42px;width:auto;"> <span style="font-size:18px;font-weight:800;color:#E2E8F0;">Edu<span style="color:#00B4D8;">Bot</span></span>
+    <img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" alt="EduBot"/>
+    <span class="logo-text">Edu<span>Bot</span></span>
   </div>
   <div class="tr">
     <div class="lang-wrap"><button class="lb on" id="lvi">🇻🇳 VI</button><button class="lb" id="len">🇬🇧 EN</button></div>
     <div id="guestbar"><button id="btn-login">Đăng nhập</button></div>
-    <div id="uinfo"><strong id="uname"></strong><span class="rbadge" id="ubadge"></span><div id="credit-badge" onclick="openUpgrade()" title="Credits remaining">⚡ <span id="credit-count">0</span></div><button id="btn-logout">Đăng xuất</button></div>
+    <div id="uinfo">
+      <strong id="uname"></strong>
+      <span class="rbadge" id="ubadge"></span>
+      <div id="credit-badge" onclick="openUpgrade()" title="Credits">⚡ <span id="credit-count">0</span></div>
+      <button id="btn-logout">Đăng xuất</button>
+    </div>
   </div>
 </div>
-<div id="tabs">
-  <button class="tb on" id="tab0">💬 Học với AI</button>
-  <button class="tb" id="tab1">🏫 Lớp học</button>
-  <button class="tb ton hide" id="tab2">👩‍🏫 Dashboard</button>
-  <button class="tb hide" id="tab3">📚 Flashcards</button>
-  <button class="tb hide" id="tab4" onclick="loadGames()">🎮 Games</button>
-</div>
-<div id="mc">
-  <!-- TAB 0: AI TUTOR -->
-  <div class="panel on" id="p0">
-    <div id="cctrl" style="display:none">
-      <label id="lsub">Môn học:</label>
-      <select id="selsub"><option value="Math" id="om">Toán</option><option value="Science" id="os">Khoa học</option><option value="English" id="oe">Tiếng Anh</option></select>
-      <label id="lgrd">Lớp:</label>
-      <select id="selgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select>
-      <div id="dcnt">Hôm nay: <b id="drem">5</b>/5</div>
+
+<div id="layout">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="sidebar-toggle" onclick="toggleSidebar()">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </div>
-    <div id="msgs">
-      <div class="wcard" id="wcard"><div class="ic"><img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" style="width:80px;height:80px;border-radius:16px;object-fit:cover"></div><h3 id="wt">Chào mừng đến EduBot!</h3><p id="wd">Gia sư AI cá nhân cho học sinh lớp 1–12. Đăng nhập để bắt đầu học!</p><button id="wbtn">Đăng nhập / Đăng ký miễn phí</button></div>
-    </div>
-    <div id="export-bar">
-      <span id="export-label">📤 Xuất:</span>
-      <button class="eb-btn" id="eb-copy" onclick="barCopy()">📋 <span id="eb-copy-lbl">Sao chép</span></button>
-      <button class="eb-btn" onclick="barExportWord()">📄 Word</button>
-      <button class="eb-btn" onclick="barExportPDF()">🖨️ PDF</button>
-    </div>
-    <div id="fbar"><span id="ficon">📄</span><span id="fname" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button onclick="rmFile()" style="border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px">✕</button></div>
-    <div id="ciarea">
-      <input type="file" id="cfi" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" style="display:none" onchange="onFile(this.files[0])"/>
-      <button id="battach" onclick="document.getElementById('cfi').click()" title="Upload file">📎</button>
-      <textarea id="cinput" rows="1" placeholder="Hỏi tôi bất cứ điều gì..."></textarea>
-      <button id="bgraph" title="Generate chart (Grade 4+)">📊</button>
-      <button id="bimg" title="Generate AI image">🎨</button>
-      <button id="bsend">Gửi ✈️</button>
-    </div>
-  </div>
-  <!-- TAB 1: CLASSROOM -->
-  <div class="panel" id="p1">
-    <div id="clpanel">
-      <div class="jcard">
-        <div class="jhdr"><div class="jico">🔑</div><div><h3 id="jt">Tham gia lớp học</h3><p id="jd">Nhập mã EDU-XXXX do giáo viên cung cấp</p></div></div>
-        <div class="jirow"><input type="text" id="codeinput" maxlength="8" placeholder="VD: EDU-4B2K" autocomplete="off"/><button id="bjoin">Tham gia lớp</button></div>
-        <div id="jfb"></div>
-      </div>
-      <div class="stitle" id="mct">🏫 Lớp học của tôi</div>
-      <div class="cgrid" id="sgrid"><div class="ebox">Bạn chưa tham gia lớp học nào.</div></div>
-    </div>
-  </div>
-  <!-- TAB 2: TEACHER DASHBOARD -->
-  <div class="panel" id="p2">
-    <div id="tpanel">
-      <div class="ttabs">
-        <button class="stb on" id="stb0">🏫 Lớp học</button>
-        <button class="stb" id="stb1">🤖 Trợ lý AI</button>
-        <button class="stb" id="stb2" style="display:none">🎟️ Promo</button>
-        <button class="stb" id="stb3" style="display:none">📚 Curriculum</button>
-      </div>
-      <!-- SP0: Classrooms -->
-      <div class="sp on" id="sp0">
-        <div class="crcard">
-          <div class="stitle" id="crt">➕ Tạo lớp học mới</div>
-          <div class="frow">
-            <div class="fg"><label id="fln">Tên lớp</label><input type="text" id="ncname" placeholder="VD: Toán 8A"/></div>
-            <div class="fg"><label id="fls">Môn học</label><select id="ncsub"><option value="Math" id="nm">Toán</option><option value="Science" id="ns">Khoa học</option><option value="English" id="ne">Tiếng Anh</option></select></div>
-            <div class="fg"><label id="flg">Lớp</label><select id="ncgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
-          </div>
-          <button id="bcreat">Tạo lớp học</button>
-        </div>
-        <div class="stitle" id="yct">📋 Lớp học của bạn</div>
-        <div id="tclist"><div class="ebox">Bạn chưa tạo lớp học nào.</div></div>
-      </div>
-      <!-- SP1: AI Assistant -->
-      <div class="sp" id="sp1">
-        <div class="qrow" id="qrow"></div>
-        <div id="aimsg"><div class="wcard" style="margin:0 auto;max-width:100%;border:none;background:transparent"><div class="ic">👩‍🏫</div><h3 id="ait">Trợ lý giáo viên AI</h3><p id="aid">Tạo giáo án, câu hỏi kiểm tra và gợi ý giảng dạy.</p></div></div>
-        <div id="tiarea"><textarea id="tinput" rows="1" placeholder="Yêu cầu giáo án, đề kiểm tra..."></textarea><button id="btsend">Gửi ✈️</button></div>
-      </div>
-      <!-- SP2: Promo Codes (admin only) -->
-      <div class="sp" id="sp2">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
-          <!-- Credits Promo -->
-          <div class="crcard">
-            <div class="stitle">⚡ Credits Promo</div>
-            <div class="frow">
-              <div class="fg"><label>Credits Amount</label><input type="number" id="promo-credits" placeholder="e.g. 100" min="1"/></div>
-              <div class="fg"><label>Max Uses</label><input type="number" id="promo-uses" placeholder="1" min="1" value="1"/></div>
-            </div>
-            <button id="bpromo" onclick="createPromo('credits')" style="background:var(--warn);border:none;color:#0D1B2E;padding:9px 18px;border-radius:var(--rs);font-weight:700;cursor:pointer">⚡ Generate Credits Code</button>
-          </div>
-          <!-- Plan Promo -->
-          <div class="crcard">
-            <div class="stitle">📦 Plan Upgrade Promo</div>
-            <div class="frow">
-              <div class="fg"><label>Plan</label>
-                <select id="promo-plan" style="padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none;width:100%">
-                  <option value="basic">Student Basic</option>
-                  <option value="plus">Student Plus</option>
-                  <option value="teacher">Teacher</option>
-                  <option value="teacher_pro">Teacher Pro</option>
-                </select>
-              </div>
-              <div class="fg"><label>Max Uses</label><input type="number" id="promo-plan-uses" placeholder="1" min="1" value="1"/></div>
-            </div>
-            <button onclick="createPromo('plan')" style="background:var(--teacher);border:none;color:#fff;padding:9px 18px;border-radius:var(--rs);font-weight:700;cursor:pointer">📦 Generate Plan Code</button>
-          </div>
-        </div>
-        <div class="stitle">📋 All Promo Codes</div>
-        <div id="promolist"><div class="ebox">No promo codes yet.</div></div>
-      </div>
-      <!-- SP3: Curriculum Upload (admin only) -->
-      <div class="sp" id="sp3">
-        <div class="crcard">
-          <div class="stitle">📄 Upload Curriculum PDF</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Upload a textbook or curriculum PDF. AI will scan it, identify grades and subjects, and give you a summary before importing.</div>
-          <div id="curr-upload-zone" style="border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .25s;position:relative;margin-bottom:14px" onclick="document.getElementById('curr-file-inp').click()">
-            <input type="file" id="curr-file-inp" accept=".pdf" style="display:none" onchange="scanCurrFile(this.files[0])"/>
-            <div style="font-size:36px;margin-bottom:8px">📄</div>
-            <div style="font-size:15px;font-weight:700;margin-bottom:4px" id="curr-upload-txt">Click to select PDF</div>
-            <div style="font-size:12px;color:var(--muted)">Max 150MB · PDF only</div>
-          </div>
-          <!-- Scan result -->
-          <div id="curr-scan-result" style="display:none">
-            <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
-              <div style="font-size:13px;font-weight:700;color:var(--success);margin-bottom:10px">✅ Scan complete! Review before importing:</div>
-              <div id="curr-scan-summary" style="font-size:13px;line-height:1.8;margin-bottom:12px"></div>
-              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-                <div style="flex:1;min-width:120px">
-                  <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px">SUBJECT</div>
-                  <select id="curr-imp-subject" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none">
-                    <option value="Math">Math / Toán</option>
-                    <option value="Science">Science / Khoa học</option>
-                    <option value="English">English / Tiếng Anh</option>
-                    <option value="Vietnamese">Vietnamese / Tiếng Việt</option>
-                    <option value="Physics">Physics / Vật lý</option>
-                    <option value="Chemistry">Chemistry / Hóa học</option>
-                    <option value="Biology">Biology / Sinh học</option>
-                    <option value="History">History / Lịch sử</option>
-                    <option value="Geography">Geography / Địa lý</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div style="flex:1;min-width:100px">
-                  <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px">GRADE</div>
-                  <select id="curr-imp-grade" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none">
-                    <option value="0">All Grades</option>
-                    <option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option>
-                    <option value="4">Grade 4</option><option value="5">Grade 5</option><option value="6">Grade 6</option>
-                    <option value="7">Grade 7</option><option value="8">Grade 8</option><option value="9">Grade 9</option>
-                    <option value="10">Grade 10</option><option value="11">Grade 11</option><option value="12">Grade 12</option>
-                  </select>
-                </div>
-                <div style="flex:1;min-width:120px">
-                  <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px">TYPE</div>
-                  <select id="curr-imp-type" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none">
-                    <option value="national">Vietnam National</option>
-                    <option value="cambridge">Cambridge</option>
-                    <option value="ib">IB</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-              </div>
-              <div id="curr-import-progress" style="display:none;margin-bottom:10px">
-                <div style="font-size:12px;color:var(--muted);margin-bottom:4px" id="curr-import-status">Importing...</div>
-                <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
-                  <div id="curr-import-bar" style="height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:3px;transition:width .3s;width:0%"></div>
-                </div>
-              </div>
-              <div style="display:flex;gap:10px">
-                <button id="btn-curr-import" onclick="importCurr()" style="padding:10px 20px;border-radius:var(--rs);background:var(--primary);border:none;color:#0D1B2E;font-size:13px;font-weight:700;cursor:pointer">✅ Import into System</button>
-                <button onclick="cancelCurrScan()" style="padding:10px 16px;border-radius:var(--rs);border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer">✕ Cancel</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="stitle" style="margin-top:4px">📋 Imported Curriculum</div>
-        <div id="curr-list"><div class="ebox">Loading...</div></div>
-      </div>
-    </div>
-  </div>
-  <!-- TAB 3: FLASHCARDS -->
-  <div class="panel" id="p3">
-    <div id="fcpanel">
-      <div class="fc-gen-box">
-        <div class="stitle">📚 Generate Flashcards</div>
-        <div class="fc-controls">
-          <select id="fcsub"><option value="Math">Toán / Math</option><option value="Science">Khoa học / Science</option><option value="English">Tiếng Anh / English</option></select>
-          <select id="fcgrd"><option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option><option value="4">Grade 4</option><option value="5">Grade 5</option><option value="6">Grade 6</option><option value="7">Grade 7</option><option value="8">Grade 8</option><option value="9">Grade 9</option><option value="10">Grade 10</option><option value="11">Grade 11</option><option value="12">Grade 12</option></select>
-          <input type="text" id="fctopic" placeholder="Topic (e.g. Fractions, Photosynthesis...)"/>
-          <select id="fccount"><option value="5">5 cards</option><option value="10">10 cards</option><option value="15">15 cards</option></select>
-          <button id="fcgen" onclick="generateFlashcards()">⚡ Generate</button>
-        </div>
-        <div id="fcstatus"></div>
-      </div>
-      <div class="fc-grid" id="fcgrid"></div>
+    <div id="side-nav"></div>
+    <div class="sidebar-bottom" id="side-bottom">
+      <div class="sideitem" id="side-user"><span class="si">👤</span><span class="sl" id="side-uname"></span></div>
+      <div class="sideitem" onclick="doLogout()"><span class="si">🚪</span><span class="sl" id="side-logout">Đăng xuất</span></div>
     </div>
   </div>
 
-  <!-- GAMES PANEL -->
-  <div class="panel" id="p4">
-    <div id="gpanel" style="flex:1;overflow-y:auto;padding:16px">
-      <div id="game-menu" style="display:block">
-        <div style="margin-bottom:16px">
-          <div style="font-size:18px;font-weight:900;margin-bottom:4px">🎮 Games học tập</div>
-          <div style="font-size:13px;color:var(--muted)">Chọn trò chơi và bắt đầu học!</div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
-          <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:22px;text-align:center;cursor:pointer;transition:all .25s" onmouseover="this.style.borderColor='rgba(245,158,11,0.4)'" onmouseout="this.style.borderColor='var(--border)'" onclick="startKahoot()">
-            <div style="font-size:44px;margin-bottom:12px">🧠</div>
-            <div style="font-size:16px;font-weight:800;margin-bottom:6px">Quiz Battle</div>
-            <div style="font-size:12px;color:var(--muted)">Trả lời câu hỏi trắc nghiệm AI tạo ra</div>
-            <div style="display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)">✅ Sẵn sàng</div>
-          </div>
-          <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:22px;text-align:center;cursor:pointer;transition:all .25s" onmouseover="this.style.borderColor='rgba(0,180,216,0.4)'" onmouseout="this.style.borderColor='var(--border)'" onclick="startSpeed()">
-            <div style="font-size:44px;margin-bottom:12px">⚡</div>
-            <div style="font-size:16px;font-weight:800;margin-bottom:6px">Speed Race</div>
-            <div style="font-size:12px;color:var(--muted)">Điền đáp án nhanh nhất có thể!</div>
-            <div style="display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)">✅ Sẵn sàng</div>
-          </div>
-          <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:22px;text-align:center;cursor:pointer;transition:all .25s" onmouseover="this.style.borderColor='rgba(124,58,237,0.4)'" onmouseout="this.style.borderColor='var(--border)'" onclick="startFlip()">
-            <div style="font-size:44px;margin-bottom:12px">🃏</div>
-            <div style="font-size:16px;font-weight:800;margin-bottom:6px">Flashcard Flip</div>
-            <div style="font-size:12px;color:var(--muted)">Lật thẻ xem đáp án. Học hiệu quả!</div>
-            <div style="display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)">✅ Sẵn sàng</div>
-          </div>
-        </div>
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:14px">⚙️ Cài đặt</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <select id="g-subject" style="flex:1;min-width:120px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none"><option value="math">Toán</option><option value="science">Khoa học</option><option value="english">Tiếng Anh</option></select>
-            <select id="g-grade" style="flex:1;min-width:100px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none"><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option><option value="6" selected>Lớp 6</option><option value="7">Lớp 7</option><option value="8">Lớp 8</option><option value="9">Lớp 9</option><option value="10">Lớp 10</option><option value="11">Lớp 11</option><option value="12">Lớp 12</option></select>
-            <select id="g-count" style="flex:1;min-width:100px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none"><option value="5">5 câu</option><option value="10" selected>10 câu</option><option value="15">15 câu</option></select>
-          </div>
+  <!-- MAIN CONTENT -->
+  <div id="mc">
+
+    <!-- TAB 0: AI TUTOR -->
+    <div class="panel on" id="p0">
+      <div id="cctrl" style="display:none">
+        <label id="lsub">Môn học:</label>
+        <select id="selsub"><option value="Math" id="om">Toán</option><option value="Science" id="os">Khoa học</option><option value="English" id="oe">Tiếng Anh</option></select>
+        <label id="lgrd">Lớp:</label>
+        <select id="selgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select>
+        <div id="dcnt">Hôm nay: <b id="drem">5</b>/5</div>
+      </div>
+      <div id="msgs">
+        <div class="wcard" id="wcard">
+          <div class="ic"><img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png"/></div>
+          <h3 id="wt">Chào mừng đến EduBot!</h3>
+          <p id="wd">Gia sư AI cá nhân cho học sinh lớp 1–12. Đăng nhập để bắt đầu học!</p>
+          <button id="wbtn">Đăng nhập / Đăng ký miễn phí</button>
         </div>
       </div>
-      <!-- Kahoot -->
-      <div id="kahoot-game" style="display:none;flex-direction:column;gap:14px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <button onclick="backToMenu()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer">← Menu</button>
-          <div style="flex:1;display:flex;justify-content:space-between;align-items:center;background:var(--panel);border-radius:10px;padding:8px 16px"><span id="k-qlabel" style="font-size:13px">Q 1/10</span><span style="font-size:13px">⭐ <span style="font-size:20px;font-weight:900;color:var(--primary)" id="k-score">0</span></span></div>
-        </div>
-        <div id="k-loading" style="text-align:center;padding:40px;color:var(--muted)">⏳ Đang tạo câu hỏi AI...</div>
-        <div id="k-game" style="display:none;flex-direction:column;gap:14px">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
-            <div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="k-qnum">Q 1</div>
-            <div style="font-size:16px;font-weight:700;line-height:1.5;margin-bottom:8px" id="k-qtext"></div>
-            <div style="font-size:28px;font-weight:900;color:var(--warn)" id="k-timer">20</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="k-answers"></div>
-          <div id="k-feedback" style="display:none;text-align:center;padding:10px;border-radius:10px;font-weight:700;font-size:14px"></div>
-        </div>
+      <div id="fbar"><span id="ficon">📄</span><span id="fname" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button onclick="rmFile()" style="border:none;background:transparent;color:var(--muted2);cursor:pointer;font-size:13px">✕</button></div>
+      <div id="ciarea">
+        <input type="file" id="cfi" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" onchange="onFile(this.files[0])"/>
+        <button id="battach" onclick="document.getElementById('cfi').click()" title="Upload file">📎</button>
+        <textarea id="cinput" rows="1" placeholder="Hỏi tôi bất cứ điều gì..."></textarea>
+        <button id="bgraph" title="Generate chart">📊</button>
+        <button id="bimg" title="Generate AI image">🎨</button>
+        <button id="bsend">Gửi ✈️</button>
       </div>
-      <!-- Speed -->
-      <div id="speed-game" style="display:none;flex-direction:column;gap:14px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <button onclick="backToMenu()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer">← Menu</button>
-          <div style="flex:1;display:flex;justify-content:space-between;align-items:center;background:var(--panel);border-radius:10px;padding:8px 16px"><span id="sp-qlabel" style="font-size:13px">Q 1/10</span><span style="font-size:13px">⚡ <span style="font-size:20px;font-weight:900;color:var(--primary)" id="sp-score">0</span></span></div>
-        </div>
-        <div id="sp-loading" style="text-align:center;padding:40px;color:var(--muted)">⏳ Đang tạo câu hỏi AI...</div>
-        <div id="sp-game" style="display:none;flex-direction:column;gap:14px">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;font-size:18px;font-weight:800;min-height:80px;display:flex;align-items:center;justify-content:center" id="sp-qtext"></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center" id="sp-progress"></div>
-          <input style="width:100%;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--panel);color:var(--text);font-size:18px;font-weight:700;text-align:center;outline:none;transition:border-color .2s" id="sp-input" placeholder="Nhập đáp án..." autocomplete="off" oninput="checkSpeed()"/>
-          <div style="text-align:center;font-size:13px;color:var(--muted);min-height:20px" id="sp-fb"></div>
-        </div>
+      <div id="export-bar">
+        <span id="export-label">📤 Xuất:</span>
+        <button class="eb-btn eb-copy" id="eb-copy" onclick="barCopy()">📋 <span id="eb-copy-lbl">Sao chép</span></button>
+        <button class="eb-btn eb-word" onclick="barExportWord()">📄 Word</button>
+        <button class="eb-btn eb-pdf" onclick="barExportPDF()">🖨️ PDF</button>
       </div>
-      <!-- Flip -->
-      <div id="flip-game" style="display:none;flex-direction:column;gap:14px;align-items:center">
-        <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
-          <button onclick="backToMenu()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer">← Menu</button>
-          <span style="font-size:13px;color:var(--muted)" id="flip-prog">1 / 10</span>
+    </div>
+
+    <!-- TAB 1: CLASSROOM -->
+    <div class="panel" id="p1">
+      <div id="clpanel">
+        <div class="jcard">
+          <div class="jhdr"><div class="jico">🔑</div><div><h3 id="jt">Tham gia lớp học</h3><p id="jd">Nhập mã EDU-XXXX do giáo viên cung cấp</p></div></div>
+          <div class="jirow"><input type="text" id="codeinput" maxlength="8" placeholder="VD: EDU-4B2K" autocomplete="off"/><button id="bjoin">Tham gia lớp</button></div>
+          <div id="jfb"></div>
         </div>
-        <div style="perspective:1000px;width:100%;max-width:500px;height:220px;cursor:pointer" onclick="doFlip()">
-          <div style="position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s;border-radius:16px" id="flip-inner">
-            <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(0,180,216,0.12),var(--card));border:1.5px solid rgba(0,180,216,0.3)">
-              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">❓ CÂU HỎI</div>
-              <div style="font-size:17px;font-weight:700;line-height:1.5" id="flip-q"></div>
-              <div style="font-size:12px;color:var(--muted);margin-top:8px">Nhấn để xem đáp án</div>
+        <div class="stitle" id="mct">🏫 Lớp học của tôi</div>
+        <div class="cgrid" id="sgrid"><div class="ebox">Bạn chưa tham gia lớp học nào.</div></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: TEACHER DASHBOARD -->
+    <div class="panel" id="p2">
+      <div id="tpanel">
+        <div class="ttabs">
+          <button class="stb on" id="stb0">🏫 Lớp học</button>
+          <button class="stb" id="stb1">🤖 Trợ lý AI</button>
+          <button class="stb" id="stb2" style="display:none">🎟️ Promo</button>
+          <button class="stb" id="stb3" style="display:none">📚 Curriculum</button>
+        </div>
+        <!-- SP0: Classrooms -->
+        <div class="sp on" id="sp0">
+          <div class="crcard">
+            <div class="stitle" id="crt">➕ Tạo lớp học mới</div>
+            <div class="frow">
+              <div class="fg"><label id="fln">Tên lớp</label><input type="text" id="ncname" placeholder="VD: Toán 8A"/></div>
+              <div class="fg"><label id="fls">Môn học</label><select id="ncsub"><option value="Math" id="nm">Toán</option><option value="Science" id="ns">Khoa học</option><option value="English" id="ne">Tiếng Anh</option></select></div>
+              <div class="fg"><label id="flg">Lớp</label><select id="ncgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
             </div>
-            <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(16,185,129,0.12),var(--card));border:1.5px solid rgba(16,185,129,0.3);transform:rotateY(180deg)">
-              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">✅ ĐÁP ÁN</div>
-              <div style="font-size:17px;font-weight:700;line-height:1.5" id="flip-a"></div>
+            <button id="bcreat">Tạo lớp học</button>
+          </div>
+          <div class="stitle" id="yct">📋 Lớp học của bạn</div>
+          <div id="tclist"><div class="ebox">Bạn chưa tạo lớp học nào.</div></div>
+        </div>
+        <!-- SP1: AI Assistant -->
+        <div class="sp" id="sp1">
+          <div class="qrow" id="qrow"></div>
+          <div id="aimsg"><div class="wcard" style="margin:0 auto;max-width:100%;border:none;background:transparent"><div class="ic">👩‍🏫</div><h3 id="ait">Trợ lý giáo viên AI</h3><p id="aid">Tạo giáo án, câu hỏi kiểm tra và gợi ý giảng dạy.</p></div></div>
+          <div id="tiarea"><textarea id="tinput" rows="1" placeholder="Yêu cầu giáo án, đề kiểm tra..."></textarea><button id="btsend">Gửi ✈️</button></div>
+        </div>
+        <!-- SP2: Promo (admin) -->
+        <div class="sp" id="sp2">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+            <div class="crcard">
+              <div class="stitle">⚡ Credits Promo</div>
+              <div class="frow">
+                <div class="fg"><label>Credits Amount</label><input type="number" id="promo-credits" placeholder="e.g. 100" min="1"/></div>
+                <div class="fg"><label>Max Uses</label><input type="number" id="promo-uses" placeholder="1" min="1" value="1"/></div>
+              </div>
+              <button onclick="createPromo('credits')" style="background:linear-gradient(135deg,rgba(245,158,11,0.5),rgba(249,115,22,0.4));border:1px solid rgba(245,158,11,0.3);border-radius:var(--rs);color:#fff;padding:9px 18px;font-weight:600;cursor:pointer;font-family:var(--font)">⚡ Generate Credits Code</button>
+            </div>
+            <div class="crcard">
+              <div class="stitle">📦 Plan Upgrade Promo</div>
+              <div class="frow">
+                <div class="fg"><label>Plan</label><select id="promo-plan" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none"><option value="basic">Student Basic</option><option value="plus">Student Plus</option><option value="teacher">Teacher</option><option value="teacher_pro">Teacher Pro</option></select></div>
+                <div class="fg"><label>Max Uses</label><input type="number" id="promo-plan-uses" placeholder="1" min="1" value="1"/></div>
+              </div>
+              <button onclick="createPromo('plan')" style="background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);border-radius:var(--rs);color:#fff;padding:9px 18px;font-weight:600;cursor:pointer;font-family:var(--font)">📦 Generate Plan Code</button>
             </div>
           </div>
+          <div class="stitle">📋 All Promo Codes</div>
+          <div id="promolist"><div class="ebox">No promo codes yet.</div></div>
         </div>
-        <div style="display:flex;gap:12px;align-items:center">
-          <button onclick="flipPrev()" style="padding:10px 20px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer">← Trước</button>
-          <span style="font-size:13px;color:var(--muted)" id="flip-counter">1/10</span>
-          <button onclick="flipNext()" style="padding:10px 20px;border-radius:10px;border:none;background:var(--primary);color:#0D1B2E;font-size:13px;font-weight:700;cursor:pointer">Tiếp →</button>
-        </div>
-      </div>
-      <!-- Result -->
-      <div id="game-result" style="display:none;flex-direction:column;align-items:center;gap:16px;padding:20px 0">
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;width:100%;max-width:400px">
-          <div style="font-size:44px;margin-bottom:8px" id="result-emoji">🏆</div>
-          <div style="font-size:18px;font-weight:900;margin-bottom:4px" id="result-title">Kết quả</div>
-          <div style="font-size:52px;font-weight:900;color:var(--primary);margin:8px 0" id="result-score">0</div>
-          <div style="font-size:16px;color:var(--muted);margin-bottom:20px" id="result-msg">Tốt lắm!</div>
-          <button onclick="backToMenu()" style="padding:12px 28px;border-radius:10px;background:var(--primary);border:none;color:#0D1B2E;font-size:14px;font-weight:700;cursor:pointer">🔄 Chơi lại</button>
+        <!-- SP3: Curriculum (admin) -->
+        <div class="sp" id="sp3">
+          <div class="crcard">
+            <div class="stitle">📄 Upload Curriculum PDF</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Upload a textbook or curriculum PDF. AI will scan it and import automatically.</div>
+            <div id="curr-upload-zone" style="border:2px dashed rgba(244,63,94,0.2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;transition:all .25s;margin-bottom:14px" onclick="document.getElementById('curr-file-inp').click()">
+              <input type="file" id="curr-file-inp" accept=".pdf" style="display:none" onchange="scanCurrFile(this.files[0])"/>
+              <div style="font-size:36px;margin-bottom:8px">📄</div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;color:var(--text)" id="curr-upload-txt">Click to select PDF</div>
+              <div style="font-size:12px;color:var(--muted)">Max 150MB · PDF only</div>
+            </div>
+            <div id="curr-scan-result" style="display:none">
+              <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--rs);padding:14px;margin-bottom:14px">
+                <div style="font-size:13px;font-weight:600;color:rgba(110,231,183,0.9);margin-bottom:10px">✅ Scan complete! Review before importing:</div>
+                <div id="curr-scan-summary" style="font-size:13px;line-height:1.8;margin-bottom:12px;color:var(--muted)"></div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+                  <div style="flex:1;min-width:120px"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">SUBJECT</div><select id="curr-imp-subject" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none"><option value="Math">Math / Toán</option><option value="Science">Science / Khoa học</option><option value="English">English / Tiếng Anh</option><option value="Vietnamese">Vietnamese / Tiếng Việt</option><option value="Physics">Physics / Vật lý</option><option value="Chemistry">Chemistry / Hóa học</option><option value="Biology">Biology / Sinh học</option><option value="History">History / Lịch sử</option><option value="Geography">Geography / Địa lý</option><option value="Other">Other</option></select></div>
+                  <div style="flex:1;min-width:100px"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">GRADE</div><select id="curr-imp-grade" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none"><option value="0">All Grades</option><option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option><option value="4">Grade 4</option><option value="5">Grade 5</option><option value="6">Grade 6</option><option value="7">Grade 7</option><option value="8">Grade 8</option><option value="9">Grade 9</option><option value="10">Grade 10</option><option value="11">Grade 11</option><option value="12">Grade 12</option></select></div>
+                  <div style="flex:1;min-width:120px"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">TYPE</div><select id="curr-imp-type" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none"><option value="national">Vietnam National</option><option value="cambridge">Cambridge</option><option value="ib">IB</option><option value="other">Other</option></select></div>
+                </div>
+                <div id="curr-import-progress" style="display:none;margin-bottom:10px">
+                  <div style="font-size:12px;color:var(--muted);margin-bottom:4px" id="curr-import-status">Importing...</div>
+                  <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden"><div id="curr-import-bar" style="height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:2px;transition:width .3s;width:0%"></div></div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <button id="btn-curr-import" onclick="importCurr()" style="padding:9px 20px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">✅ Import into System</button>
+                  <button onclick="cancelCurrScan()" style="padding:9px 16px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">✕ Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="stitle" style="margin-top:4px">📋 Imported Curriculum</div>
+          <div id="curr-list"><div class="ebox">Loading...</div></div>
         </div>
       </div>
     </div>
+
+    <!-- TAB 3: FLASHCARDS -->
+    <div class="panel" id="p3">
+      <div id="fcpanel">
+        <div class="fc-gen-box">
+          <div class="stitle">📚 Generate Flashcards</div>
+          <div class="fc-controls">
+            <select id="fcsub"><option value="Math">Toán / Math</option><option value="Science">Khoa học / Science</option><option value="English">Tiếng Anh / English</option></select>
+            <select id="fcgrd"><option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option><option value="4">Grade 4</option><option value="5">Grade 5</option><option value="6">Grade 6</option><option value="7">Grade 7</option><option value="8">Grade 8</option><option value="9">Grade 9</option><option value="10">Grade 10</option><option value="11">Grade 11</option><option value="12">Grade 12</option></select>
+            <input type="text" id="fctopic" placeholder="Topic (e.g. Fractions, Photosynthesis...)"/>
+            <select id="fccount"><option value="5">5 cards</option><option value="10">10 cards</option><option value="15">15 cards</option></select>
+            <button id="fcgen" onclick="generateFlashcards()">⚡ Generate</button>
+          </div>
+          <div id="fcstatus"></div>
+        </div>
+        <div class="fc-grid" id="fcgrid"></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: GAMES -->
+    <div class="panel" id="p4">
+      <div id="gpanel">
+        <div id="game-menu">
+          <div style="margin-bottom:18px"><div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)">🎮 Games học tập</div><div style="font-size:13px;color:var(--muted)">Chọn trò chơi và bắt đầu học!</div></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
+            <div class="game-card" onclick="startKahoot()"><div style="font-size:44px;margin-bottom:12px">🧠</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">Quiz Battle</div><div style="font-size:12px;color:var(--muted)">Trả lời câu hỏi trắc nghiệm AI tạo ra</div><div class="game-badge">✅ Sẵn sàng</div></div>
+            <div class="game-card" onclick="startSpeed()"><div style="font-size:44px;margin-bottom:12px">⚡</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">Speed Race</div><div style="font-size:12px;color:var(--muted)">Điền đáp án nhanh nhất có thể!</div><div class="game-badge">✅ Sẵn sàng</div></div>
+            <div class="game-card" onclick="startFlip()"><div style="font-size:44px;margin-bottom:12px">🃏</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">Flashcard Flip</div><div style="font-size:12px;color:var(--muted)">Lật thẻ xem đáp án. Học hiệu quả!</div><div class="game-badge">✅ Sẵn sàng</div></div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;backdrop-filter:var(--blur2)">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)">⚙️ Cài đặt</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <select id="g-subject" style="flex:1;min-width:120px;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)"><option value="math">Toán</option><option value="science">Khoa học</option><option value="english">Tiếng Anh</option></select>
+              <select id="g-grade" style="flex:1;min-width:100px;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)"><option value="1">Lớp 1</option><option value="2">Lớp 2</option><option value="3">Lớp 3</option><option value="4">Lớp 4</option><option value="5">Lớp 5</option><option value="6" selected>Lớp 6</option><option value="7">Lớp 7</option><option value="8">Lớp 8</option><option value="9">Lớp 9</option><option value="10">Lớp 10</option><option value="11">Lớp 11</option><option value="12">Lớp 12</option></select>
+              <select id="g-count" style="flex:1;min-width:100px;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)"><option value="5">5 câu</option><option value="10" selected>10 câu</option><option value="15">15 câu</option></select>
+            </div>
+          </div>
+        </div>
+        <!-- Game UIs (same as before, re-styled) -->
+        <div id="kahoot-game" style="display:none;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:10px"><button onclick="backToMenu()" style="padding:7px 14px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">← Menu</button><div style="flex:1;display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 16px"><span id="k-qlabel" style="font-size:13px;color:var(--muted)">Q 1/10</span><span style="font-size:13px;color:var(--muted)">⭐ <span style="font-size:20px;font-weight:800;color:var(--primary)" id="k-score">0</span></span></div></div>
+          <div id="k-loading" style="text-align:center;padding:40px;color:var(--muted)">⏳ Đang tạo câu hỏi AI...</div>
+          <div id="k-game" style="display:none;flex-direction:column;gap:14px">
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;text-align:center;backdrop-filter:var(--blur2)"><div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="k-qnum">Q 1</div><div style="font-size:16px;font-weight:700;line-height:1.5;margin-bottom:8px;color:var(--text)" id="k-qtext"></div><div style="font-size:28px;font-weight:800;color:var(--secondary)" id="k-timer">20</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="k-answers"></div>
+            <div id="k-feedback" style="display:none;text-align:center;padding:10px;border-radius:10px;font-weight:600;font-size:14px"></div>
+          </div>
+        </div>
+        <div id="speed-game" style="display:none;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:10px"><button onclick="backToMenu()" style="padding:7px 14px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">← Menu</button><div style="flex:1;display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 16px"><span id="sp-qlabel" style="font-size:13px;color:var(--muted)">Q 1/10</span><span style="font-size:13px;color:var(--muted)">⚡ <span style="font-size:20px;font-weight:800;color:var(--primary)" id="sp-score">0</span></span></div></div>
+          <div id="sp-loading" style="text-align:center;padding:40px;color:var(--muted)">⏳ Đang tạo câu hỏi AI...</div>
+          <div id="sp-game" style="display:none;flex-direction:column;gap:14px">
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;font-size:18px;font-weight:700;min-height:80px;display:flex;align-items:center;justify-content:center;color:var(--text);backdrop-filter:var(--blur2)" id="sp-qtext"></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center" id="sp-progress"></div>
+            <input style="width:100%;padding:14px;border-radius:var(--r);border:2px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:18px;font-weight:700;text-align:center;outline:none;transition:border-color .2s;font-family:var(--font)" id="sp-input" placeholder="Nhập đáp án..." autocomplete="off" oninput="checkSpeed()"/>
+            <div style="text-align:center;font-size:13px;color:var(--muted);min-height:20px" id="sp-fb"></div>
+          </div>
+        </div>
+        <div id="flip-game" style="display:none;flex-direction:column;gap:14px;align-items:center">
+          <div style="display:flex;justify-content:space-between;align-items:center;width:100%"><button onclick="backToMenu()" style="padding:7px 14px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">← Menu</button><span style="font-size:13px;color:var(--muted)" id="flip-prog">1 / 10</span></div>
+          <div style="perspective:1000px;width:100%;max-width:500px;height:220px;cursor:pointer" onclick="doFlip()">
+            <div style="position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s;border-radius:var(--r)" id="flip-inner">
+              <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(244,63,94,0.1),var(--card));border:1.5px solid rgba(244,63,94,0.2)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(244,63,94,0.5);margin-bottom:10px">❓ CÂU HỎI</div><div style="font-size:17px;font-weight:700;line-height:1.5;color:var(--text)" id="flip-q"></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Nhấn để xem đáp án</div></div>
+              <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(16,185,129,0.1),var(--card));border:1.5px solid rgba(16,185,129,0.2);transform:rotateY(180deg)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(16,185,129,0.6);margin-bottom:10px">✅ ĐÁP ÁN</div><div style="font-size:17px;font-weight:700;line-height:1.5;color:var(--text)" id="flip-a"></div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center"><button onclick="flipPrev()" style="padding:10px 20px;border-radius:10px;border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">← Trước</button><span style="font-size:13px;color:var(--muted)" id="flip-counter">1/10</span><button onclick="flipNext()" style="padding:10px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Tiếp →</button></div>
+        </div>
+        <div id="game-result" style="display:none;flex-direction:column;align-items:center;gap:16px;padding:20px 0">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;text-align:center;width:100%;max-width:400px;backdrop-filter:var(--blur2)"><div style="font-size:44px;margin-bottom:8px" id="result-emoji">🏆</div><div style="font-size:18px;font-weight:800;margin-bottom:4px;color:var(--text)" id="result-title">Kết quả</div><div style="font-size:52px;font-weight:800;color:var(--primary);margin:8px 0" id="result-score">0</div><div style="font-size:16px;color:var(--muted);margin-bottom:20px" id="result-msg">Tốt lắm!</div><button onclick="backToMenu()" style="padding:12px 28px;border-radius:10px;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">🔄 Chơi lại</button></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -507,7 +568,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <div id="overlay">
   <div id="modal">
     <button id="mcls">✕</button>
-    <div class="mlogo" style="text-align:center;margin-bottom:8px"><img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png" style="height:40px;width:auto;vertical-align:middle"> <span style="font-size:18px;font-weight:800;color:#E2E8F0;">Edu<span style="color:#00B4D8;">Bot</span></span></div>
+    <div class="mlogo"><img src="https://i.ibb.co/HDFp9HPw/Dynamic-Edubot-Logo-Featuring-Books-and-Robot-Head.png"/><span class="mlogo-text">Edu<span>Bot</span></span></div>
     <div id="msub">Nền tảng học tập AI cho học sinh lớp 1–12</div>
     <div class="rtog"><button class="rb on" id="rst">🎒 Học sinh</button><button class="rb ton" id="rte">👩‍🏫 Giáo viên</button></div>
     <div class="atabs"><button class="at on" id="at0">Đăng nhập</button><button class="at" id="at1">Đăng ký</button></div>
@@ -523,99 +584,39 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   </div>
 </div>
 
-
-
 <!-- UPGRADE MODAL -->
 <div id="upgoverlay">
   <div id="upgmodal">
     <button id="upgcls" onclick="closeUpgrade()">✕</button>
-    <div style="text-align:center;margin-bottom:16px">
-      <div style="font-size:28px;margin-bottom:8px">🚀</div>
-      <div style="font-size:18px;font-weight:800" id="upg-title">Nâng cấp EduBot</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:4px" id="upg-sub">Chọn gói phù hợp với bạn</div>
-    </div>
-    <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--panel);padding:4px;border-radius:var(--r)">
-      <button id="upg-tab0" onclick="showUpgTab(0)" style="flex:1;padding:8px;border-radius:9px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:600;cursor:pointer">📦 Gói tháng</button>
-      <button id="upg-tab1" onclick="showUpgTab(1)" style="flex:1;padding:8px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer">⚡ Mua Credits</button>
+    <div style="text-align:center;margin-bottom:16px"><div style="font-size:28px;margin-bottom:8px">🚀</div><div style="font-size:18px;font-weight:800;color:var(--text)" id="upg-title">Nâng cấp EduBot</div><div style="font-size:13px;color:var(--muted);margin-top:4px" id="upg-sub">Chọn gói phù hợp với bạn</div></div>
+    <div style="display:flex;gap:4px;margin-bottom:16px;background:rgba(255,255,255,0.03);padding:4px;border-radius:var(--r);border:1px solid var(--border2)">
+      <button id="upg-tab0" onclick="showUpgTab(0)" style="flex:1;padding:8px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)">📦 Gói tháng</button>
+      <button id="upg-tab1" onclick="showUpgTab(1)" style="flex:1;padding:8px;border-radius:10px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)">⚡ Mua Credits</button>
     </div>
     <div id="upg-plans">
       <div class="plan-grid">
-        <div class="plan-card">
-          <div class="plan-name" id="pn0">Student Basic</div>
-          <div class="plan-price">79k <span id="pm0">VND/tháng</span></div>
-          <div style="font-size:11px;color:var(--success);font-weight:700;margin-bottom:6px">⚡ 100 credits included</div>
-          <ul class="plan-feat"><li id="pf0a">Câu hỏi không giới hạn</li><li id="pf0b">Flashcards AI</li><li id="pf0c">Biểu đồ (Lớp 4+)</li><li id="pf0d">VI + EN</li></ul>
-          <button class="plan-btn stripe" onclick="buyPlan('student_basic','stripe')">💳 Stripe $3.20</button>
-          <button class="plan-btn vnpay" style="margin-top:6px" onclick="buyPlan('student_basic','vnpay')">🏦 VNPay 79k</button>
-        </div>
-        <div class="plan-card featured">
-          <div class="plan-name" id="pn1">Student Plus ⭐</div>
-          <div class="plan-price">149k <span id="pm1">VND/tháng</span></div>
-          <div style="font-size:11px;color:var(--success);font-weight:700;margin-bottom:6px">⚡ 250 credits included</div>
-          <ul class="plan-feat"><li id="pf1a">Tất cả Basic</li><li id="pf1b">Ảnh AI</li><li id="pf1c">Ưu tiên hỗ trợ</li></ul>
-          <button class="plan-btn stripe" onclick="buyPlan('student_plus','stripe')">💳 Stripe $5.99</button>
-          <button class="plan-btn vnpay" style="margin-top:6px" onclick="buyPlan('student_plus','vnpay')">🏦 VNPay 149k</button>
-        </div>
-        <div class="plan-card">
-          <div class="plan-name" id="pn2">Teacher</div>
-          <div class="plan-price">249k <span id="pm2">VND/tháng</span></div>
-          <div style="font-size:11px;color:var(--success);font-weight:700;margin-bottom:6px">⚡ 400 credits included</div>
-          <ul class="plan-feat"><li id="pf2a">Dashboard + Lớp học</li><li id="pf2b">Trợ lý AI giáo viên</li><li id="pf2c">Câu hỏi không giới hạn</li></ul>
-          <button class="plan-btn stripe" onclick="buyPlan('teacher','stripe')">💳 Stripe $9.99</button>
-          <button class="plan-btn vnpay" style="margin-top:6px" onclick="buyPlan('teacher','vnpay')">🏦 VNPay 249k</button>
-        </div>
-        <div class="plan-card featured">
-          <div class="plan-name" id="pn3">Teacher Pro ⭐</div>
-          <div class="plan-price">299k <span id="pm3">VND/tháng</span></div>
-          <div style="font-size:11px;color:var(--success);font-weight:700;margin-bottom:6px">⚡ 600 credits included</div>
-          <ul class="plan-feat"><li id="pf3a">Tất cả Teacher</li><li id="pf3b">Ảnh AI</li><li id="pf3c">Ưu tiên hỗ trợ</li></ul>
-          <button class="plan-btn stripe" onclick="buyPlan('teacher_pro','stripe')">💳 Stripe $12.99</button>
-          <button class="plan-btn vnpay" style="margin-top:6px" onclick="buyPlan('teacher_pro','vnpay')">🏦 VNPay 299k</button>
-        </div>
+        <div class="plan-card"><div class="plan-name" id="pn0">Student Basic</div><div class="plan-price">79k <span id="pm0">VND/tháng</span></div><div class="plan-credits">⚡ 100 credits</div><ul class="plan-feat"><li id="pf0a">Câu hỏi không giới hạn</li><li id="pf0b">Flashcards AI</li><li id="pf0c">Biểu đồ (Lớp 4+)</li><li id="pf0d">VI + EN</li></ul><button class="plan-btn stripe" onclick="buyPlan('student_basic','stripe')">💳 Stripe $3.20</button><button class="plan-btn vnpay" onclick="buyPlan('student_basic','vnpay')">🏦 VNPay 79k</button></div>
+        <div class="plan-card featured"><div class="plan-name" id="pn1">Student Plus ⭐</div><div class="plan-price">149k <span id="pm1">VND/tháng</span></div><div class="plan-credits">⚡ 250 credits</div><ul class="plan-feat"><li id="pf1a">Tất cả Basic</li><li id="pf1b">Ảnh AI</li><li id="pf1c">Ưu tiên hỗ trợ</li></ul><button class="plan-btn stripe" onclick="buyPlan('student_plus','stripe')">💳 Stripe $5.99</button><button class="plan-btn vnpay" onclick="buyPlan('student_plus','vnpay')">🏦 VNPay 149k</button></div>
+        <div class="plan-card"><div class="plan-name" id="pn2">Teacher</div><div class="plan-price">249k <span id="pm2">VND/tháng</span></div><div class="plan-credits">⚡ 400 credits</div><ul class="plan-feat"><li id="pf2a">Dashboard + Lớp học</li><li id="pf2b">Trợ lý AI giáo viên</li><li id="pf2c">Câu hỏi không giới hạn</li></ul><button class="plan-btn stripe" onclick="buyPlan('teacher','stripe')">💳 Stripe $9.99</button><button class="plan-btn vnpay" onclick="buyPlan('teacher','vnpay')">🏦 VNPay 249k</button></div>
+        <div class="plan-card featured"><div class="plan-name" id="pn3">Teacher Pro ⭐</div><div class="plan-price">299k <span id="pm3">VND/tháng</span></div><div class="plan-credits">⚡ 600 credits</div><ul class="plan-feat"><li id="pf3a">Tất cả Teacher</li><li id="pf3b">Ảnh AI</li><li id="pf3c">Ưu tiên hỗ trợ</li></ul><button class="plan-btn stripe" onclick="buyPlan('teacher_pro','stripe')">💳 Stripe $12.99</button><button class="plan-btn vnpay" onclick="buyPlan('teacher_pro','vnpay')">🏦 VNPay 299k</button></div>
       </div>
     </div>
     <div id="upg-credits" style="display:none">
       <div id="upg-credit-info" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px">1 credit = 1 câu hỏi · Ảnh AI = 5 credits · Quiz = 5 · Exam = 10</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="plan-card" style="text-align:center">
-          <div style="font-size:24px;font-weight:800;color:var(--warn)">⚡ 60</div>
-          <div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div>
-          <div style="font-size:18px;font-weight:800;color:var(--primary)">49k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div>
-          <button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(60,'stripe')">💳 $1.99</button>
-          <button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(60,'vnpay')">🏦 49k</button>
-        </div>
-        <div class="plan-card featured" style="text-align:center">
-          <div style="font-size:24px;font-weight:800;color:var(--warn)">⚡ 100</div>
-          <div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div>
-          <div style="font-size:18px;font-weight:800;color:var(--primary)">99k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div>
-          <button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(100,'stripe')">💳 $3.99</button>
-          <button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(100,'vnpay')">🏦 99k</button>
-        </div>
-        <div class="plan-card" style="text-align:center">
-          <div style="font-size:24px;font-weight:800;color:var(--warn)">⚡ 300</div>
-          <div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div>
-          <div style="font-size:18px;font-weight:800;color:var(--primary)">249k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div>
-          <button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(300,'stripe')">💳 $9.99</button>
-          <button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(300,'vnpay')">🏦 249k</button>
-        </div>
-        <div class="plan-card featured" style="text-align:center">
-          <div style="font-size:24px;font-weight:800;color:var(--warn)">⚡ 500</div>
-          <div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div>
-          <div style="font-size:18px;font-weight:800;color:var(--primary)">499k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div>
-          <button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(500,'stripe')">💳 $19.99</button>
-          <button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(500,'vnpay')">🏦 499k</button>
-        </div>
+        <div class="plan-card" style="text-align:center"><div style="font-size:24px;font-weight:800;color:var(--secondary)">⚡ 60</div><div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div><div style="font-size:18px;font-weight:800;color:var(--primary)">49k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div><button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(60,'stripe')">💳 $1.99</button><button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(60,'vnpay')">🏦 49k</button></div>
+        <div class="plan-card featured" style="text-align:center"><div style="font-size:24px;font-weight:800;color:var(--secondary)">⚡ 150</div><div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div><div style="font-size:18px;font-weight:800;color:var(--primary)">99k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div><button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(150,'stripe')">💳 $3.99</button><button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(150,'vnpay')">🏦 99k</button></div>
+        <div class="plan-card" style="text-align:center"><div style="font-size:24px;font-weight:800;color:var(--secondary)">⚡ 300</div><div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div><div style="font-size:18px;font-weight:800;color:var(--primary)">249k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div><button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(300,'stripe')">💳 $9.99</button><button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(300,'vnpay')">🏦 249k</button></div>
+        <div class="plan-card featured" style="text-align:center"><div style="font-size:24px;font-weight:800;color:var(--secondary)">⚡ 500</div><div style="font-size:11px;color:var(--muted);margin:4px 0 8px">Credits</div><div style="font-size:18px;font-weight:800;color:var(--primary)">499k <span style="font-size:11px;color:var(--muted);font-weight:400">VND</span></div><button class="plan-btn stripe" style="margin-top:10px" onclick="buyCreditPack(500,'stripe')">💳 $19.99</button><button class="plan-btn vnpay" style="margin-top:6px" onclick="buyCreditPack(500,'vnpay')">🏦 499k</button></div>
       </div>
     </div>
   </div>
 </div>
 
-
 <div id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
 <script>
-var _v='5.26';
+var _v='6.0';
 var API='https://edubot-vietnam.onrender.com';
 var tok=localStorage.getItem('eb_tok')||'';
 var uname=localStorage.getItem('eb_name')||'';
@@ -625,10 +626,11 @@ var amode='login';
 var arole='student';
 var lastAiContentId=null;
 var userCredits=0;
+var sidebarOpen=true;
 
 var VI={
   login:'Đăng nhập',reg:'Đăng ký',logout:'Đăng xuất',loginbtn:'Đăng nhập',std:'Học sinh',tch:'Giáo viên',adm:'Quản trị',
-  t0:'💬 Học với AI',t1:'🏫 Lớp học',t2:'👩‍🏫 Dashboard',t3:'📚 Flashcards',
+  t0:'💬 AI Tutor',t1:'🏫 Lớp học',t2:'👩‍🏫 Dashboard',t3:'📚 Flashcards',t4:'🎮 Games',
   ls:'Môn học:',lg:'Lớp:',m:'Toán',sc:'Khoa học',en:'Tiếng Anh',today:'Hôm nay:',
   wt:'Chào mừng đến EduBot!',wd:'Gia sư AI cá nhân cho học sinh lớp 1–12. Đăng nhập để bắt đầu học!',wb:'Đăng nhập / Đăng ký miễn phí',
   cph:'Hỏi tôi bất cứ điều gì...',send:'Gửi ✈️',
@@ -657,7 +659,7 @@ var VI={
 };
 var EN={
   login:'Login',reg:'Register',logout:'Log out',loginbtn:'Login',std:'Student',tch:'Teacher',adm:'Admin',
-  t0:'💬 AI Tutor',t1:'🏫 Classroom',t2:'👩‍🏫 Dashboard',t3:'📚 Flashcards',
+  t0:'💬 AI Tutor',t1:'🏫 Classroom',t2:'👩‍🏫 Dashboard',t3:'📚 Flashcards',t4:'🎮 Games',
   ls:'Subject:',lg:'Grade:',m:'Math',sc:'Science',en:'English',today:'Today:',
   wt:'Welcome to EduBot!',wd:'Your personal AI tutor for grades 1–12. Log in to start learning!',wb:'Login / Sign up free',
   cph:'Ask me anything...',send:'Send ✈️',
@@ -687,19 +689,59 @@ var EN={
 
 function L(k){return(lang==='en'?EN:VI)[k]||(VI)[k]||k;}
 
+// ── SIDEBAR ──
+function toggleSidebar(){
+  sidebarOpen=!sidebarOpen;
+  var sb=document.getElementById('sidebar');
+  sb.className=sidebarOpen?'':'collapsed';
+}
+
+function buildSidebar(){
+  var nav=document.getElementById('side-nav');
+  var items=[];
+  if(urole==='teacher'||urole==='admin'){
+    items=[
+      {i:'👩‍🏫',l:L('t2'),p:2},
+      {i:'💬',l:L('t0'),p:0},
+      {i:'📚',l:L('t3'),p:3},
+      {i:'🎮',l:L('t4'),p:4},
+      {i:'🏫',l:L('t1'),p:1},
+    ];
+  } else {
+    items=[
+      {i:'💬',l:L('t0'),p:0},
+      {i:'📚',l:L('t3'),p:3},
+      {i:'🎮',l:L('t4'),p:4},
+      {i:'🏫',l:L('t1'),p:1},
+    ];
+  }
+  nav.innerHTML=items.map(function(it){
+    return '<div class="sideitem" id="snav'+it.p+'" onclick="showPanel('+it.p+')"><span class="si">'+it.i+'</span><span class="sl">'+it.l+'</span></div>';
+  }).join('');
+  document.getElementById('side-uname').textContent=uname;
+  document.getElementById('side-logout').textContent=L('logout');
+}
+
+function showPanel(n){
+  document.querySelectorAll('.sideitem').forEach(function(el){el.classList.remove('on');});
+  var active=document.getElementById('snav'+n);
+  if(active)active.classList.add('on');
+  [0,1,2,3,4].forEach(function(i){
+    var p=document.getElementById('p'+i);
+    if(p)p.className='panel'+(i===n?' on':'');
+  });
+  if(n===3)loadFlashcards();
+  if(n===4){setTimeout(function(){backToMenu();},50);}
+  if(n===2)loadTClasses();
+  if(n===1){if(urole==='student'||urole==='admin')loadSClasses();}
+}
+
 function applyLang(){
   try{
     document.getElementById('lvi').className='lb'+(lang==='vi'?' on':'');
     document.getElementById('len').className='lb'+(lang==='en'?' on':'');
     document.getElementById('btn-login').textContent=L('loginbtn');
     document.getElementById('btn-logout').textContent=L('logout');
-    document.getElementById('tab0').textContent=L('t0');
-    document.getElementById('tab1').textContent=L('t1');
-    document.getElementById('tab2').textContent=L('t2');
-    document.getElementById('tab3').textContent=L('t3');
-    document.getElementById('tab4').textContent='🎮 Games';
-    document.getElementById('lsub').textContent=L('ls');
-    document.getElementById('lgrd').textContent=L('lg');
     document.getElementById('om').textContent=L('m');
     document.getElementById('os').textContent=L('sc');
     document.getElementById('oe').textContent=L('en');
@@ -754,6 +796,7 @@ function applyLang(){
     document.getElementById('upg-credit-info').textContent=lang==='en'?'1 credit = 1 question · AI Image = 5 credits · Quiz = 5 · Exam = 10':'1 credit = 1 câu hỏi · Ảnh AI = 5 credits · Quiz = 5 · Exam = 10';
     document.getElementById('upg-tab0').textContent=lang==='en'?'📦 Monthly Plans':'📦 Gói tháng';
     document.getElementById('upg-tab1').textContent=lang==='en'?'⚡ Buy Credits':'⚡ Mua Credits';
+    if(tok)buildSidebar();
   }catch(e){console.warn('applyLang err',e);}
 }
 
@@ -763,17 +806,13 @@ function updateCredits(n){
   var badge=document.getElementById('credit-badge');
   if(el)el.textContent=urole==='admin'?'∞':n;
   if(badge){
-    if(urole==='admin'||n>10){badge.style.borderColor='var(--warn)';badge.style.color='var(--warn)';badge.style.background='rgba(245,158,11,.15)';}
-    else{badge.style.borderColor='var(--error)';badge.style.color='var(--error)';badge.style.background='rgba(239,68,68,.15)';}
+    if(urole==='admin'||n>10){badge.style.borderColor='rgba(249,115,22,0.35)';badge.style.color='rgba(253,186,116,0.9)';badge.style.background='rgba(249,115,22,0.1)';}
+    else{badge.style.borderColor='rgba(239,68,68,0.35)';badge.style.color='rgba(252,165,165,0.9)';badge.style.background='rgba(239,68,68,0.1)';}
     badge.style.display='flex';
   }
 }
 async function fetchCredits(){
-  try{
-    var res=await fetch(API+'/credits/balance',{headers:ah()});
-    var data=await res.json();
-    if(data.credits!=null)updateCredits(data.credits);
-  }catch(e){}
+  try{var res=await fetch(API+'/credits/balance',{headers:ah()});var data=await res.json();if(data.credits!=null)updateCredits(data.credits);}catch(e){}
 }
 
 window.onload=function(){
@@ -793,14 +832,6 @@ window.onload=function(){
   document.getElementById('aemail').onkeydown=function(e){if(e.key==='Enter')doAuth();};
   document.getElementById('apw').onkeydown=function(e){if(e.key==='Enter')doAuth();};
   document.getElementById('rname').onkeydown=function(e){if(e.key==='Enter')doAuth();};
-  document.getElementById('tab0').onclick=function(){showTab(0);};
-  document.getElementById('tab1').onclick=function(){showTab(1);};
-  document.getElementById('tab2').onclick=function(){showTab(2);};
-  document.getElementById('tab3').onclick=function(){showTab(3);loadFlashcards();};
-  document.getElementById('stb0').onclick=function(){showSub(0);};
-  document.getElementById('stb1').onclick=function(){showSub(1);};
-  document.getElementById('stb2').onclick=function(){showSub(2);loadPromos();};
-  document.getElementById('stb3').onclick=function(){showSub(3);loadCurrList();};
   document.getElementById('bsend').onclick=doSend;
   document.getElementById('bimg').onclick=doImage;
   document.getElementById('bgraph').onclick=doGraph;
@@ -813,6 +844,10 @@ window.onload=function(){
   document.getElementById('codeinput').onkeydown=function(e){if(e.key==='Enter')doJoin();};
   document.getElementById('codeinput').oninput=function(){var v=this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();if(v.length>3)v=v.slice(0,3)+'-'+v.slice(3);this.value=v.slice(0,8);};
   document.getElementById('bcreat').onclick=doCreate;
+  document.getElementById('stb0').onclick=function(){showSub(0);};
+  document.getElementById('stb1').onclick=function(){showSub(1);};
+  document.getElementById('stb2').onclick=function(){showSub(2);loadPromos();};
+  document.getElementById('stb3').onclick=function(){showSub(3);loadCurrList();};
   if(tok)showApp();
   var urlp=new URLSearchParams(window.location.search);
   if(urlp.get('payment')==='success'){var sid=urlp.get('session_id');if(sid)verifyStripe(sid);else toast('Payment successful! 🎉','ok');}
@@ -831,7 +866,7 @@ async function doAuth(){
   var err=document.getElementById('aerr');var btn=document.getElementById('asubmit');
   var emailReg=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if(!email||!pw){err.textContent=L('eep');return;}
-  if(!emailReg.test(email)){err.textContent=lang==='vi'?'Email không hợp lệ! VD: ten@gmail.com':'Invalid email! e.g. name@gmail.com';return;}
+  if(!emailReg.test(email)){err.textContent=lang==='vi'?'Email không hợp lệ!':'Invalid email!';return;}
   if(pw.length<6){err.textContent=lang==='vi'?'Mật khẩu tối thiểu 6 ký tự!':'Password must be at least 6 characters!';return;}
   btn.disabled=true;btn.innerHTML='<span class="sp2"></span>';err.textContent='';
   try{
@@ -856,133 +891,15 @@ function showApp(){
   document.getElementById('ubadge').className='rbadge '+(urole==='teacher'||urole==='admin'?'rt':'rs');
   var wc=document.getElementById('wcard');if(wc)wc.remove();
   fetchCredits();
+  buildSidebar();
   if(urole==='teacher'||urole==='admin'){
-    document.getElementById('tab2').classList.remove('hide');document.getElementById('tab2').style.display='';
-    document.getElementById('tab0').classList.remove('hide');
-    document.getElementById('tab1').classList.remove('hide');
-    document.getElementById('tab3').classList.remove('hide');
-    document.getElementById('tab4').classList.remove('hide');document.getElementById('tab3').style.display='';
-    showTab(2);loadTClasses();
     if(urole==='admin'){document.getElementById('stb2').style.display='inline-block';document.getElementById('stb3').style.display='inline-block';}
+    showPanel(2);loadTClasses();
   } else {
-    document.getElementById('tab2').classList.add('hide');document.getElementById('tab2').style.display='none';
-    document.getElementById('tab0').classList.remove('hide');
-    document.getElementById('tab1').classList.remove('hide');
-    document.getElementById('tab3').classList.remove('hide');
-    document.getElementById('tab4').classList.remove('hide');document.getElementById('tab3').style.display='';
-    showTab(0);loadSClasses();loadHistory();
+    showPanel(0);loadSClasses();loadHistory();
   }
 }
 
-
-function loadGames(){showTab(4);setTimeout(function(){backToMenu();},50);}
-
-var gQ=[],gIdx=0,gScore=0,gTimer=null,flipIdx=0,flipped=false;
-
-function backToMenu(){
-  clearInterval(gTimer);
-  ['kahoot-game','speed-game','flip-game'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
-  var gr=document.getElementById('game-result');if(gr)gr.style.display='none';
-  var gm=document.getElementById('game-menu');if(gm)gm.style.display='block';
-}
-
-async function genQ(type){
-  var sub=document.getElementById('g-subject').value;
-  var grade=document.getElementById('g-grade').value;
-  var count=parseInt(document.getElementById('g-count').value)||10;
-  var subMap={math:'Math',science:'Science',english:'English'};
-  var p='';
-  if(type==='kahoot')p='Generate '+count+' multiple choice questions for grade '+grade+' '+subMap[sub]+'. JSON only: {"questions":[{"q":"question","options":["A","B","C","D"],"correct":0}]}';
-  else if(type==='speed')p='Generate '+count+' short answer questions for grade '+grade+' '+subMap[sub]+'. Answers 1-4 words. JSON only: {"questions":[{"q":"question","a":"answer"}]}';
-  else p='Generate '+count+' flashcard pairs for grade '+grade+' '+subMap[sub]+'. JSON only: {"questions":[{"q":"term","a":"definition"}]}';
-  var res=await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({message:p,subject:sub,grade:grade,lang:'en',role:'student'})});
-  var data=await res.json();
-  var text=(data.reply||'').replace(/```json|```/g,'').trim();
-  return JSON.parse(text).questions||[];
-}
-
-async function startKahoot(){
-  document.getElementById('game-menu').style.display='none';
-  var kg=document.getElementById('kahoot-game');kg.style.display='flex';kg.style.flexDirection='column';kg.style.gap='14px';
-  document.getElementById('k-loading').style.display='block';
-  document.getElementById('k-game').style.display='none';
-  gScore=0;gIdx=0;document.getElementById('k-score').textContent='0';
-  try{gQ=await genQ('kahoot');document.getElementById('k-loading').style.display='none';document.getElementById('k-game').style.display='flex';document.getElementById('k-game').style.flexDirection='column';document.getElementById('k-game').style.gap='14px';showKQ();}
-  catch(e){document.getElementById('k-loading').textContent='❌ Lỗi! Thử lại.';}}
-
-function showKQ(){
-  if(gIdx>=gQ.length){endGame('kahoot');return;}clearInterval(gTimer);
-  var q=gQ[gIdx];
-  document.getElementById('k-qnum').textContent='Q '+(gIdx+1);
-  document.getElementById('k-qlabel').textContent='Q '+(gIdx+1)+'/'+gQ.length;
-  document.getElementById('k-qtext').textContent=q.q;
-  document.getElementById('k-feedback').style.display='none';
-  var shapes=['▲','◆','●','■'];
-  var colors=['rgba(239,68,68,0.2)','rgba(59,130,246,0.2)','rgba(245,158,11,0.2)','rgba(16,185,129,0.2)'];
-  var borders=['rgba(239,68,68,0.4)','rgba(59,130,246,0.4)','rgba(245,158,11,0.4)','rgba(16,185,129,0.4)'];
-  var textc=['#fca5a5','#93c5fd','#fcd34d','#6ee7b7'];
-  var html='';
-  (q.options||[]).forEach(function(opt,i){html+='<button onclick="ansK('+i+')" style="padding:14px 12px;border-radius:12px;border:1.5px solid '+borders[i]+';background:'+colors[i]+';color:'+textc[i]+';font-size:13px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px"><span>'+shapes[i]+'</span>'+opt+'</button>';});
-  document.getElementById('k-answers').innerHTML=html;
-  var t=20;document.getElementById('k-timer').textContent=t;
-  gTimer=setInterval(function(){t--;document.getElementById('k-timer').textContent=t;if(t<=0){clearInterval(gTimer);timeoutK();}},1000);
-}
-
-function ansK(idx){
-  clearInterval(gTimer);var q=gQ[gIdx];
-  var btns=document.getElementById('k-answers').querySelectorAll('button');
-  btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.4)';else if(i===idx)b.style.background='rgba(239,68,68,0.4)';});
-  var tv=parseInt(document.getElementById('k-timer').textContent)||0;
-  var fb=document.getElementById('k-feedback');
-  if(idx===q.correct){var pts=Math.max(100,tv*10);gScore+=pts;document.getElementById('k-score').textContent=gScore;fb.style.cssText='display:block;background:rgba(16,185,129,0.15);border:1px solid var(--success);color:var(--success);padding:10px;border-radius:10px;text-align:center;font-weight:700;font-size:14px';fb.textContent='✅ Đúng! +'+pts+' pts';}
-  else{fb.style.cssText='display:block;background:rgba(239,68,68,0.15);border:1px solid var(--error);color:var(--error);padding:10px;border-radius:10px;text-align:center;font-weight:700;font-size:14px';fb.textContent='❌ Sai! Đáp án: '+(q.options[q.correct]);}
-  gIdx++;setTimeout(showKQ,1800);
-}
-
-function timeoutK(){var q=gQ[gIdx];var btns=document.getElementById('k-answers').querySelectorAll('button');btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.4)';});var fb=document.getElementById('k-feedback');fb.style.cssText='display:block;background:rgba(245,158,11,0.15);border:1px solid var(--warn);color:var(--warn);padding:10px;border-radius:10px;text-align:center;font-weight:700;font-size:14px';fb.textContent='⏰ Hết giờ! Đáp án: '+(q.options[q.correct]);gIdx++;setTimeout(showKQ,1800);}
-
-async function startSpeed(){
-  document.getElementById('game-menu').style.display='none';
-  var sg=document.getElementById('speed-game');sg.style.display='flex';sg.style.flexDirection='column';sg.style.gap='14px';
-  document.getElementById('sp-loading').style.display='block';document.getElementById('sp-game').style.display='none';
-  gScore=0;gIdx=0;document.getElementById('sp-score').textContent='0';
-  try{gQ=await genQ('speed');document.getElementById('sp-loading').style.display='none';document.getElementById('sp-game').style.display='flex';document.getElementById('sp-game').style.flexDirection='column';document.getElementById('sp-game').style.gap='14px';
-  var ph='';gQ.forEach(function(q,i){ph+='<div style="width:12px;height:12px;border-radius:50%;background:'+(i===0?'var(--primary)':'var(--border)')+';display:inline-block;transition:background .3s" id="spdot'+i+'"></div>';});
-  document.getElementById('sp-progress').innerHTML=ph;showSQ();}
-  catch(e){document.getElementById('sp-loading').textContent='❌ Lỗi!';}}
-
-function showSQ(){
-  if(gIdx>=gQ.length){endGame('speed');return;}
-  var q=gQ[gIdx];document.getElementById('sp-qtext').textContent=q.q;document.getElementById('sp-qlabel').textContent='Q '+(gIdx+1)+'/'+gQ.length;
-  var inp=document.getElementById('sp-input');inp.value='';inp.style.borderColor='var(--border)';inp.focus();document.getElementById('sp-fb').textContent='';
-  if(gIdx>0){var pd=document.getElementById('spdot'+(gIdx-1));if(pd)pd.style.background='var(--success)';}
-  var cd=document.getElementById('spdot'+gIdx);if(cd)cd.style.background='var(--primary)';
-}
-
-function checkSpeed(){var q=gQ[gIdx];var inp=document.getElementById('sp-input');var val=inp.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');var ans=(q.a||'').toString().trim().toLowerCase().replace(/[^a-z0-9]/g,'');if(val===ans){inp.style.borderColor='var(--success)';gScore+=100;document.getElementById('sp-score').textContent=gScore;document.getElementById('sp-fb').textContent='✅ Chính xác!';gIdx++;setTimeout(showSQ,700);}}
-
-async function startFlip(){
-  document.getElementById('game-menu').style.display='none';
-  var fg=document.getElementById('flip-game');fg.style.display='flex';fg.style.flexDirection='column';fg.style.gap='14px';fg.style.alignItems='center';
-  document.getElementById('flip-q').textContent='⏳ Đang tạo...';flipIdx=0;flipped=false;
-  try{gQ=await genQ('flip');showFC();}catch(e){document.getElementById('flip-q').textContent='❌ Lỗi!';}}
-
-function showFC(){if(!gQ.length)return;var q=gQ[flipIdx];document.getElementById('flip-q').textContent=q.q;document.getElementById('flip-a').textContent=q.a;document.getElementById('flip-counter').textContent=(flipIdx+1)+'/'+gQ.length;document.getElementById('flip-prog').textContent=(flipIdx+1)+' / '+gQ.length;document.getElementById('flip-inner').style.transform='';flipped=false;}
-function doFlip(){var fi=document.getElementById('flip-inner');flipped=!flipped;fi.style.transform=flipped?'rotateY(180deg)':'';}
-function flipNext(){if(flipIdx<gQ.length-1){flipIdx++;showFC();}else{endGame('flip');}}
-function flipPrev(){if(flipIdx>0){flipIdx--;showFC();}}
-
-function endGame(type){
-  clearInterval(gTimer);
-  ['kahoot-game','speed-game','flip-game'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
-  var res=document.getElementById('game-result');res.style.display='flex';res.style.flexDirection='column';res.style.alignItems='center';res.style.gap='16px';res.style.padding='20px 0';
-  var total=gQ.length;
-  if(type==='flip'){document.getElementById('result-emoji').textContent='🃏';document.getElementById('result-score').textContent=total+' thẻ';document.getElementById('result-msg').textContent='Bạn đã xem hết tất cả thẻ!';document.getElementById('result-title').textContent='Hoàn thành!';}
-  else{var pct=total>0?Math.round((gScore/(total*100))*100):0;document.getElementById('result-emoji').textContent=pct>=80?'🏆':pct>=60?'⭐':'💪';document.getElementById('result-score').textContent=gScore+' pts';document.getElementById('result-msg').textContent=pct>=80?'Xuất sắc!':pct>=60?'Tốt lắm!':'Cố lên!';document.getElementById('result-title').textContent='Kết quả';}
-}
-
-function doLogout(){['eb_tok','eb_name','eb_role'].forEach(function(k){localStorage.removeItem(k);});location.reload();}
-function showTab(n){[0,1,2,3,4].forEach(function(i){var t=document.getElementById('tab'+i);var p=document.getElementById('p'+i);if(t)t.className='tb'+(i===2?' ton':'')+(i===n?' on':'');if(p)p.className='panel'+(i===n?' on':'');});}
 function showSub(n){
   ['stb0','stb1','stb2','stb3'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='stb'+(i===n?' on':'');});
   ['sp0','sp1','sp2','sp3'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.className='sp'+(i===n?' on':'');});
@@ -990,15 +907,35 @@ function showSub(n){
 
 async function loadHistory(){
   try{
-    var res=await fetch(API+'/chat/history?subject='+document.getElementById('selsub').value,{headers:ah()});
+    var res=await fetch(API+'/chat/history?subject=general',{headers:ah()});
     var data=await res.json();
-    if(data.messages&&data.messages.length){document.getElementById('msgs').innerHTML='';data.messages.forEach(function(m){addMsg(m.role,m.content);});}
+    if(Array.isArray(data)&&data.length){document.getElementById('msgs').innerHTML='';data.forEach(function(m){addMsg(m.role,m.content);});}
   }catch(e){}
 }
 
 var cfd=null,cft=null,cfn='';
-function onFile(f){if(!f)return;if(f.size>100*1024*1024){toast('Max 100MB','err');return;}cfn=f.name;var ext=f.name.split('.').pop().toLowerCase();cft=ext==='pdf'?'application/pdf':('image/'+(ext==='jpg'?'jpeg':ext));var r=new FileReader();r.onload=function(e){cfd=e.target.result.split(',')[1];document.getElementById('ficon').textContent=ext==='pdf'?'📄':'🖼️';document.getElementById('fname').textContent=f.name;document.getElementById('fbar').className='fbar on';document.getElementById('battach').className='on';var isImg=cft.startsWith('image');var fm=isImg?'<img src="'+e.target.result+'" style="max-width:220px;max-height:180px;border-radius:8px;border:1px solid var(--border)"/>':'<div style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px"><span style="font-size:20px">📄</span><span style="font-size:13px;font-weight:700">'+f.name+'</span></div>';addMsg('u',fm,1);addMsg('a',lang==='vi'?'📎 Đã tải lên! Bạn muốn tôi làm gì?\n• Giải thích nội dung\n• Tạo câu hỏi\n• Tóm tắt\n• Tạo flashcards\n• Hoặc hỏi bất cứ điều gì!':'📎 Uploaded! What shall I do?\n• Explain the content\n• Create quiz questions\n• Summarize\n• Create flashcards\n• Or ask anything!');};r.onerror=function(){toast('Error reading file','err');};r.readAsDataURL(f);}
+function onFile(f){
+  if(!f)return;
+  if(f.size>100*1024*1024){toast('Max 100MB','err');return;}
+  cfn=f.name;var ext=f.name.split('.').pop().toLowerCase();
+  cft=ext==='pdf'?'application/pdf':('image/'+(ext==='jpg'?'jpeg':ext));
+  var r=new FileReader();
+  r.onload=function(e){
+    cfd=e.target.result.split(',')[1];
+    document.getElementById('ficon').textContent=ext==='pdf'?'📄':'🖼️';
+    document.getElementById('fname').textContent=f.name;
+    document.getElementById('fbar').className='fbar on';
+    document.getElementById('battach').className='on';
+    var isImg=cft.startsWith('image');
+    var fm=isImg?'<img src="'+e.target.result+'" style="max-width:220px;max-height:180px;border-radius:8px;border:1px solid var(--border)"/>':'<div style="display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px"><span style="font-size:20px">📄</span><span style="font-size:13px;font-weight:600;color:var(--text)">'+f.name+'</span></div>';
+    addMsg('u',fm,1);
+    addMsg('a',lang==='vi'?'📎 Đã tải lên! Bạn muốn tôi làm gì?\n• Giải thích nội dung\n• Tạo câu hỏi\n• Tóm tắt\n• Tạo flashcards':'📎 Uploaded! What shall I do?\n• Explain the content\n• Create quiz questions\n• Summarize\n• Create flashcards');
+  };
+  r.onerror=function(){toast('Error reading file','err');};
+  r.readAsDataURL(f);
+}
 function rmFile(){cfd=null;cft=null;cfn='';document.getElementById('fbar').className='fbar';document.getElementById('battach').className='';document.getElementById('cfi').value='';}
+
 async function doSend(){
   if(!tok){openModal();return;}
   var inp=document.getElementById('cinput');var msg=inp.value.trim();if(!msg)return;
@@ -1037,10 +974,10 @@ async function doImage(){
     var res=await fetch(API+'/image/generate',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({prompt:prompt,subject:document.getElementById('selsub').value,grade:parseInt(document.getElementById('selgrd').value)})});
     var data=await res.json();
     var te=document.getElementById(tid);if(te)te.remove();
-    if(!res.ok){if(data.upgrade){toast(data.error,'err');openUpgrade();}else addMsg('a','<p>❌ '+(data.error||'Failed to generate image')+'</p>');return;}
+    if(!res.ok){if(data.upgrade){toast(data.error,'err');openUpgrade();}else addMsg('a','<p>❌ '+(data.error||'Failed')+'</p>');return;}
     var box=document.getElementById('msgs');
     var d=document.createElement('div');d.className='m a';
-    d.innerHTML='<div class="av">🎨</div><div class="bub" style="width:100%"><img src="'+data.imageUrl+'" style="width:100%;border-radius:8px" alt="AI generated image"/></div>';
+    d.innerHTML='<div class="av">🎨</div><div class="bub" style="width:100%"><img src="'+data.imageUrl+'" style="width:100%;border-radius:8px" alt="AI image"/></div>';
     box.appendChild(d);box.scrollTop=box.scrollHeight;
   }catch(e){var te=document.getElementById(tid);if(te)te.remove();addMsg('a','<p>❌ '+L('cerr')+'</p>');}
   finally{btn.disabled=false;btn.textContent='🎨';}
@@ -1058,7 +995,7 @@ async function doGraph(){
     var res=await fetch(API+'/graph/generate',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({topic:topic,subject:document.getElementById('selsub').value,grade:grade,lang:lang})});
     var data=await res.json();
     var te=document.getElementById(tid);if(te)te.remove();
-    if(!res.ok){addMsg('a','<p>❌ '+(data.error||'Failed to generate graph')+'</p>');return;}
+    if(!res.ok){addMsg('a','<p>❌ '+(data.error||'Failed')+'</p>');return;}
     renderChart(data.chart);
   }catch(e){var te=document.getElementById(tid);if(te)te.remove();addMsg('a','<p>❌ '+L('cerr')+'</p>');}
   finally{btn.disabled=false;btn.textContent='📊';}
@@ -1071,7 +1008,7 @@ function renderChart(chart){
   d.innerHTML='<div class="av">📊</div><div class="bub" style="width:100%"><div class="chart-wrap"><div class="chart-title">'+esc(chart.title)+'</div><div class="chart-desc">'+esc(chart.description)+'</div><canvas id="'+cid+'" class="chart-canvas"></canvas></div></div>';
   box.appendChild(d);box.scrollTop=box.scrollHeight;
   var ctx=document.getElementById(cid).getContext('2d');
-  new Chart(ctx,{type:chart.type,data:chart.data,options:{responsive:true,plugins:{legend:{labels:{color:'#E2E8F0'}},tooltip:{backgroundColor:'#1A1840',titleColor:'#E2E8F0',bodyColor:'#94A3B8'}},scales:chart.type!=='pie'?{x:{ticks:{color:'#94A3B8'},grid:{color:'#2D2B55'},title:{display:!!(chart.options&&chart.options.xLabel),text:chart.options&&chart.options.xLabel,color:'#94A3B8'}},y:{ticks:{color:'#94A3B8'},grid:{color:'#2D2B55'},title:{display:!!(chart.options&&chart.options.yLabel),text:chart.options&&chart.options.yLabel,color:'#94A3B8'}}}:{}}});
+  new Chart(ctx,{type:chart.type,data:chart.data,options:{responsive:true,plugins:{legend:{labels:{color:'#FFF1F2'}},tooltip:{backgroundColor:'rgba(31,13,24,0.9)',titleColor:'#FFF1F2',bodyColor:'rgba(253,164,175,0.8)'}},scales:chart.type!=='pie'?{x:{ticks:{color:'rgba(253,164,175,0.7)'},grid:{color:'rgba(244,63,94,0.08)'}},y:{ticks:{color:'rgba(253,164,175,0.7)'},grid:{color:'rgba(244,63,94,0.08)'}}}:{}}});
 }
 
 function addMsg(role,txt,isHtml){
@@ -1098,7 +1035,6 @@ function addTyping(bid){
 }
 
 function showExportBar(){document.getElementById('export-bar').classList.add('visible');}
-function hideExportBar(){document.getElementById('export-bar').classList.remove('visible');lastAiContentId=null;}
 
 function barCopy(){
   if(!lastAiContentId)return;
@@ -1106,15 +1042,16 @@ function barCopy(){
   var lbl=document.getElementById('eb-copy-lbl');
   var el=document.getElementById(lastAiContentId);if(!el)return;
   var clone=el.cloneNode(true);
-  var html='<html><body><style>table{border-collapse:collapse;width:100%}th{background:#00B4D8;color:#fff;padding:8px 12px;text-align:left}td{padding:8px 12px;border:1px solid #ccc}tr:nth-child(even) td{background:#f5f5f5}h2{font-size:16px;font-weight:bold;margin:12px 0 6px}h3{font-size:14px;font-weight:bold;margin:10px 0 4px}p{margin:4px 0;line-height:1.6}ul,ol{margin:4px 0 4px 20px}li{margin-bottom:2px}strong{font-weight:bold}</style>'+clone.innerHTML+'</body></html>';
   var plain=clone.innerText||clone.textContent||'';
-  try{
-    navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})})]).then(function(){lbl.textContent=L('copied').replace('✅ ','');btn.className='eb-btn copied';setTimeout(function(){lbl.textContent=L('copy').replace('📋 ','');btn.className='eb-btn';},2000);}).catch(function(){navigator.clipboard.writeText(plain).then(function(){lbl.textContent=L('copied').replace('✅ ','');btn.className='eb-btn copied';setTimeout(function(){lbl.textContent=L('copy').replace('📋 ','');btn.className='eb-btn';},2000);});});
-  }catch(e){navigator.clipboard.writeText(plain);}
+  navigator.clipboard.writeText(plain).then(function(){
+    lbl.textContent=L('copied').replace('✅ ','');
+    btn.className='eb-btn eb-copy copied';
+    setTimeout(function(){lbl.textContent=L('copy').replace('📋 ','');btn.className='eb-btn eb-copy';},2000);
+  });
 }
 
 function getRandomAccentColor(){
-  var colors=['#1a3a5c','#1b4332','#4a1942','#1a2744','#0d3b3b','#7b2d00','#2d1b69','#3d2b00'];
+  var colors=['#7b1f2e','#8b2800','#6b1a35','#7a2200','#5c1520','#6e2400'];
   return colors[Math.floor(Math.random()*colors.length)];
 }
 
@@ -1125,21 +1062,21 @@ function buildExportHTML(contentId){
   var h2=clone.querySelector('h2');if(h2){title=h2.textContent.toUpperCase();h2.remove();}
   var css=[
     'body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:1.5cm;color:#111;line-height:1.5;background:#fff}',
-    '.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #2C3E50}',
-    '.doc-brand{font-size:13pt;font-weight:bold;color:#2C3E50;letter-spacing:1px}',
-    '.doc-title{font-size:16pt;font-weight:bold;color:#2C3E50;text-transform:uppercase;margin:16px 0 24px;text-align:center;letter-spacing:1px}',
-    'h2{font-size:13pt;font-weight:bold;color:#2C3E50;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid #2C3E50}',
-    'h3{font-size:11pt;font-weight:bold;color:#2C3E50;margin:10px 0 4px}',
+    '.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #F43F5E}',
+    '.doc-brand{font-size:13pt;font-weight:bold;color:#F43F5E;letter-spacing:1px}',
+    '.doc-title{font-size:16pt;font-weight:bold;color:#F43F5E;text-transform:uppercase;margin:16px 0 24px;text-align:center;letter-spacing:1px}',
+    'h2{font-size:13pt;font-weight:bold;color:#F43F5E;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid #F43F5E}',
+    'h3{font-size:11pt;font-weight:bold;color:#F97316;margin:10px 0 4px}',
     'p{margin:4px 0;line-height:1.5}',
     'ul,ol{margin:4px 0 4px 20px;line-height:1.6}li{margin-bottom:2px}',
     'table{border-collapse:collapse;width:100%;margin:10px 0;table-layout:fixed;word-wrap:break-word}',
-    'th{background:#2C3E50;color:#fff;padding:6px 8px;text-align:left;font-weight:bold;font-size:10pt;border:1px solid #2C3E50;word-wrap:break-word}',
+    'th{background:#F43F5E;color:#fff;padding:6px 8px;text-align:left;font-weight:bold;font-size:10pt;border:1px solid #F43F5E;word-wrap:break-word}',
     'td{padding:6px 8px;border:1px solid #dee2e6;vertical-align:top;font-size:10pt;word-wrap:break-word}',
-    'tr:nth-child(even) td{background:#f8f9fa}',
+    'tr:nth-child(even) td{background:#fef2f2}',
     'strong{font-weight:bold}',
-    '.doc-footer{margin-top:30px;padding-top:10px;border-top:2px solid #2C3E50;font-size:8pt;color:#888;display:flex;justify-content:space-between}'
+    '.doc-footer{margin-top:30px;padding-top:10px;border-top:2px solid #F43F5E;font-size:8pt;color:#888;display:flex;justify-content:space-between}'
   ].join('');
-  return {css:css,clone:clone,title:title,accent:'#2C3E50'};
+  return {css:css,clone:clone,title:title,accent:'#F43F5E'};
 }
 
 function barExportPDF(){
@@ -1171,7 +1108,7 @@ function barExportWord(){
 
 function exportPDF(id){lastAiContentId=id;barExportPDF();}
 function exportWord(id){lastAiContentId=id;barExportWord();}
-function copyContent(id,btn){lastAiContentId=id;barCopy();}
+function copyContent(id){lastAiContentId=id;barCopy();}
 
 async function doJoin(){
   var inp=document.getElementById('codeinput');var fb=document.getElementById('jfb');var btn=document.getElementById('bjoin');
@@ -1193,8 +1130,7 @@ async function loadSClasses(){
     var res=await fetch(API+'/classroom/my',{headers:ah()});var data=await res.json();
     var g=document.getElementById('sgrid');var list=data.classrooms||[];
     if(!list.length){g.innerHTML='<div class="ebox">'+L('sempty')+'</div>';return;}
-    var sl={Math:L('m'),Science:L('sc'),English:L('en')};
-    g.innerHTML=list.map(function(c){return '<div class="ccard"><div class="csub">'+(sl[c.subject]||c.subject)+' · '+c.grade+'</div><div class="cname">'+esc(c.name)+'</div><div class="ctch">👩‍🏫 '+esc(c.teacher_name||L('tch'))+'</div><div class="ccode">🔑 '+esc(c.code)+'</div></div>';}).join('');
+    g.innerHTML=list.map(function(c){return '<div class="ccard"><div class="csub">'+esc(c.subject)+' · '+c.grade+'</div><div class="cname">'+esc(c.name)+'</div><div class="ctch">👩‍🏫 '+esc(c.teacher_name||L('tch'))+'</div><div class="ccode">🔑 '+esc(c.code)+'</div></div>';}).join('');
   }catch(e){}
 }
 
@@ -1215,8 +1151,7 @@ async function loadTClasses(){
     var res=await fetch(API+'/classroom/my',{headers:ah()});var data=await res.json();
     var el=document.getElementById('tclist');var list=data.classrooms||[];
     if(!list.length){el.innerHTML='<div class="ebox">'+L('tempty')+'</div>';return;}
-    var sl={Math:L('m'),Science:L('sc'),English:L('en')};
-    el.innerHTML=list.map(function(c){return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(c.name)+'</div><div class="tcm">'+(sl[c.subject]||c.subject)+' · '+c.grade+'</div></div><span class="tcbadge">'+esc(c.code)+'</span></div><div class="tcst"><span>👥 <b>'+(c.student_count||0)+'</b> '+L('sts')+'</span><button class="tcvb" onclick="toast(\''+L('cs')+'\',\'ok\')">'+L('vs')+'</button></div></div>';}).join('');
+    el.innerHTML=list.map(function(c){return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(c.name)+'</div><div class="tcm">'+esc(c.subject)+' · Grade '+c.grade+'</div></div><span class="tcbadge">'+esc(c.code)+'</span></div><div class="tcst"><span>👥 <b>'+(c.student_count||0)+'</b> '+L('sts')+'</span><button class="tcvb" onclick="toast(\''+L('cs')+'\',\'ok\')">'+L('vs')+'</button></div></div>';}).join('');
   }catch(e){}
 }
 
@@ -1234,7 +1169,7 @@ async function doTSend(){
     var r=document.createElement('div');r.className='m a';var copyId='cp'+Date.now();
     r.innerHTML='<div class="av">🤖</div><div class="bub" style="width:100%"><div class="ai-out" id="'+copyId+'">'+(data.reply||data.response||'<p>'+esc(data.error||'Error')+'</p>')+'</div></div>';
     box.appendChild(r);box.scrollTop=box.scrollHeight;
-    lastAiContentId=copyId;showExportBar();
+    lastAiContentId=copyId;
   }catch(e){var te=document.getElementById(tid);if(te)te.remove();var r=document.createElement('div');r.className='m a';r.innerHTML='<div class="av">🤖</div><div class="bub">❌ '+L('cerr')+'</div>';box.appendChild(r);}
   finally{btn.disabled=false;}
 }
@@ -1242,21 +1177,13 @@ async function doTSend(){
 async function buyPlan(planKey,gateway){
   if(!tok){closeUpgrade();openModal();return;}
   try{
-    if(gateway==='stripe'){
-      var res=await fetch(API+'/payment/create-stripe-session',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({planKey:planKey})});
-      var data=await res.json();if(data.sessionUrl)window.location.href=data.sessionUrl;
-    } else {
-      var res=await fetch(API+'/payment/create-vnpay',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({planKey:planKey})});
-      var data=await res.json();if(data.paymentUrl)window.location.href=data.paymentUrl;
-    }
+    if(gateway==='stripe'){var res=await fetch(API+'/payment/create-stripe-session',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({planKey:planKey})});var data=await res.json();if(data.sessionUrl)window.location.href=data.sessionUrl;}
+    else{var res=await fetch(API+'/payment/create-vnpay',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({planKey:planKey})});var data=await res.json();if(data.paymentUrl)window.location.href=data.paymentUrl;}
   }catch(e){toast('Payment error. Try again.','err');}
 }
 
 async function verifyStripe(sessionId){
-  try{
-    var res=await fetch(API+'/payment/verify-stripe',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({sessionId:sessionId})});
-    var data=await res.json();if(data.success)toast('Upgrade successful! 🎉 Plan: '+data.plan,'ok');
-  }catch(e){}
+  try{var res=await fetch(API+'/payment/verify-stripe',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({sessionId:sessionId})});var data=await res.json();if(data.success)toast('Upgrade successful! 🎉 Plan: '+data.plan,'ok');}catch(e){}
 }
 
 async function generateFlashcards(){
@@ -1297,78 +1224,50 @@ function renderFlashcards(cards,prepend){
 }
 
 function flipCard(el){el.classList.toggle('flipped');}
-
-async function deleteFlashcard(id){
-  try{await fetch(API+'/flashcards/'+id,{method:'DELETE',headers:ah()});var el=document.getElementById('fc-'+id);if(el)el.remove();}catch(e){}
-}
+async function deleteFlashcard(id){try{await fetch(API+'/flashcards/'+id,{method:'DELETE',headers:ah()});var el=document.getElementById('fc-'+id);if(el)el.remove();}catch(e){}}
 
 function showUpgTab(n){
   document.getElementById('upg-plans').style.display=n===0?'block':'none';
   document.getElementById('upg-credits').style.display=n===1?'block':'none';
-  document.getElementById('upg-tab0').style.background=n===0?'var(--primary)':'transparent';
-  document.getElementById('upg-tab0').style.color=n===0?'#fff':'var(--muted)';
-  document.getElementById('upg-tab1').style.background=n===1?'var(--primary)':'transparent';
-  document.getElementById('upg-tab1').style.color=n===1?'#fff':'var(--muted)';
+  document.getElementById('upg-tab0').style.background=n===0?'linear-gradient(135deg,rgba(244,63,94,0.65),rgba(249,115,22,0.5))':'transparent';
+  document.getElementById('upg-tab0').style.color=n===0?'#fff':'rgba(255,255,255,0.4)';
+  document.getElementById('upg-tab1').style.background=n===1?'linear-gradient(135deg,rgba(244,63,94,0.65),rgba(249,115,22,0.5))':'transparent';
+  document.getElementById('upg-tab1').style.color=n===1?'#fff':'rgba(255,255,255,0.4)';
 }
 
-async function buyCreditPack(amount,gateway){
-  if(!tok){closeUpgrade();openModal();return;}
-  toast('Credit packs coming soon! 🚀','ok');
-}
+async function buyCreditPack(amount,gateway){if(!tok){closeUpgrade();openModal();return;}toast('Credit packs coming soon! 🚀','ok');}
 
 async function createPromo(type){
   var body={};
-  if(type==='credits'){
-    var credits=parseInt(document.getElementById('promo-credits').value);
-    var maxUses=parseInt(document.getElementById('promo-uses').value)||1;
-    if(!credits||credits<1){toast('Enter a valid credit amount','err');return;}
-    body={credits,max_uses:maxUses,type:'credits'};
-  } else {
-    var plan=document.getElementById('promo-plan').value;
-    var maxUses=parseInt(document.getElementById('promo-plan-uses').value)||1;
-    body={plan,max_uses:maxUses,type:'plan'};
-  }
+  if(type==='credits'){var credits=parseInt(document.getElementById('promo-credits').value);var maxUses=parseInt(document.getElementById('promo-uses').value)||1;if(!credits||credits<1){toast('Enter a valid credit amount','err');return;}body={credits,max_uses:maxUses,type:'credits'};}
+  else{var plan=document.getElementById('promo-plan').value;var maxUses=parseInt(document.getElementById('promo-plan-uses').value)||1;body={plan,max_uses:maxUses,type:'plan'};}
   try{
     var res=await fetch(API+'/promo/create',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify(body)});
-    var data=await res.json();
-    if(!res.ok)throw new Error(data.error||'Error');
-    toast('Code created: '+data.promo.code,'ok');
-    if(type==='credits'){document.getElementById('promo-credits').value='';document.getElementById('promo-uses').value='1';}
-    else{document.getElementById('promo-plan-uses').value='1';}
-    loadPromos();
+    var data=await res.json();if(!res.ok)throw new Error(data.error||'Error');
+    toast('Code created: '+data.promo.code,'ok');loadPromos();
   }catch(e){toast(e.message,'err');}
 }
 
 var currFileData2=null,currFileName2='';
-
 async function scanCurrFile(file){
-  if(!file)return;
-  if(file.size>150*1024*1024){toast('Max 150MB','err');return;}
+  if(!file)return;if(file.size>150*1024*1024){toast('Max 150MB','err');return;}
   currFileName2=file.name;
   document.getElementById('curr-upload-txt').textContent='📄 '+file.name;
   document.getElementById('curr-scan-result').style.display='none';
   document.getElementById('curr-scan-summary').innerHTML='<span class="sp2"></span> AI is scanning the PDF...';
   document.getElementById('curr-scan-result').style.display='block';
-  
   var reader=new FileReader();
   reader.onload=async function(e){
     currFileData2=e.target.result.split(',')[1];
     try{
       var res=await fetch(API+'/admin/curriculum/detect',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({fileName:file.name,fileData:currFileData2,fileSize:file.size})});
       var data=await res.json();
-      // Auto-fill
       var ss=document.getElementById('curr-imp-subject');
-      for(var i=0;i<ss.options.length;i++){if(ss.options[i].value.toLowerCase()===( data.subject||'').toLowerCase()){ss.selectedIndex=i;break;}}
+      for(var i=0;i<ss.options.length;i++){if(ss.options[i].value.toLowerCase()===(data.subject||'').toLowerCase()){ss.selectedIndex=i;break;}}
       if(data.grade)document.getElementById('curr-imp-grade').value=data.grade;
-      document.getElementById('curr-scan-summary').innerHTML=
-        '<strong>📖 Subject detected:</strong> '+esc(data.subject||'Unknown')+'<br>'+
-        '<strong>🎓 Grade detected:</strong> '+(data.grade?'Grade '+data.grade:'Multiple grades')+'<br>'+
-        '<strong>📝 Overview:</strong> '+esc(data.preview||'Curriculum content ready to import')+'<br>'+
-        '<strong>📦 Estimated items:</strong> ~'+data.estimated_chunks+' learning objectives';
-      toast('✅ Scan complete! Review and confirm.','ok');
-    }catch(err){
-      document.getElementById('curr-scan-summary').textContent='Could not auto-detect. Please select manually.';
-    }
+      document.getElementById('curr-scan-summary').innerHTML='<strong style="color:var(--text)">📖 Subject detected:</strong> '+esc(data.subject||'Unknown')+'<br><strong style="color:var(--text)">🎓 Grade detected:</strong> '+(data.grade?'Grade '+data.grade:'Multiple grades')+'<br><strong style="color:var(--text)">📝 Overview:</strong> '+esc(data.preview||'Curriculum content ready')+'<br><strong style="color:var(--text)">📦 Estimated items:</strong> ~'+data.estimated_chunks+' objectives';
+      toast('✅ Scan complete!','ok');
+    }catch(err){document.getElementById('curr-scan-summary').textContent='Could not auto-detect. Please select manually.';}
   };
   reader.readAsDataURL(file);
 }
@@ -1381,71 +1280,144 @@ async function importCurr(){
   var btn=document.getElementById('btn-curr-import');
   btn.disabled=true;btn.innerHTML='<span class="sp2"></span> Importing...';
   document.getElementById('curr-import-progress').style.display='block';
-  var fill=document.getElementById('curr-import-bar');
-  var status=document.getElementById('curr-import-status');
-  var pct=0;
-  var iv=setInterval(function(){pct=Math.min(pct+3,90);fill.style.width=pct+'%';if(pct<30)status.textContent='Extracting content...';else if(pct<60)status.textContent='Processing objectives...';else status.textContent='Saving to database...';},300);
+  var fill=document.getElementById('curr-import-bar');var status=document.getElementById('curr-import-status');
+  var pct=0;var iv=setInterval(function(){pct=Math.min(pct+3,90);fill.style.width=pct+'%';if(pct<30)status.textContent='Extracting content...';else if(pct<60)status.textContent='Processing objectives...';else status.textContent='Saving to database...';},300);
   try{
     var res=await fetch(API+'/admin/curriculum/import',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({fileData:currFileData2,fileName:currFileName2,subject,grade,type,lang:'vi'})});
-    var data=await res.json();
-    clearInterval(iv);fill.style.width='100%';status.textContent='✅ Done!';
+    var data=await res.json();clearInterval(iv);fill.style.width='100%';status.textContent='✅ Done!';
     if(!res.ok)throw new Error(data.error||'Failed');
-    toast('✅ '+data.imported+' items imported into system!','ok');
+    toast('✅ '+data.imported+' items imported!','ok');
     setTimeout(function(){cancelCurrScan();loadCurrList();},1500);
-  }catch(e){
-    clearInterval(iv);toast('❌ '+e.message,'err');
-    btn.disabled=false;btn.textContent='✅ Import into System';
-    document.getElementById('curr-import-progress').style.display='none';
-  }
+  }catch(e){clearInterval(iv);toast('❌ '+e.message,'err');btn.disabled=false;btn.textContent='✅ Import into System';document.getElementById('curr-import-progress').style.display='none';}
 }
 
-function cancelCurrScan(){
-  currFileData2=null;currFileName2='';
-  document.getElementById('curr-scan-result').style.display='none';
-  document.getElementById('curr-upload-txt').textContent='Click to select PDF';
-  document.getElementById('curr-file-inp').value='';
-}
+function cancelCurrScan(){currFileData2=null;currFileName2='';document.getElementById('curr-scan-result').style.display='none';document.getElementById('curr-upload-txt').textContent='Click to select PDF';document.getElementById('curr-file-inp').value='';}
 
 async function loadCurrList(){
   try{
-    var res=await fetch(API+'/admin/curriculum/list',{headers:ah()});
-    var data=await res.json();
-    var items=data.items||[];
-    var el=document.getElementById('curr-list');
+    var res=await fetch(API+'/admin/curriculum/list',{headers:ah()});var data=await res.json();
+    var items=data.items||[];var el=document.getElementById('curr-list');
     if(!items.length){el.innerHTML='<div class="ebox">No curriculum imported yet.</div>';return;}
-    el.innerHTML=items.map(function(c){
-      var subj=esc(c.subject);
-      var typ=esc(c.curriculum_type);
-      return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+subj+' — Grade '+(c.grade||'All')+'</div><div class="tcm">'+typ+' · '+c.count+' items</div></div><button class="tcvb" onclick="deleteCurr(this)">🗑️ Delete</button></div></div>';
-    }).join('');
-    items.forEach(function(c,i){var btns=el.querySelectorAll('.tcvb');if(btns[i])btns[i].setAttribute('data-s',c.subject);if(btns[i])btns[i].setAttribute('data-g',c.grade);});
+    el.innerHTML=items.map(function(c){return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(c.subject)+' — Grade '+(c.grade||'All')+'</div><div class="tcm">'+esc(c.curriculum_type)+' · '+c.count+' items</div></div><button class="tcvb" onclick="deleteCurr(this)" data-s="'+esc(c.subject)+'" data-g="'+c.grade+'">🗑️ Delete</button></div></div>';}).join('');
   }catch(e){document.getElementById('curr-list').innerHTML='<div class="ebox">Failed to load</div>';}
 }
 
 async function deleteCurr(btn){
-  var subject=btn.getAttribute('data-s');
-  var grade=btn.getAttribute('data-g');
+  var subject=btn.getAttribute('data-s');var grade=btn.getAttribute('data-g');
   if(!confirm('Delete '+subject+' Grade '+grade+'?'))return;
-  try{
-    await fetch(API+'/admin/curriculum/delete',{method:'DELETE',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({subject,grade})});
-    toast('✅ Deleted','ok');loadCurrList();
-  }catch(e){toast('❌ Failed','err');}
+  try{await fetch(API+'/admin/curriculum/delete',{method:'DELETE',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({subject,grade})});toast('✅ Deleted','ok');loadCurrList();}
+  catch(e){toast('❌ Failed','err');}
 }
 
 async function loadPromos(){
   try{
-    var res=await fetch(API+'/promo/list',{headers:ah()});
-    var data=await res.json();
+    var res=await fetch(API+'/promo/list',{headers:ah()});var data=await res.json();
     var el=document.getElementById('promolist');
     if(!data.promos||!data.promos.length){el.innerHTML='<div class="ebox">No promo codes yet.</div>';return;}
-    el.innerHTML=data.promos.map(function(p){
-      return '<div class="tccard"><div class="tchdr"><div><div class="tcn" style="font-family:monospace;letter-spacing:2px">'+p.code+'</div><div class="tcm">⚡ '+p.credits+' credits · '+p.uses+'/'+p.max_uses+' uses</div></div><button class="tcvb" onclick="navigator.clipboard.writeText(\''+p.code+'\').then(function(){toast(\'Copied!\',\'ok\')})">📋 Copy</button></div></div>';
-    }).join('');
+    el.innerHTML=data.promos.map(function(p){return '<div class="tccard"><div class="tchdr"><div><div class="tcn" style="font-family:monospace;letter-spacing:2px;color:var(--primary)">'+p.code+'</div><div class="tcm">⚡ '+p.credits+' credits · '+p.uses+'/'+p.max_uses+' uses</div></div><button class="tcvb" onclick="navigator.clipboard.writeText(\''+p.code+'\').then(function(){toast(\'Copied!\',\'ok\')})">📋 Copy</button></div></div>';}).join('');
   }catch(e){}
 }
 
-function ah(){return{'Authorization':'Bearer '+tok};}
+// ── GAMES ──
+var gQ=[],gIdx=0,gScore=0,gTimer=null,flipIdx=0,flipped=false;
+function backToMenu(){
+  clearInterval(gTimer);
+  ['kahoot-game','speed-game','flip-game'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+  var gr=document.getElementById('game-result');if(gr)gr.style.display='none';
+  var gm=document.getElementById('game-menu');if(gm)gm.style.display='block';
+}
+async function genQ(type){
+  var sub=document.getElementById('g-subject').value;
+  var grade=document.getElementById('g-grade').value;
+  var count=parseInt(document.getElementById('g-count').value)||10;
+  var subMap={math:'Math',science:'Science',english:'English'};
+  var p='';
+  if(type==='kahoot')p='Generate '+count+' multiple choice questions for grade '+grade+' '+subMap[sub]+'. JSON only: {"questions":[{"q":"question","options":["A","B","C","D"],"correct":0}]}';
+  else if(type==='speed')p='Generate '+count+' short answer questions for grade '+grade+' '+subMap[sub]+'. Answers 1-4 words. JSON only: {"questions":[{"q":"question","a":"answer"}]}';
+  else p='Generate '+count+' flashcard pairs for grade '+grade+' '+subMap[sub]+'. JSON only: {"questions":[{"q":"term","a":"definition"}]}';
+  var res=await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({message:p,subject:sub,grade:grade,lang:'en',role:'student'})});
+  var data=await res.json();
+  var text=(data.reply||'').replace(/```json|```/g,'').trim();
+  return JSON.parse(text).questions||[];
+}
+async function startKahoot(){
+  document.getElementById('game-menu').style.display='none';
+  var kg=document.getElementById('kahoot-game');kg.style.display='flex';kg.style.flexDirection='column';kg.style.gap='14px';
+  document.getElementById('k-loading').style.display='block';document.getElementById('k-game').style.display='none';
+  gScore=0;gIdx=0;document.getElementById('k-score').textContent='0';
+  try{gQ=await genQ('kahoot');document.getElementById('k-loading').style.display='none';document.getElementById('k-game').style.display='flex';document.getElementById('k-game').style.flexDirection='column';document.getElementById('k-game').style.gap='14px';showKQ();}
+  catch(e){document.getElementById('k-loading').textContent='❌ Lỗi! Thử lại.';}
+}
+function showKQ(){
+  if(gIdx>=gQ.length){endGame('kahoot');return;}clearInterval(gTimer);
+  var q=gQ[gIdx];
+  document.getElementById('k-qnum').textContent='Q '+(gIdx+1);
+  document.getElementById('k-qlabel').textContent='Q '+(gIdx+1)+'/'+gQ.length;
+  document.getElementById('k-qtext').textContent=q.q;
+  document.getElementById('k-feedback').style.display='none';
+  var shapes=['▲','◆','●','■'];
+  var colors=['rgba(244,63,94,0.15)','rgba(59,130,246,0.15)','rgba(249,115,22,0.15)','rgba(16,185,129,0.15)'];
+  var borders=['rgba(244,63,94,0.3)','rgba(59,130,246,0.3)','rgba(249,115,22,0.3)','rgba(16,185,129,0.3)'];
+  var textc=['rgba(253,164,175,0.9)','rgba(147,197,253,0.9)','rgba(253,186,116,0.9)','rgba(110,231,183,0.9)'];
+  var html='';
+  (q.options||[]).forEach(function(opt,i){html+='<button onclick="ansK('+i+')" style="padding:13px 12px;border-radius:var(--r);border:1.5px solid '+borders[i]+';background:'+colors[i]+';color:'+textc[i]+';font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;font-family:var(--font)"><span>'+shapes[i]+'</span>'+opt+'</button>';});
+  document.getElementById('k-answers').innerHTML=html;
+  var t=20;document.getElementById('k-timer').textContent=t;
+  gTimer=setInterval(function(){t--;document.getElementById('k-timer').textContent=t;if(t<=0){clearInterval(gTimer);timeoutK();}},1000);
+}
+function ansK(idx){
+  clearInterval(gTimer);var q=gQ[gIdx];
+  var btns=document.getElementById('k-answers').querySelectorAll('button');
+  btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.3)';else if(i===idx)b.style.background='rgba(244,63,94,0.3)';});
+  var tv=parseInt(document.getElementById('k-timer').textContent)||0;
+  var fb=document.getElementById('k-feedback');
+  if(idx===q.correct){var pts=Math.max(100,tv*10);gScore+=pts;document.getElementById('k-score').textContent=gScore;fb.style.cssText='display:block;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='✅ Đúng! +'+pts+' pts';}
+  else{fb.style.cssText='display:block;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.25);color:rgba(253,164,175,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='❌ Sai! Đáp án: '+(q.options[q.correct]);}
+  gIdx++;setTimeout(showKQ,1800);
+}
+function timeoutK(){var q=gQ[gIdx];var btns=document.getElementById('k-answers').querySelectorAll('button');btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.3)';});var fb=document.getElementById('k-feedback');fb.style.cssText='display:block;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:rgba(253,186,116,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='⏰ Hết giờ! Đáp án: '+(q.options[q.correct]);gIdx++;setTimeout(showKQ,1800);}
+async function startSpeed(){
+  document.getElementById('game-menu').style.display='none';
+  var sg=document.getElementById('speed-game');sg.style.display='flex';sg.style.flexDirection='column';sg.style.gap='14px';
+  document.getElementById('sp-loading').style.display='block';document.getElementById('sp-game').style.display='none';
+  gScore=0;gIdx=0;document.getElementById('sp-score').textContent='0';
+  try{gQ=await genQ('speed');document.getElementById('sp-loading').style.display='none';document.getElementById('sp-game').style.display='flex';document.getElementById('sp-game').style.flexDirection='column';document.getElementById('sp-game').style.gap='14px';
+  var ph='';gQ.forEach(function(q,i){ph+='<div style="width:10px;height:10px;border-radius:50%;background:'+(i===0?'var(--primary)':'rgba(255,255,255,0.1)')+';display:inline-block;transition:background .3s" id="spdot'+i+'"></div>';});
+  document.getElementById('sp-progress').innerHTML=ph;showSQ();}
+  catch(e){document.getElementById('sp-loading').textContent='❌ Lỗi!';}
+}
+function showSQ(){
+  if(gIdx>=gQ.length){endGame('speed');return;}
+  var q=gQ[gIdx];document.getElementById('sp-qtext').textContent=q.q;document.getElementById('sp-qlabel').textContent='Q '+(gIdx+1)+'/'+gQ.length;
+  var inp=document.getElementById('sp-input');inp.value='';inp.style.borderColor='var(--border)';inp.focus();document.getElementById('sp-fb').textContent='';
+  if(gIdx>0){var pd=document.getElementById('spdot'+(gIdx-1));if(pd)pd.style.background='rgba(16,185,129,0.5)';}
+  var cd=document.getElementById('spdot'+gIdx);if(cd)cd.style.background='var(--primary)';
+}
+function checkSpeed(){var q=gQ[gIdx];var inp=document.getElementById('sp-input');var val=inp.value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');var ans=(q.a||'').toString().trim().toLowerCase().replace(/[^a-z0-9]/g,'');if(val===ans){inp.style.borderColor='rgba(16,185,129,0.5)';gScore+=100;document.getElementById('sp-score').textContent=gScore;document.getElementById('sp-fb').textContent='✅ Chính xác!';gIdx++;setTimeout(showSQ,700);}}
+async function startFlip(){
+  document.getElementById('game-menu').style.display='none';
+  var fg=document.getElementById('flip-game');fg.style.display='flex';fg.style.flexDirection='column';fg.style.gap='14px';fg.style.alignItems='center';
+  document.getElementById('flip-q').textContent='⏳ Đang tạo...';flipIdx=0;flipped=false;
+  try{gQ=await genQ('flip');showFC();}catch(e){document.getElementById('flip-q').textContent='❌ Lỗi!';}
+}
+function showFC(){if(!gQ.length)return;var q=gQ[flipIdx];document.getElementById('flip-q').textContent=q.q;document.getElementById('flip-a').textContent=q.a;document.getElementById('flip-counter').textContent=(flipIdx+1)+'/'+gQ.length;document.getElementById('flip-prog').textContent=(flipIdx+1)+' / '+gQ.length;document.getElementById('flip-inner').style.transform='';flipped=false;}
+function doFlip(){var fi=document.getElementById('flip-inner');flipped=!flipped;fi.style.transform=flipped?'rotateY(180deg)':'';}
+function flipNext(){if(flipIdx<gQ.length-1){flipIdx++;showFC();}else{endGame('flip');}}
+function flipPrev(){if(flipIdx>0){flipIdx--;showFC();}}
+function endGame(type){
+  clearInterval(gTimer);
+  ['kahoot-game','speed-game','flip-game'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+  var res=document.getElementById('game-result');res.style.display='flex';res.style.flexDirection='column';res.style.alignItems='center';res.style.gap='16px';res.style.padding='20px 0';
+  var total=gQ.length;
+  if(type==='flip'){document.getElementById('result-emoji').textContent='🃏';document.getElementById('result-score').textContent=total+' thẻ';document.getElementById('result-msg').textContent='Bạn đã xem hết tất cả thẻ!';document.getElementById('result-title').textContent='Hoàn thành!';}
+  else{var pct=total>0?Math.round((gScore/(total*100))*100):0;document.getElementById('result-emoji').textContent=pct>=80?'🏆':pct>=60?'⭐':'💪';document.getElementById('result-score').textContent=gScore+' pts';document.getElementById('result-msg').textContent=pct>=80?'Xuất sắc!':pct>=60?'Tốt lắm!':'Cố lên!';document.getElementById('result-title').textContent='Kết quả';}
+}
+
+function doLogout(){['eb_tok','eb_name','eb_role'].forEach(function(k){localStorage.removeItem(k);});location.reload();}
+function ah(){return{'Authorization':'Bearer '+tok,'Content-Type':'application/json'};}
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 var tT;
 function toast(msg,type){var el=document.getElementById('toast');el.textContent=msg;el.className='on '+(type||'');clearTimeout(tT);tT=setTimeout(function(){el.className='';},3000);}
 </script>
+</body>
+</html>
