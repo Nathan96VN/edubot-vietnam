@@ -1859,15 +1859,34 @@ async function saveExamToMemory(){
 
 async function assignExam(){
   if(!currentExamId){ toast('Generate an exam first','err'); return; }
+  // Show classroom selector first
+  var classes = await getMyClasses();
+  var classSelect = '';
+  if(classes.length > 0){
+    classSelect = '<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:700;color:rgba(253,164,175,0.7);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Assign to classroom (optional)</label><select id="assign-class-sel" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(244,63,94,0.2);background:rgba(255,255,255,0.05);color:var(--text);font-family:var(--font);font-size:13px"><option value="">Everyone with code</option>'+classes.map(function(c){return'<option value="'+c.id+'">'+c.name+'</option>';}).join('')+'</select></div>';
+  }
+  if(!confirm('Make this exam live? Students can join with the code.')) return;
   try{
     var res = await fetch(API+'/exam/'+currentExamId+'/assign', {method:'POST',headers:{'Content-Type':'application/json',...ah()}});
     var data = await res.json();
     if(!res.ok) throw new Error(data.error);
-    document.getElementById('exam-assign-info').style.display = 'block';
-    document.getElementById('exam-live-code').textContent = currentExamCode;
-    document.getElementById('btn-assign').textContent = '✅ Assigned!';
-    toast('Exam is now live! Share the code: '+currentExamCode, 'ok');
+    currentExamCode = data.exam.code;
+    var codeEl = document.getElementById('exam-live-code');
+    if(codeEl) codeEl.textContent = currentExamCode;
+    var assignInfo = document.getElementById('exam-assign-info');
+    if(assignInfo) assignInfo.style.display = 'block';
+    var btnAssign = document.getElementById('btn-assign');
+    if(btnAssign){ btnAssign.textContent = '✅ Assigned!'; btnAssign.style.background='rgba(16,185,129,0.2)'; }
+    toast('✅ Exam is LIVE! Code: '+currentExamCode, 'ok');
   } catch(e){ toast('❌ '+e.message,'err'); }
+}
+
+async function getMyClasses(){
+  try{
+    var res = await fetch(API+'/classroom/my',{headers:ah()});
+    var data = await res.json();
+    return data.classrooms || [];
+  }catch(e){ return []; }
 }
 
 function copyExamCode(){
@@ -2172,10 +2191,7 @@ async function loadLiveResults(examId){
   }catch(e){}
 }
 
-function copyExamCode(){
-  if(!currentExamCode) return;
-  navigator.clipboard.writeText(currentExamCode).then(function(){ toast('Code copied! '+currentExamCode,'ok'); });
-}
+
 
 async function addExtraTime(){
   if(!currentExamId) return;
@@ -2183,13 +2199,7 @@ async function addExtraTime(){
   toast('✅ Added 5 minutes to all active students','ok');
 }
 
-async function closeExam(){
-  if(!currentExamId||!confirm('Close this exam? Students will not be able to continue.')) return;
-  await fetch(API+'/exam/'+currentExamId+'/close',{method:'POST',headers:ah()});
-  if(liveResultsInterval){clearInterval(liveResultsInterval);liveResultsInterval=null;}
-  toast('🔒 Exam closed','ok');
-  document.getElementById('ex-assign-panel').style.display='none';
-}
+
 
 function exportExamWord(type){
   if(!currentExam){toast('No exam to export','err');return;}
