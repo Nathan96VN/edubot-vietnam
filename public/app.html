@@ -807,7 +807,14 @@ input[type=file]#cfi{display:none}
             </div>
             <div class="fg" style="margin-bottom:12px">
               <label>Topics to cover</label>
-              <input type="text" id="ex-topics" placeholder="e.g. Fractions, decimals, percentages — be specific!"/>
+              <textarea id="ex-topics" rows="3" placeholder="e.g. Fractions, decimals, percentages — be specific!" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:13px;font-family:var(--font);resize:vertical;outline:none"></textarea>
+              <div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <div id="ex-upload-zone" onclick="document.getElementById('ex-file-inp').click()" style="display:flex;align-items:center;gap:8px;padding:8px 14px;border:1.5px dashed rgba(244,63,94,0.25);border-radius:var(--rs);cursor:pointer;transition:all 0.2s;font-size:12px;color:var(--muted2)">
+                  <span>📎</span><span id="ex-upload-txt">Upload file for AI to scan (PDF, image, Word)</span>
+                </div>
+                <input type="file" id="ex-file-inp" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none" onchange="scanExamFile(this.files[0])"/>
+                <div id="ex-scan-status" style="font-size:12px;color:var(--muted);min-height:16px"></div>
+              </div>
             </div>
             <div class="frow">
               <div class="fg">
@@ -1843,6 +1850,67 @@ function endGame(type){
   var total=gQ.length;
   if(type==='flip'){document.getElementById('result-emoji').textContent='🃏';document.getElementById('result-score').textContent=total+' thẻ';document.getElementById('result-msg').textContent='Bạn đã xem hết tất cả thẻ!';document.getElementById('result-title').textContent='Hoàn thành!';}
   else{var pct=total>0?Math.round((gScore/(total*100))*100):0;document.getElementById('result-emoji').textContent=pct>=80?'🏆':pct>=60?'⭐':'💪';document.getElementById('result-score').textContent=gScore+' pts';document.getElementById('result-msg').textContent=pct>=80?'Xuất sắc!':pct>=60?'Tốt lắm!':'Cố lên!';document.getElementById('result-title').textContent='Kết quả';}
+}
+
+// ── EXAM FILE SCANNER ────────────────────────────────────────────────────────
+var examFileData = null;
+var examFileType = null;
+
+async function scanExamFile(file) {
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { toast('Max 20MB', 'err'); return; }
+  var status = document.getElementById('ex-scan-status');
+  var txt = document.getElementById('ex-upload-txt');
+  var ext = file.name.split('.').pop().toLowerCase();
+  var isPdf = ext === 'pdf';
+  var isImg = ['jpg','jpeg','png'].includes(ext);
+  if (!isPdf && !isImg && !['doc','docx'].includes(ext)) {
+    toast('Please upload PDF, image or Word file', 'err'); return;
+  }
+  txt.textContent = '⏳ ' + file.name;
+  status.textContent = 'Scanning file with AI...';
+  document.getElementById('ex-upload-zone').style.borderColor = 'rgba(249,115,22,0.4)';
+
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    var base64 = e.target.result.split(',')[1];
+    var fileType = isPdf ? 'application/pdf' : isImg ? 'image/'+(ext==='jpg'?'jpeg':ext) : 'application/msword';
+    examFileData = base64;
+    examFileType = fileType;
+
+    try {
+      var messages = [];
+      if (isPdf || isImg) {
+        messages = [{
+          role: 'user',
+          content: [
+            { type: isPdf ? 'document' : 'image', source: { type: 'base64', media_type: fileType, data: base64 } },
+            { type: 'text', text: 'Extract the key topics, concepts and learning objectives from this educational document. List them clearly and concisely so they can be used to generate exam questions. Format as a clear list of topics.' }
+          ]
+        }];
+      } else {
+        messages = [{ role: 'user', content: 'The teacher uploaded a Word document called: ' + file.name + '. Ask them to describe the key topics covered in it.' }];
+      }
+
+      var res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...ah() },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages })
+      });
+      var data = await res.json();
+      var topics = data.content && data.content[0] ? data.content[0].text : '';
+      if (topics) {
+        document.getElementById('ex-topics').value = topics;
+        status.textContent = '✅ Topics extracted! Review and edit if needed.';
+        document.getElementById('ex-upload-zone').style.borderColor = 'rgba(16,185,129,0.4)';
+        txt.textContent = '✅ ' + file.name;
+      }
+    } catch(e) {
+      status.textContent = '❌ Could not scan file. Please type topics manually.';
+      document.getElementById('ex-upload-zone').style.borderColor = 'rgba(239,68,68,0.3)';
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 // ── EXAM GENERATOR ──────────────────────────────────────────────────────────
