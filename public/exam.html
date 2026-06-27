@@ -266,7 +266,7 @@ async function joinExam(){
     var res = await fetch(API+'/exam/join/'+code, {headers});
     var data = await res.json();
     if(!res.ok) throw new Error(data.error || 'Exam not found');
-    examData = data.exam;
+    examData = data.exam; examData.code = code;
     // Build flat question list
     allQuestions = [];
     (examData.questions.sections||[]).forEach(function(s){
