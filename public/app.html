@@ -4,50 +4,50 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EduBot</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 /* ── RESET ── */
 *{box-sizing:border-box;margin:0;padding:0}
 /* ── CORAL DUSK TOKENS ── */
 :root{
-  --bg:#150810;
-  --bg2:#1F0D18;
-  --bg3:#180A14;
-  --card:rgba(244,63,94,0.07);
-  --card2:rgba(255,255,255,0.03);
+  --bg:#FFFFFF;
+  --bg2:#F5F9FF;
+  --bg3:#F0F4FF;
+  --card:rgba(0,180,166,0.05);
+  --card2:rgba(0,180,166,0.03);
   --card3:rgba(244,63,94,0.12);
-  --primary:#F43F5E;
-  --secondary:#F97316;
-  --primary-glass:rgba(244,63,94,0.65);
-  --secondary-glass:rgba(249,115,22,0.5);
-  --border:rgba(244,63,94,0.15);
-  --border2:rgba(255,255,255,0.07);
-  --border3:rgba(244,63,94,0.25);
-  --text:#FFF1F2;
-  --muted:rgba(253,164,175,0.7);
-  --muted2:rgba(255,255,255,0.4);
+  --primary:#00B4A6;
+  --secondary:#7B8CDE;
+  --primary-glass:rgba(0,180,166,0.8);
+  --secondary-glass:rgba(123,140,222,0.6);
+  --border:rgba(0,180,166,0.15);
+  --border2:rgba(0,180,166,0.08);
+  --border3:rgba(0,180,166,0.25);
+  --text:#1E1B4B;
+  --muted:rgba(45,45,45,0.6);
+  --muted2:rgba(30,27,75,0.4);
   --success:#10B981;
   --error:#EF4444;
   --warn:#F59E0B;
-  --teacher:#10B981;
+  --teacher:#00B4A6;
   --blur:blur(20px);
   --blur2:blur(12px);
   --r:14px;
   --rs:8px;
-  --font:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font:'Poppins',system-ui,sans-serif;
 }
 /* ── BASE ── */
-html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden}
+html,body{width:100%;height:100%;background:#F5F9FF;color:var(--text);font-family:var(--font);overflow:hidden}
 #app{display:flex;flex-direction:column;width:100%;height:100%;position:relative}
 /* ── BACKGROUND ORBS ── */
-#app::before{content:'';position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(244,63,94,0.18),transparent 70%);top:-100px;right:-80px;border-radius:50%;pointer-events:none;z-index:0}
-#app::after{content:'';position:fixed;width:300px;height:300px;background:radial-gradient(circle,rgba(249,115,22,0.14),transparent 70%);bottom:50px;left:-60px;border-radius:50%;pointer-events:none;z-index:0}
+#app::before{content:'';position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(0,180,166,0.12),transparent 70%);top:-100px;right:-80px;border-radius:50%;pointer-events:none;z-index:0}
+#app::after{content:'';position:fixed;width:300px;height:300px;background:radial-gradient(circle,rgba(123,140,222,0.1),transparent 70%);bottom:50px;left:-60px;border-radius:50%;pointer-events:none;z-index:0}
 /* ── TOPBAR ── */
-#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:rgba(255,255,255,0.04);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-shrink:0;gap:8px;flex-wrap:wrap}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-shrink:0;gap:8px;flex-wrap:wrap}
 .logo{display:flex;align-items:center;gap:8px}
 .logo img{height:36px;width:auto}
-.logo-text{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-0.3px}
-.logo-text span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-text{font-size:18px;font-weight:800;color:#1E1B4B;letter-spacing:-0.3px}
+.logo-text span{color:#00B4A6;-webkit-text-fill-color:#00B4A6}
 .tr{display:flex;align-items:center;gap:8px}
 .lang-wrap{display:flex;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:20px;overflow:hidden}
 .lb{padding:5px 12px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:var(--font)}
@@ -66,18 +66,18 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #layout{display:flex;flex:1;min-height:0;position:relative;z-index:1}
 
 /* ── SIDEBAR ── */
-#sidebar{width:220px;background:rgba(255,255,255,0.03);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;transition:width 0.3s ease;overflow:hidden}
+#sidebar{width:220px;background:#1E1B4B;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;transition:width 0.3s ease;overflow:hidden}
 #sidebar.collapsed{width:56px}
 #sidebar-toggle{display:flex;align-items:center;justify-content:center;padding:13px;border-bottom:1px solid var(--border2);cursor:pointer;flex-shrink:0}
 #sidebar-toggle:hover{background:rgba(244,63,94,0.06)}
 #sidebar-toggle svg{width:18px;height:18px;stroke:rgba(244,63,94,0.6);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
-.sideitem{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-left:3px solid transparent;transition:all 0.2s;white-space:nowrap;text-decoration:none}
-.sideitem:hover{background:rgba(244,63,94,0.06);border-left-color:rgba(244,63,94,0.3)}
-.sideitem.on{background:rgba(244,63,94,0.1);border-left-color:var(--primary)}
+.sideitem{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-left:3px solid transparent;transition:all 0.2s;white-space:nowrap;text-decoration:none;color:rgba(255,255,255,0.6)}
+.sideitem:hover{background:rgba(0,180,166,0.1);border-left-color:rgba(0,180,166,0.3)}
+.sideitem.on{background:rgba(0,180,166,0.15);border-left-color:#00B4A6}
 .sideitem .si{font-size:18px;flex-shrink:0;width:22px;text-align:center}
-.sideitem .sl{font-size:13px;font-weight:500;color:var(--muted2);overflow:hidden;white-space:nowrap}
+.sideitem .sl{font-size:13px;font-weight:500;color:rgba(255,255,255,0.6);overflow:hidden;white-space:nowrap}
 .sideitem.on .sl{color:var(--text)}
-.sidebar-bottom{margin-top:auto;border-top:1px solid var(--border2)}
+.sidebar-bottom{margin-top:auto;border-top:1px solid rgba(255,255,255,0.1)}
 .side-section{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(244,63,94,0.4);padding:12px 16px 4px;white-space:nowrap;overflow:hidden}
 #sidebar.collapsed .side-section{opacity:0}
 #sidebar.collapsed .sl{opacity:0}
