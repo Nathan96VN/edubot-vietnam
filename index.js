@@ -1791,26 +1791,14 @@ app.post('/exam/join/:code/start', async (req, res) => {
     if (!examResult.rows[0]) return res.status(404).json({ error: 'Exam not found or not active' });
     const exam = examResult.rows[0];
 
-    // Use authenticated user if token provided, fallback to studentId from body
+    // Resolve student ID from body OR from JWT token in header
     let resolvedStudentId = studentId || null;
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (!resolvedStudentId && authHeader && authHeader.startsWith('Bearer ')) {
       try {
-        const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
-        resolvedStudentId = decoded.id || decoded.userId || resolvedStudentId;
+        const decoded = require('jsonwebtoken').verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+        resolvedStudentId = decoded.id || decoded.userId || null;
       } catch(e) {}
-    }
-
-    // Check max attempts if student is logged in
-    if (resolvedStudentId && exam.max_attempts > 0) {
-      const attemptsResult = await pool.query(
-        `SELECT COUNT(*) FROM exam_submissions WHERE exam_id=$1 AND student_id=$2 AND status != 'in_progress'`,
-        [exam.id, resolvedStudentId]
-      );
-      if (parseInt(attemptsResult.rows[0].count) >= exam.max_attempts) {
-        return res.status(403).json({ error: 'Maximum attempts reached' });
-      }
     }
 
     const result = await pool.query(
