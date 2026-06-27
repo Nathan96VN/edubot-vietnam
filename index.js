@@ -1537,7 +1537,7 @@ Respond ONLY with valid JSON, no markdown, no explanation:
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: fileData ? [{ type: fileType && fileType.startsWith('image/') ? 'image' : 'document', source: { type: 'base64', media_type: fileType || 'application/pdf', data: fileData } }, { type: 'text', text: prompt }] : prompt }]
     });
 
     let text = response.content[0].text.replace(/```json|```/g, '').trim();
