@@ -1462,7 +1462,7 @@ async function loadSClasses(){
     var res=await fetch(API+'/exam/my',{headers:ah()});
     var data=await res.json();
     var exams=(data.exams||[]).filter(function(e){ return String(e.classroom_id)===String(classId); });
-    var html='<div style="margin-bottom:14px"><button onclick="openClassExams(window._gradeClassId)" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
+    var html='<div style="margin-bottom:14px"><button onclick="loadSClasses()" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
     html+='<div class="stitle">📝 Exams for this class</div>';
     if(!exams.length){
       html+='<div class="ebox">No exams assigned to this class yet.</div>';
