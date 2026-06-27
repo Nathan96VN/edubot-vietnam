@@ -1806,6 +1806,7 @@ function showExamPreview(examData, exam){
   document.getElementById('exam-gen-form').style.display = 'none';
   document.getElementById('exam-preview').style.display = 'block';
   document.getElementById('exam-live-results').style.display = 'none';
+  loadClassesIntoSelector();
   document.getElementById('exam-preview-title').textContent = examData.title || (exam && exam.title) || 'Exam';
 
   var html = '';
