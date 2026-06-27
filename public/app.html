@@ -1445,10 +1445,10 @@ async function loadSClasses(){
     var res=await fetch(API+'/classroom/my',{headers:ah()});var data=await res.json();
     var g=document.getElementById('sgrid');var list=data.classrooms||[];
     if(!list.length){g.innerHTML='<div class="ebox">'+L('sempty')+'</div>';return;}
-    g.innerHTML=list.map(function(c){return '<div class="ccard" id="sc-'+c.id+'"><div class="csub">'+esc(c.subject)+' · '+c.grade+'</div><div class="cname">'+esc(c.name)+'</div><div class="ctch">👩‍🏫 '+esc(c.teacher_name||L('tch'))+'</div><div class="ccode">🔑 '+esc(c.code)+'</div></div>';}).join('');
+    g.innerHTML=list.map(function(c){return '<div class="ccard" id="sc-'+c.id+'" '+((urole==='teacher'||urole==='admin')?'style="cursor:pointer" onclick="openClassExams(\''+c.id+'\')"':'')+'><div class="csub">'+esc(c.subject)+' · '+c.grade+'</div><div class="cname">'+esc(c.name)+'</div><div class="ctch">👩‍🏫 '+esc(c.teacher_name||L('tch'))+'</div><div class="ccode">🔑 '+esc(c.code)+'</div></div>';}).join('');
     list.forEach(function(c){
       var card = document.getElementById('sc-'+c.id);
-      if(card) loadClassroomExams(c.id, card);
+      if((urole!=='teacher'&&urole!=='admin')&&card) loadClassroomExams(c.id, card);
     });
   }catch(e){}
 }
