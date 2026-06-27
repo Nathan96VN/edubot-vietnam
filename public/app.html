@@ -15,7 +15,7 @@
   --bg3:#F0F4FF;
   --card:rgba(0,180,166,0.05);
   --card2:rgba(0,180,166,0.03);
-  --card3:rgba(244,63,94,0.12);
+  --card3:rgba(0,180,166,0.1);
   --primary:#00B4A6;
   --secondary:#7B8CDE;
   --primary-glass:rgba(0,180,166,0.8);
@@ -56,11 +56,11 @@ html,body{width:100%;height:100%;background:#F5F9FF;color:var(--text);font-famil
 #uinfo{display:none;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
 #uinfo strong{color:var(--text);font-weight:600}
 .rbadge{padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
-.rs{background:rgba(244,63,94,0.15);color:rgba(253,164,175,0.9);border:1px solid rgba(244,63,94,0.25)}
+.rs{background:rgba(0,180,166,0.15);color:rgba(30,27,75,0.7);border:1px solid rgba(0,180,166,0.25)}
 .rt{background:rgba(16,185,129,0.15);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.25)}
 #btn-logout{padding:5px 12px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:12px;cursor:pointer;font-family:var(--font)}
 #btn-logout:hover{border-color:var(--border3);color:var(--primary)}
-#credit-badge{display:none;align-items:center;gap:4px;padding:4px 11px;border-radius:20px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:rgba(253,186,116,0.9);font-size:12px;font-weight:700;cursor:pointer}
+#credit-badge{display:none;align-items:center;gap:4px;padding:4px 11px;border-radius:20px;background:rgba(123,140,222,0.1);border:1px solid rgba(123,140,222,0.25);color:rgba(180,83,9,0.9);font-size:12px;font-weight:700;cursor:pointer}
 
 /* ── LAYOUT ── */
 #layout{display:flex;flex:1;min-height:0;position:relative;z-index:1}
@@ -69,8 +69,8 @@ html,body{width:100%;height:100%;background:#F5F9FF;color:var(--text);font-famil
 #sidebar{width:220px;background:#1E1B4B;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;transition:width 0.3s ease;overflow:hidden}
 #sidebar.collapsed{width:56px}
 #sidebar-toggle{display:flex;align-items:center;justify-content:center;padding:13px;border-bottom:1px solid var(--border2);cursor:pointer;flex-shrink:0}
-#sidebar-toggle:hover{background:rgba(244,63,94,0.06)}
-#sidebar-toggle svg{width:18px;height:18px;stroke:rgba(244,63,94,0.6);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+#sidebar-toggle:hover{background:rgba(0,180,166,0.06)}
+#sidebar-toggle svg{width:18px;height:18px;stroke:rgba(0,180,166,0.7);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
 .sideitem{display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-left:3px solid transparent;transition:all 0.2s;white-space:nowrap;text-decoration:none;color:rgba(255,255,255,0.6)}
 .sideitem:hover{background:rgba(0,180,166,0.1);border-left-color:rgba(0,180,166,0.3)}
 .sideitem.on{background:rgba(0,180,166,0.15);border-left-color:#00B4A6}
@@ -78,7 +78,7 @@ html,body{width:100%;height:100%;background:#F5F9FF;color:var(--text);font-famil
 .sideitem .sl{font-size:13px;font-weight:500;color:rgba(255,255,255,0.6);overflow:hidden;white-space:nowrap}
 .sideitem.on .sl{color:var(--text)}
 .sidebar-bottom{margin-top:auto;border-top:1px solid rgba(255,255,255,0.1)}
-.side-section{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(244,63,94,0.4);padding:12px 16px 4px;white-space:nowrap;overflow:hidden}
+.side-section{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(0,180,166,0.4);padding:12px 16px 4px;white-space:nowrap;overflow:hidden}
 #sidebar.collapsed .side-section{opacity:0}
 #sidebar.collapsed .sl{opacity:0}
 
@@ -87,25 +87,25 @@ html,body{width:100%;height:100%;background:#F5F9FF;color:var(--text);font-famil
 .panel{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}.panel.on{display:flex}
 
 /* ── AI TUTOR PANEL ── */
-#msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
+#msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent}
 #msgs::-webkit-scrollbar{width:4px}
 #msgs::-webkit-scrollbar-track{background:transparent}
-#msgs::-webkit-scrollbar-thumb{background:rgba(244,63,94,0.2);border-radius:2px}
+#msgs::-webkit-scrollbar-thumb{background:rgba(0,180,166,0.2);border-radius:2px}
 .m{display:flex;gap:10px;max-width:90%}
 .m.u{align-self:flex-end;flex-direction:row-reverse;max-width:72%}
 .m.a{align-self:flex-start;max-width:95%}
 .av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:4px}
-.m.a .av{background:linear-gradient(135deg,rgba(244,63,94,0.5),rgba(249,115,22,0.4))}
+.m.a .av{background:linear-gradient(135deg,rgba(0,180,166,0.6),rgba(123,140,222,0.4))}
 .m.u .av{background:rgba(255,255,255,0.1)}
 .bub{padding:11px 15px;border-radius:var(--r);font-size:14px;line-height:1.65}
 .m.a .bub{background:var(--card);border:1px solid var(--border);width:100%;border-radius:4px 14px 14px 14px}
-.m.u .bub{background:linear-gradient(135deg,rgba(244,63,94,0.22),rgba(249,115,22,0.14));border:1px solid rgba(244,63,94,0.22);color:#fff;white-space:pre-wrap;border-radius:14px 4px 14px 14px}
+.m.u .bub{background:linear-gradient(135deg,rgba(0,180,166,0.2),rgba(123,140,222,0.1));border:1px solid rgba(0,180,166,0.2);color:#fff;white-space:pre-wrap;border-radius:14px 4px 14px 14px}
 .ai-out table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
-.ai-out th{background:linear-gradient(135deg,rgba(244,63,94,0.4),rgba(249,115,22,0.3));color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:12px}
+.ai-out th{background:linear-gradient(135deg,rgba(0,180,166,0.4),rgba(123,140,222,0.3));color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:12px}
 .ai-out td{padding:7px 12px;border:1px solid var(--border);vertical-align:top;line-height:1.5}
-.ai-out tr:nth-child(even) td{background:rgba(244,63,94,0.03)}
+.ai-out tr:nth-child(even) td{background:rgba(0,180,166,0.03)}
 .ai-out h2{font-size:15px;font-weight:700;color:var(--text);margin:14px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--border)}
-.ai-out h3{font-size:14px;font-weight:600;color:rgba(253,164,175,0.9);margin:10px 0 5px}
+.ai-out h3{font-size:14px;font-weight:600;color:rgba(30,27,75,0.7);margin:10px 0 5px}
 .ai-out p{margin:5px 0;line-height:1.7}
 .ai-out ul,.ai-out ol{margin:5px 0 5px 20px;line-height:1.8}
 .ai-out li{margin-bottom:3px}
@@ -127,23 +127,23 @@ input[type=file]#cfi{display:none}
 #battach:hover{color:var(--primary);border-color:var(--border3)}
 #battach.on{color:var(--success);border-color:rgba(16,185,129,0.35);background:rgba(16,185,129,0.08)}
 #cinput{flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:14px;font-family:var(--font);resize:none;outline:none;line-height:1.5;min-height:42px;max-height:120px}
-#cinput:focus{border-color:rgba(244,63,94,0.35)}
+#cinput:focus{border-color:rgba(0,180,166,0.35)}
 #cinput::placeholder{color:var(--muted2)}
 #bimg,#bgraph{padding:9px 11px;border-radius:var(--r);background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--text);font-size:15px;cursor:pointer;height:42px}
-#bimg:hover{border-color:rgba(249,115,22,0.35)}
+#bimg:hover{border-color:rgba(123,140,222,0.3)}
 #bgraph:hover{border-color:rgba(16,185,129,0.35)}
 #bimg:disabled,#bgraph:disabled{opacity:.4}
 #bsend{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;height:42px;font-family:var(--font)}
 #bsend:disabled{opacity:.5}
 
 /* export bar — BELOW input */
-#export-bar{display:none;align-items:center;gap:8px;padding:7px 16px;background:rgba(244,63,94,0.06);backdrop-filter:var(--blur2);border-top:1px solid rgba(244,63,94,0.1);flex-shrink:0;flex-wrap:wrap}
+#export-bar{display:none;align-items:center;gap:8px;padding:7px 16px;background:rgba(0,180,166,0.06);backdrop-filter:var(--blur2);border-top:1px solid rgba(0,180,166,0.1);flex-shrink:0;flex-wrap:wrap}
 #export-bar.visible{display:flex}
-#export-bar span{font-size:11px;font-weight:600;color:rgba(244,63,94,0.5);letter-spacing:0.04em;margin-right:4px}
+#export-bar span{font-size:11px;font-weight:600;color:rgba(0,180,166,0.6);letter-spacing:0.04em;margin-right:4px}
 .eb-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--rs);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);border:none;transition:all 0.2s}
 .eb-copy{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6)}
 .eb-word{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:rgba(147,197,253,0.9)}
-.eb-pdf{background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);color:rgba(253,164,175,0.9)}
+.eb-pdf{background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.2);color:rgba(30,27,75,0.7)}
 .eb-btn:hover{opacity:0.85;transform:translateY(-1px)}
 .eb-btn.copied{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.25);color:rgba(110,231,183,0.9)}
 
@@ -151,18 +151,18 @@ input[type=file]#cfi{display:none}
 #clpanel{flex:1;padding:20px;overflow-y:auto}
 .jcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:20px;backdrop-filter:var(--blur2)}
 .jhdr{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.jico{width:42px;height:42px;border-radius:var(--rs);background:linear-gradient(135deg,rgba(244,63,94,0.25),rgba(249,115,22,0.15));border:1px solid var(--border3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.jico{width:42px;height:42px;border-radius:var(--rs);background:linear-gradient(135deg,rgba(0,180,166,0.25),rgba(123,140,222,0.15));border:1px solid var(--border3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .jcard h3{font-size:15px;font-weight:700;margin:0;color:var(--text)}.jcard p{font-size:13px;color:var(--muted);margin:2px 0 0}
 .jirow{display:flex;gap:8px;flex-wrap:wrap}
 #codeinput{flex:1;min-width:160px;padding:10px 14px;background:rgba(255,255,255,0.05);border:2px solid var(--border);border-radius:var(--r);color:var(--text);font-size:15px;font-weight:700;font-family:monospace;letter-spacing:2px;text-transform:uppercase;outline:none}
-#codeinput:focus{border-color:rgba(244,63,94,0.35)}
+#codeinput:focus{border-color:rgba(0,180,166,0.35)}
 #bjoin{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--font)}
 #jfb{margin-top:10px;padding:9px 12px;border-radius:var(--rs);font-size:13px;display:none}
 #jfb.ok{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);display:block}
 #jfb.err{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:rgba(252,165,165,0.9);display:block}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
 .ccard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;backdrop-filter:var(--blur2)}
-.csub{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(244,63,94,0.6);margin-bottom:6px}
+.csub{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(0,180,166,0.7);margin-bottom:6px}
 .cname{font-size:15px;font-weight:700;margin-bottom:4px;color:var(--text)}
 .ctch{font-size:13px;color:var(--muted)}
 .ccode{margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);font-family:monospace;font-size:13px;color:var(--muted2)}
@@ -172,14 +172,14 @@ input[type=file]#cfi{display:none}
 #tpanel{flex:1;padding:20px;overflow-y:auto}
 .ttabs{display:flex;gap:4px;margin-bottom:18px;background:rgba(255,255,255,0.03);padding:4px;border-radius:var(--r);width:fit-content;border:1px solid var(--border2)}
 .stb{padding:7px 16px;border-radius:10px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all 0.2s}
-.stb.on{background:linear-gradient(135deg,rgba(244,63,94,0.35),rgba(249,115,22,0.2));color:var(--text);border:1px solid var(--border3)}
+.stb.on{background:rgba(0,180,166,0.15);color:#00B4A6;border:1px solid rgba(0,180,166,0.3)}
 .sp{display:none}.sp.on{display:block}
 .crcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px;backdrop-filter:var(--blur2)}
 .frow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px}
 .fg label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 .fg input,.fg select{padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)}
-.fg input:focus,.fg select:focus{border-color:rgba(244,63,94,0.35)}
+.fg input:focus,.fg select:focus{border-color:rgba(0,180,166,0.35)}
 #bcreat{padding:10px 20px;border-radius:var(--r);background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)}
 .tccard{background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:10px;backdrop-filter:var(--blur2)}
 .tchdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
@@ -192,7 +192,7 @@ input[type=file]#cfi{display:none}
 .stitle{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)}
 
 /* teacher AI chat */
-#aimsg{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;height:380px;border:1px solid var(--border);border-radius:var(--r);background:rgba(255,255,255,0.02);margin-bottom:10px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
+#aimsg{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;height:380px;border:1px solid var(--border);border-radius:var(--r);background:rgba(255,255,255,0.02);margin-bottom:10px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent}
 .qrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .qb{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:var(--card2);color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--font);transition:all 0.2s}
 .qb:hover{border-color:rgba(16,185,129,0.35);color:rgba(110,231,183,0.9)}
@@ -207,7 +207,7 @@ input[type=file]#cfi{display:none}
 .sp#sp2,.sp#sp3{padding:4px 0}
 
 /* ── FLASHCARDS ── */
-#fcpanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
+#fcpanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent}
 .fc-gen-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px;backdrop-filter:var(--blur2)}
 .fc-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .fc-controls select,.fc-controls input{padding:8px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)}
@@ -218,12 +218,12 @@ input[type=file]#cfi{display:none}
 #fcstatus{font-size:13px;color:var(--muted);min-height:16px}
 .fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .fc-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:0;cursor:pointer;min-height:160px;position:relative;transition:all 0.2s;backdrop-filter:var(--blur2)}
-.fc-card:hover{border-color:rgba(244,63,94,0.3);transform:translateY(-2px)}
+.fc-card:hover{border-color:rgba(0,180,166,0.3);transform:translateY(-2px)}
 .fc-front,.fc-back{padding:20px;min-height:160px;display:flex;flex-direction:column;justify-content:center}
-.fc-back{display:none;border-top:2px solid rgba(244,63,94,0.3)}
+.fc-back{display:none;border-top:2px solid rgba(0,180,166,0.3)}
 .fc-card.flipped .fc-front{display:none}
 .fc-card.flipped .fc-back{display:flex}
-.fc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(244,63,94,0.5);margin-bottom:8px}
+.fc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#00B4A6;margin-bottom:8px}
 .fc-q{font-size:15px;font-weight:600;color:var(--text);line-height:1.5}
 .fc-a{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:8px}
 .fc-hint{font-size:12px;color:var(--muted);font-style:italic;margin-top:6px}
@@ -233,15 +233,15 @@ input[type=file]#cfi{display:none}
 .fc-flip-hint{font-size:11px;color:var(--muted2);text-align:center;margin-top:8px}
 
 /* ── GAMES ── */
-#gpanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
+#gpanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent}
 .game-card{background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:24px;text-align:center;cursor:pointer;transition:all 0.25s;backdrop-filter:var(--blur2)}
-.game-card:hover{border-color:rgba(244,63,94,0.35);transform:translateY(-3px);background:rgba(244,63,94,0.1)}
+.game-card:hover{border-color:rgba(0,180,166,0.35);transform:translateY(-3px);background:rgba(0,180,166,0.1)}
 .game-badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.12);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.25)}
 
 /* ── MODALS ── */
-#overlay{position:fixed;inset:0;background:rgba(15,8,16,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+#overlay{position:fixed;inset:0;background:rgba(30,27,75,0.5);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
 #overlay.on{display:flex}
-#modal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
+#modal{background:#ffffff;border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
 #mcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;line-height:1;padding:4px 9px;font-family:var(--font)}
 .mlogo{text-align:center;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px}
 .mlogo img{height:36px}
@@ -250,7 +250,7 @@ input[type=file]#cfi{display:none}
 #msub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
 .rtog{display:flex;gap:6px;margin-bottom:12px}
 .rb{flex:1;padding:9px 6px;border-radius:var(--rs);border:1.5px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.2s;font-family:var(--font)}
-.rb.on{border-color:rgba(244,63,94,0.35);color:var(--primary);background:rgba(244,63,94,0.08)}
+.rb.on{border-color:rgba(0,180,166,0.35);color:#00B4A6;background:rgba(0,180,166,0.08)}
 .rb.ton.on{border-color:rgba(16,185,129,0.35);color:rgba(110,231,183,0.9);background:rgba(16,185,129,0.08)}
 .atabs{display:flex;gap:4px;margin-bottom:14px;background:rgba(255,255,255,0.03);padding:3px;border-radius:var(--rs);border:1px solid var(--border2)}
 .at{flex:1;padding:7px;text-align:center;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;font-family:var(--font);transition:all 0.2s}
@@ -258,20 +258,20 @@ input[type=file]#cfi{display:none}
 .af{margin-bottom:11px}
 .af label{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
 .af input,.af select{width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px;outline:none;font-family:var(--font)}
-.af input:focus,.af select:focus{border-color:rgba(244,63,94,0.35)}
+.af input:focus,.af select:focus{border-color:rgba(0,180,166,0.35)}
 #asubmit{width:100%;padding:12px;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);border-radius:var(--r);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;font-family:var(--font)}
 #asubmit:disabled{opacity:.5;cursor:not-allowed}
 #aerr{color:rgba(252,165,165,0.9);font-size:13px;text-align:center;margin-top:8px;min-height:16px}
 
 /* upgrade modal */
-#upgoverlay{position:fixed;inset:0;background:rgba(15,8,16,0.92);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
+#upgoverlay{position:fixed;inset:0;background:rgba(30,27,75,0.6);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
 #upgoverlay.on{display:flex}
-#upgmodal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;position:relative;max-height:90vh;overflow-y:auto}
+#upgmodal{background:#ffffff;border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;position:relative;max-height:90vh;overflow-y:auto}
 #upgcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;padding:4px 9px;font-family:var(--font)}
 .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
 .plan-card{background:rgba(255,255,255,0.03);border:1.5px solid var(--border2);border-radius:14px;padding:16px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
-.plan-card:hover{border-color:rgba(244,63,94,0.3);transform:translateY(-2px);background:rgba(244,63,94,0.05)}
-.plan-card.featured{border-color:rgba(244,63,94,0.25);background:rgba(244,63,94,0.06)}
+.plan-card:hover{border-color:rgba(0,180,166,0.3);transform:translateY(-2px);background:rgba(0,180,166,0.05)}
+.plan-card.featured{border-color:rgba(0,180,166,0.25);background:rgba(0,180,166,0.06)}
 .plan-name{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--text)}
 .plan-price{font-size:22px;font-weight:800;color:var(--primary);margin-bottom:4px;letter-spacing:-0.5px}
 .plan-price span{font-size:11px;color:var(--muted);font-weight:400}
@@ -281,7 +281,7 @@ input[type=file]#cfi{display:none}
 .plan-feat li:last-child{border:none}
 .plan-feat li:before{content:'✓';color:var(--primary);font-weight:700;flex-shrink:0}
 .plan-btn{width:100%;padding:8px;border-radius:var(--rs);border:none;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px;font-family:var(--font);transition:all 0.2s}
-.plan-btn.stripe{background:linear-gradient(135deg,rgba(244,63,94,0.6),rgba(249,115,22,0.5));color:#fff;border:1px solid var(--border3)}
+.plan-btn.stripe{background:linear-gradient(135deg,rgba(0,180,166,0.7),rgba(123,140,222,0.5));color:#fff;border:1px solid var(--border3)}
 .plan-btn.stripe:hover{opacity:0.85}
 .plan-btn.vnpay{background:rgba(230,29,36,0.3);color:#fff;margin-top:5px;border:1px solid rgba(230,29,36,0.4)}
 .plan-btn.vnpay:hover{background:rgba(230,29,36,0.5)}
@@ -294,7 +294,7 @@ input[type=file]#cfi{display:none}
 
 /* ── UTILITIES ── */
 .dots{display:flex;gap:4px;padding:2px 0}
-.dots span{width:6px;height:6px;border-radius:50%;background:rgba(244,63,94,0.5);animation:bn .9s infinite}
+.dots span{width:6px;height:6px;border-radius:50%;background:rgba(0,180,166,0.6);animation:bn .9s infinite}
 .dots span:nth-child(2){animation-delay:.15s}
 .dots span:nth-child(3){animation-delay:.3s}
 @keyframes bn{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
@@ -310,28 +310,28 @@ input[type=file]#cfi{display:none}
 .sp#sp2 .crcard,.sp#sp3 .crcard{margin-bottom:14px}
 
 /* ── EXAM GENERATOR ── */
-#exampanel,#memorypanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent}
+#exampanel,#memorypanel{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent}
 .exam-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px;backdrop-filter:var(--blur2)}
 .exam-step-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .qtype-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:4px}
 .qtype-btn{padding:8px 12px;border-radius:var(--rs);border:1.5px solid var(--border2);background:var(--card2);color:var(--muted2);font-size:12px;font-weight:500;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font)}
-.qtype-btn.on{border-color:rgba(244,63,94,0.4);color:var(--primary);background:rgba(244,63,94,0.08)}
+.qtype-btn.on{border-color:rgba(0,180,166,0.4);color:var(--primary);background:rgba(0,180,166,0.08)}
 .gen-btn{padding:12px 24px;border-radius:var(--r);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);width:100%;margin-top:4px;transition:opacity 0.2s}
 .gen-btn:disabled{opacity:0.5}
 .exam-preview{background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:20px;margin-top:16px}
 .exam-section{margin-bottom:20px}
-.exam-section-title{font-size:13px;font-weight:700;color:rgba(244,63,94,0.8);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.exam-section-title{font-size:13px;font-weight:700;color:rgba(0,180,166,0.8);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 .exam-q{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:14px;margin-bottom:10px}
 .exam-q-text{font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px;line-height:1.5}
 .exam-q-opt{font-size:13px;color:var(--muted);margin:3px 0;padding:4px 8px;border-radius:6px}
 .exam-q-opt.correct{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:rgba(110,231,183,0.9)}
-.exam-q-pts{font-size:11px;font-weight:700;color:rgba(244,63,94,0.6);float:right}
+.exam-q-pts{font-size:11px;font-weight:700;color:rgba(0,180,166,0.7);float:right}
 .exam-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 .exam-act-btn{padding:9px 18px;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);border:none;transition:all 0.2s}
 .ea-assign{background:linear-gradient(135deg,rgba(16,185,129,0.6),rgba(5,150,105,0.5));color:#fff;border:1px solid rgba(16,185,129,0.3)}
 .ea-word{background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.2);color:rgba(147,197,253,0.9)}
-.ea-pdf{background:rgba(244,63,94,0.12);border:1px solid rgba(244,63,94,0.2);color:rgba(253,164,175,0.9)}
-.ea-save{background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.2);color:rgba(253,186,116,0.9)}
+.ea-pdf{background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.2);color:rgba(30,27,75,0.7)}
+.ea-save{background:rgba(123,140,222,0.1);border:1px solid rgba(123,140,222,0.2);color:rgba(180,83,9,0.9)}
 .code-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:var(--rs);background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);font-family:monospace;font-size:16px;font-weight:700;color:rgba(110,231,183,0.9);letter-spacing:2px;cursor:pointer}
 .mem-card{background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;backdrop-filter:var(--blur2);transition:all 0.2s}
 .mem-card:hover{border-color:var(--border)}
@@ -341,12 +341,12 @@ input[type=file]#cfi{display:none}
 .mem-status{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700}
 .ms-draft{background:rgba(255,255,255,0.06);color:var(--muted2);border:1px solid var(--border2)}
 .ms-active{background:rgba(16,185,129,0.12);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.2)}
-.ms-closed{background:rgba(244,63,94,0.1);color:rgba(253,164,175,0.7);border:1px solid rgba(244,63,94,0.15)}
+.ms-closed{background:rgba(0,180,166,0.1);color:rgba(45,45,45,0.6);border:1px solid rgba(0,180,166,0.15)}
 .mem-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)}
 .mem-btn{padding:5px 12px;border-radius:var(--rs);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);border:none;transition:all 0.2s}
 .mb-view{background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted2)}
 .mb-assign{background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.2);color:rgba(110,231,183,0.9)}
-.mb-close{background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);color:rgba(253,164,175,0.8)}
+.mb-close{background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.2);color:rgba(30,27,75,0.6)}
 .mb-del{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:rgba(252,165,165,0.8)}
 .results-live{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:12px}
 .res-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
@@ -356,7 +356,7 @@ input[type=file]#cfi{display:none}
 .sub-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rs);background:var(--card2);border:1px solid var(--border2);margin-bottom:6px}
 .sub-name{font-size:13px;font-weight:600;color:var(--text);flex:1}
 .sub-status{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
-.ss-progress{background:rgba(249,115,22,0.12);color:rgba(253,186,116,0.9);border:1px solid rgba(249,115,22,0.2)}
+.ss-progress{background:rgba(123,140,222,0.1);color:rgba(180,83,9,0.9);border:1px solid rgba(123,140,222,0.2)}
 .ss-submitted{background:rgba(59,130,246,0.12);color:rgba(147,197,253,0.9);border:1px solid rgba(59,130,246,0.2)}
 .ss-graded{background:rgba(16,185,129,0.12);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.2)}
 .sub-score{font-size:13px;font-weight:700;color:var(--text)}
@@ -530,7 +530,7 @@ input[type=file]#cfi{display:none}
                 <div class="fg"><label>Credits Amount</label><input type="number" id="promo-credits" placeholder="e.g. 100" min="1"/></div>
                 <div class="fg"><label>Max Uses</label><input type="number" id="promo-uses" placeholder="1" min="1" value="1"/></div>
               </div>
-              <button onclick="createPromo('credits')" style="background:linear-gradient(135deg,rgba(245,158,11,0.5),rgba(249,115,22,0.4));border:1px solid rgba(245,158,11,0.3);border-radius:var(--rs);color:#fff;padding:9px 18px;font-weight:600;cursor:pointer;font-family:var(--font)">⚡ Generate Credits Code</button>
+              <button onclick="createPromo('credits')" style="background:linear-gradient(135deg,rgba(245,158,11,0.5),rgba(123,140,222,0.4));border:1px solid rgba(245,158,11,0.3);border-radius:var(--rs);color:#fff;padding:9px 18px;font-weight:600;cursor:pointer;font-family:var(--font)">⚡ Generate Credits Code</button>
             </div>
             <div class="crcard">
               <div class="stitle">📦 Plan Upgrade Promo</div>
@@ -549,7 +549,7 @@ input[type=file]#cfi{display:none}
           <div class="crcard">
             <div class="stitle">📄 Upload Curriculum PDF</div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Upload a textbook or curriculum PDF. AI will scan it and import automatically.</div>
-            <div id="curr-upload-zone" style="border:2px dashed rgba(244,63,94,0.2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;transition:all .25s;margin-bottom:14px" onclick="document.getElementById('curr-file-inp').click()">
+            <div id="curr-upload-zone" style="border:2px dashed rgba(0,180,166,0.2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;transition:all .25s;margin-bottom:14px" onclick="document.getElementById('curr-file-inp').click()">
               <input type="file" id="curr-file-inp" accept=".pdf" style="display:none" onchange="scanCurrFile(this.files[0])"/>
               <div style="font-size:36px;margin-bottom:8px">📄</div>
               <div style="font-size:15px;font-weight:600;margin-bottom:4px;color:var(--text)" id="curr-upload-txt">Click to select PDF</div>
@@ -601,14 +601,14 @@ input[type=file]#cfi{display:none}
 
     <!-- TAB 5: EXAM GENERATOR -->
     <div class="panel" id="p5">
-      <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent">
+      <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent">
         <div id="exam-gen-form">
           <div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)">📝 AI Exam Generator</div>
           <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Create professional exams in seconds with AI</div>
 
           <!-- Step 1: Context & Subject -->
           <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;backdrop-filter:var(--blur2)">
-            <div style="font-size:12px;font-weight:700;color:rgba(244,63,94,0.6);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 1 — Context & Subject</div>
+            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 1 — Context & Subject</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
               <div>
                 <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Context</div>
@@ -651,24 +651,24 @@ input[type=file]#cfi{display:none}
 
           <!-- Step 2: Topics -->
           <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;backdrop-filter:var(--blur2)">
-            <div style="font-size:12px;font-weight:700;color:rgba(244,63,94,0.6);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 2 — Topics to Cover</div>
+            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 2 — Topics to Cover</div>
             <textarea id="exam-topics" rows="3" placeholder="e.g. Fractions, decimals, percentages, ratio and proportion" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px;font-family:var(--font);resize:none;outline:none;line-height:1.5"></textarea>
             <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-              <button type="button" onclick="document.getElementById('ex-file-inp').click()" id="ex-upload-btn" style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1.5px dashed rgba(244,63,94,0.35);border-radius:var(--rs);cursor:pointer;font-size:13px;color:rgba(253,164,175,0.8);background:rgba(244,63,94,0.06);font-family:var(--font)">
+              <button type="button" onclick="document.getElementById('ex-file-inp').click()" id="ex-upload-btn" style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1.5px dashed rgba(0,180,166,0.35);border-radius:var(--rs);cursor:pointer;font-size:13px;color:rgba(30,27,75,0.6);background:rgba(0,180,166,0.06);font-family:var(--font)">
                 📎 <span id="ex-upload-txt">Upload file for AI to scan (PDF, image, Word)</span>
               </button>
               <input type="file" id="ex-file-inp" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none" onchange="scanExamFile(this.files[0])"/>
               <span id="ex-scan-status" style="font-size:12px;color:var(--muted)"></span>
             </div>
-            <div style="margin-top:10px;display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:var(--rs)">
+            <div style="margin-top:10px;display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,180,166,0.06);border:1px solid rgba(123,140,222,0.2);border-radius:var(--rs)">
               <input type="checkbox" id="exam-adapt" style="width:16px;height:16px;accent-color:var(--primary);flex-shrink:0"/>
-              <label for="exam-adapt" style="font-size:13px;color:rgba(253,186,116,0.9);cursor:pointer;line-height:1.4">Adapt for underperforming students — simpler language, more scaffolding</label>
+              <label for="exam-adapt" style="font-size:13px;color:rgba(180,83,9,0.9);cursor:pointer;line-height:1.4">Adapt for underperforming students — simpler language, more scaffolding</label>
             </div>
           </div>
 
           <!-- Step 3: Question Types -->
           <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;backdrop-filter:var(--blur2)">
-            <div style="font-size:12px;font-weight:700;color:rgba(244,63,94,0.6);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 3 — Question Types</div>
+            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 3 — Question Types</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="mcq" class="qtype" checked style="accent-color:var(--primary)"/> Multiple Choice</label>
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="truefalse" class="qtype" checked style="accent-color:var(--primary)"/> True / False</label>
@@ -683,7 +683,7 @@ input[type=file]#cfi{display:none}
 
           <!-- Step 4: Settings -->
           <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px;backdrop-filter:var(--blur2)">
-            <div style="font-size:12px;font-weight:700;color:rgba(244,63,94,0.6);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 4 — Settings</div>
+            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 4 — Settings</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
               <div>
                 <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Questions</div>
@@ -722,7 +722,7 @@ input[type=file]#cfi{display:none}
             <button onclick="saveExamToMemory()" style="padding:8px 16px;border-radius:var(--rs);background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">🗂️ Save</button>
             <button onclick="assignExam()" id="btn-assign" style="padding:8px 16px;border-radius:var(--rs);background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">📤 Assign to Students</button>
             <button onclick="exportExamWord('student')" style="padding:8px 16px;border-radius:var(--rs);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:rgba(147,197,253,0.9);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">📄 Export Student</button>
-            <button onclick="exportExamWord('teacher')" style="padding:8px 16px;border-radius:var(--rs);background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);color:rgba(253,164,175,0.9);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">🔑 Export Answer Key</button>
+            <button onclick="exportExamWord('teacher')" style="padding:8px 16px;border-radius:var(--rs);background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.2);color:rgba(30,27,75,0.7);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">🔑 Export Answer Key</button>
           </div>
           <!-- PRE-ASSIGN: Class selector + attempt limit -->
           <div id="exam-pre-assign" style="background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:14px">
@@ -751,14 +751,14 @@ input[type=file]#cfi{display:none}
             <div style="font-size:13px;font-weight:700;color:rgba(110,231,183,0.9);margin-bottom:10px">✅ Exam is now LIVE!</div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Share this code with your students:</div>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
-              <div id="exam-live-code" style="font-size:28px;font-weight:800;font-family:monospace;color:var(--primary);letter-spacing:4px;padding:10px 20px;background:rgba(244,63,94,0.1);border:2px solid rgba(244,63,94,0.3);border-radius:var(--rs)">—</div>
+              <div id="exam-live-code" style="font-size:28px;font-weight:800;font-family:monospace;color:var(--primary);letter-spacing:4px;padding:10px 20px;background:rgba(0,180,166,0.1);border:2px solid rgba(0,180,166,0.3);border-radius:var(--rs)">—</div>
               <button onclick="copyExamCode()" style="padding:10px 18px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">📋 Copy Code</button>
             </div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Students go to <strong style="color:var(--text)">edubot-vietnam.onrender.com/exam</strong> and enter this code</div>
             <div id="assigned-class-info" style="font-size:12px;color:rgba(110,231,183,0.7);margin-bottom:12px"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button onclick="viewLiveResults()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📊 Live Results</button>
-              <button onclick="extendTime()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.2);color:rgba(253,186,116,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">⏱️ +5 min</button>
+              <button onclick="extendTime()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(123,140,222,0.1);border:1px solid rgba(123,140,222,0.2);color:rgba(180,83,9,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">⏱️ +5 min</button>
               <button onclick="closeExam()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:rgba(252,165,165,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🔒 Close Exam</button>
             </div>
           </div>
@@ -780,7 +780,7 @@ input[type=file]#cfi{display:none}
 
     <!-- TAB 6: MEMORY -->
     <div class="panel" id="p6">
-      <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent">
+      <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
           <div>
             <div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)">🗂️ Memory</div>
@@ -795,7 +795,7 @@ input[type=file]#cfi{display:none}
     <!-- TAB 5: EXAM GENERATOR -->
         <!-- TAB 6: MEMORY -->
     <div class="panel" id="p6">
-      <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(244,63,94,0.2) transparent">
+      <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent">
         <div class="stitle">🗂️ Memory — Saved Exams</div>
         <div id="memory-list"><div class="ebox">No exams saved yet. Generate an exam and save it here!</div></div>
       </div>
@@ -844,7 +844,7 @@ input[type=file]#cfi{display:none}
           <div style="display:flex;justify-content:space-between;align-items:center;width:100%"><button onclick="backToMenu()" style="padding:7px 14px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">← Menu</button><span style="font-size:13px;color:var(--muted)" id="flip-prog">1 / 10</span></div>
           <div style="perspective:1000px;width:100%;max-width:500px;height:220px;cursor:pointer" onclick="doFlip()">
             <div style="position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s;border-radius:var(--r)" id="flip-inner">
-              <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(244,63,94,0.1),var(--card));border:1.5px solid rgba(244,63,94,0.2)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(244,63,94,0.5);margin-bottom:10px">❓ CÂU HỎI</div><div style="font-size:17px;font-weight:700;line-height:1.5;color:var(--text)" id="flip-q"></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Nhấn để xem đáp án</div></div>
+              <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(0,180,166,0.1),var(--card));border:1.5px solid rgba(0,180,166,0.2)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(0,180,166,0.6);margin-bottom:10px">❓ CÂU HỎI</div><div style="font-size:17px;font-weight:700;line-height:1.5;color:var(--text)" id="flip-q"></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Nhấn để xem đáp án</div></div>
               <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(135deg,rgba(16,185,129,0.1),var(--card));border:1.5px solid rgba(16,185,129,0.2);transform:rotateY(180deg)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(16,185,129,0.6);margin-bottom:10px">✅ ĐÁP ÁN</div><div style="font-size:17px;font-weight:700;line-height:1.5;color:var(--text)" id="flip-a"></div></div>
             </div>
           </div>
@@ -1120,7 +1120,7 @@ function updateCredits(n){
   var badge=document.getElementById('credit-badge');
   if(el)el.textContent=urole==='admin'?'∞':n;
   if(badge){
-    if(urole==='admin'||n>10){badge.style.borderColor='rgba(249,115,22,0.35)';badge.style.color='rgba(253,186,116,0.9)';badge.style.background='rgba(249,115,22,0.1)';}
+    if(urole==='admin'||n>10){badge.style.borderColor='rgba(123,140,222,0.3)';badge.style.color='rgba(180,83,9,0.9)';badge.style.background='rgba(123,140,222,0.1)';}
     else{badge.style.borderColor='rgba(239,68,68,0.35)';badge.style.color='rgba(252,165,165,0.9)';badge.style.background='rgba(239,68,68,0.1)';}
     badge.style.display='flex';
   }
@@ -1323,7 +1323,7 @@ function renderChart(chart){
   d.innerHTML='<div class="av">📊</div><div class="bub" style="width:100%"><div class="chart-wrap"><div class="chart-title">'+esc(chart.title)+'</div><div class="chart-desc">'+esc(chart.description)+'</div><canvas id="'+cid+'" class="chart-canvas"></canvas></div></div>';
   box.appendChild(d);box.scrollTop=box.scrollHeight;
   var ctx=document.getElementById(cid).getContext('2d');
-  new Chart(ctx,{type:chart.type,data:chart.data,options:{responsive:true,plugins:{legend:{labels:{color:'#FFF1F2'}},tooltip:{backgroundColor:'rgba(31,13,24,0.9)',titleColor:'#FFF1F2',bodyColor:'rgba(253,164,175,0.8)'}},scales:chart.type!=='pie'?{x:{ticks:{color:'rgba(253,164,175,0.7)'},grid:{color:'rgba(244,63,94,0.08)'}},y:{ticks:{color:'rgba(253,164,175,0.7)'},grid:{color:'rgba(244,63,94,0.08)'}}}:{}}});
+  new Chart(ctx,{type:chart.type,data:chart.data,options:{responsive:true,plugins:{legend:{labels:{color:'#FFF1F2'}},tooltip:{backgroundColor:'rgba(31,13,24,0.9)',titleColor:'#FFF1F2',bodyColor:'rgba(30,27,75,0.6)'}},scales:chart.type!=='pie'?{x:{ticks:{color:'rgba(45,45,45,0.6)'},grid:{color:'rgba(0,180,166,0.08)'}},y:{ticks:{color:'rgba(45,45,45,0.6)'},grid:{color:'rgba(0,180,166,0.08)'}}}:{}}});
 }
 
 function addMsg(role,txt,isHtml){
@@ -1377,21 +1377,21 @@ function buildExportHTML(contentId){
   var h2=clone.querySelector('h2');if(h2){title=h2.textContent.toUpperCase();h2.remove();}
   var css=[
     'body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:1.5cm;color:#111;line-height:1.5;background:#fff}',
-    '.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #F43F5E}',
-    '.doc-brand{font-size:13pt;font-weight:bold;color:#F43F5E;letter-spacing:1px}',
-    '.doc-title{font-size:16pt;font-weight:bold;color:#F43F5E;text-transform:uppercase;margin:16px 0 24px;text-align:center;letter-spacing:1px}',
-    'h2{font-size:13pt;font-weight:bold;color:#F43F5E;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid #F43F5E}',
-    'h3{font-size:11pt;font-weight:bold;color:#F97316;margin:10px 0 4px}',
+    '.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #00B4A6}',
+    '.doc-brand{font-size:13pt;font-weight:bold;color:#00B4A6;letter-spacing:1px}',
+    '.doc-title{font-size:16pt;font-weight:bold;color:#00B4A6;text-transform:uppercase;margin:16px 0 24px;text-align:center;letter-spacing:1px}',
+    'h2{font-size:13pt;font-weight:bold;color:#00B4A6;margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid #00B4A6}',
+    'h3{font-size:11pt;font-weight:bold;color:#7B8CDE;margin:10px 0 4px}',
     'p{margin:4px 0;line-height:1.5}',
     'ul,ol{margin:4px 0 4px 20px;line-height:1.6}li{margin-bottom:2px}',
     'table{border-collapse:collapse;width:100%;margin:10px 0;table-layout:fixed;word-wrap:break-word}',
-    'th{background:#F43F5E;color:#fff;padding:6px 8px;text-align:left;font-weight:bold;font-size:10pt;border:1px solid #F43F5E;word-wrap:break-word}',
+    'th{background:#00B4A6;color:#fff;padding:6px 8px;text-align:left;font-weight:bold;font-size:10pt;border:1px solid #00B4A6;word-wrap:break-word}',
     'td{padding:6px 8px;border:1px solid #dee2e6;vertical-align:top;font-size:10pt;word-wrap:break-word}',
     'tr:nth-child(even) td{background:#fef2f2}',
     'strong{font-weight:bold}',
-    '.doc-footer{margin-top:30px;padding-top:10px;border-top:2px solid #F43F5E;font-size:8pt;color:#888;display:flex;justify-content:space-between}'
+    '.doc-footer{margin-top:30px;padding-top:10px;border-top:2px solid #00B4A6;font-size:8pt;color:#888;display:flex;justify-content:space-between}'
   ].join('');
-  return {css:css,clone:clone,title:title,accent:'#F43F5E'};
+  return {css:css,clone:clone,title:title,accent:'#00B4A6'};
 }
 
 function barExportPDF(){
@@ -1498,13 +1498,13 @@ async function loadSClasses(){
     } else {
       html+=subs.map(function(s){
         var name=s.student_name||s.guest_name||'Anonymous';
-        var statusColor=s.status==='graded'?'rgba(16,185,129,0.8)':s.status==='submitted'?'rgba(59,130,246,0.8)':'rgba(249,115,22,0.8)';
+        var statusColor=s.status==='graded'?'rgba(16,185,129,0.8)':s.status==='submitted'?'rgba(59,130,246,0.8)':'rgba(123,140,222,0.8)';
         var statusLabel=s.status==='graded'?'✅ Graded':s.status==='submitted'?'📝 Submitted':'⏳ In Progress';
         var canGrade=(s.status==='submitted'||s.status==='graded');
         return '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">'
           +'<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
           +'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+statusLabel+' · '+(s.total_score||0)+'/'+s.max_score+' pts</div></div>'
-          +(canGrade?'<button onclick="openGrading('+s.id+')" style="padding:7px 16px;border-radius:8px;background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.3);color:rgba(253,164,175,0.95);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Grade →</button>':'<span style="font-size:12px;color:var(--muted)">Not submitted</span>')
+          +(canGrade?'<button onclick="openGrading('+s.id+')" style="padding:7px 16px;border-radius:8px;background:rgba(0,180,166,0.15);border:1px solid rgba(0,180,166,0.3);color:rgba(0,150,138,0.95);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Grade →</button>':'<span style="font-size:12px;color:var(--muted)">Not submitted</span>')
           +'</div>';
       }).join('');
     }
@@ -1665,9 +1665,9 @@ async function deleteFlashcard(id){try{await fetch(API+'/flashcards/'+id,{method
 function showUpgTab(n){
   document.getElementById('upg-plans').style.display=n===0?'block':'none';
   document.getElementById('upg-credits').style.display=n===1?'block':'none';
-  document.getElementById('upg-tab0').style.background=n===0?'linear-gradient(135deg,rgba(244,63,94,0.65),rgba(249,115,22,0.5))':'transparent';
+  document.getElementById('upg-tab0').style.background=n===0?'linear-gradient(135deg,rgba(0,180,166,0.8),rgba(123,140,222,0.5))':'transparent';
   document.getElementById('upg-tab0').style.color=n===0?'#fff':'rgba(255,255,255,0.4)';
-  document.getElementById('upg-tab1').style.background=n===1?'linear-gradient(135deg,rgba(244,63,94,0.65),rgba(249,115,22,0.5))':'transparent';
+  document.getElementById('upg-tab1').style.background=n===1?'linear-gradient(135deg,rgba(0,180,166,0.8),rgba(123,140,222,0.5))':'transparent';
   document.getElementById('upg-tab1').style.color=n===1?'#fff':'rgba(255,255,255,0.4)';
 }
 
@@ -1792,9 +1792,9 @@ function showKQ(){
   document.getElementById('k-qtext').textContent=q.q;
   document.getElementById('k-feedback').style.display='none';
   var shapes=['▲','◆','●','■'];
-  var colors=['rgba(244,63,94,0.15)','rgba(59,130,246,0.15)','rgba(249,115,22,0.15)','rgba(16,185,129,0.15)'];
-  var borders=['rgba(244,63,94,0.3)','rgba(59,130,246,0.3)','rgba(249,115,22,0.3)','rgba(16,185,129,0.3)'];
-  var textc=['rgba(253,164,175,0.9)','rgba(147,197,253,0.9)','rgba(253,186,116,0.9)','rgba(110,231,183,0.9)'];
+  var colors=['rgba(0,180,166,0.15)','rgba(59,130,246,0.15)','rgba(123,140,222,0.15)','rgba(16,185,129,0.15)'];
+  var borders=['rgba(0,180,166,0.3)','rgba(59,130,246,0.3)','rgba(123,140,222,0.3)','rgba(16,185,129,0.3)'];
+  var textc=['rgba(30,27,75,0.7)','rgba(147,197,253,0.9)','rgba(180,83,9,0.9)','rgba(110,231,183,0.9)'];
   var html='';
   (q.options||[]).forEach(function(opt,i){html+='<button onclick="ansK('+i+')" style="padding:13px 12px;border-radius:var(--r);border:1.5px solid '+borders[i]+';background:'+colors[i]+';color:'+textc[i]+';font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;font-family:var(--font)"><span>'+shapes[i]+'</span>'+opt+'</button>';});
   document.getElementById('k-answers').innerHTML=html;
@@ -1804,14 +1804,14 @@ function showKQ(){
 function ansK(idx){
   clearInterval(gTimer);var q=gQ[gIdx];
   var btns=document.getElementById('k-answers').querySelectorAll('button');
-  btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.3)';else if(i===idx)b.style.background='rgba(244,63,94,0.3)';});
+  btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.3)';else if(i===idx)b.style.background='rgba(0,180,166,0.3)';});
   var tv=parseInt(document.getElementById('k-timer').textContent)||0;
   var fb=document.getElementById('k-feedback');
   if(idx===q.correct){var pts=Math.max(100,tv*10);gScore+=pts;document.getElementById('k-score').textContent=gScore;fb.style.cssText='display:block;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='✅ Đúng! +'+pts+' pts';}
-  else{fb.style.cssText='display:block;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.25);color:rgba(253,164,175,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='❌ Sai! Đáp án: '+(q.options[q.correct]);}
+  else{fb.style.cssText='display:block;background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.25);color:rgba(30,27,75,0.7);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='❌ Sai! Đáp án: '+(q.options[q.correct]);}
   gIdx++;setTimeout(showKQ,1800);
 }
-function timeoutK(){var q=gQ[gIdx];var btns=document.getElementById('k-answers').querySelectorAll('button');btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.3)';});var fb=document.getElementById('k-feedback');fb.style.cssText='display:block;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:rgba(253,186,116,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='⏰ Hết giờ! Đáp án: '+(q.options[q.correct]);gIdx++;setTimeout(showKQ,1800);}
+function timeoutK(){var q=gQ[gIdx];var btns=document.getElementById('k-answers').querySelectorAll('button');btns.forEach(function(b,i){b.disabled=true;if(i===q.correct)b.style.background='rgba(16,185,129,0.3)';});var fb=document.getElementById('k-feedback');fb.style.cssText='display:block;background:rgba(123,140,222,0.1);border:1px solid rgba(123,140,222,0.25);color:rgba(180,83,9,0.9);padding:10px;border-radius:10px;text-align:center;font-weight:600;font-size:14px';fb.textContent='⏰ Hết giờ! Đáp án: '+(q.options[q.correct]);gIdx++;setTimeout(showKQ,1800);}
 async function startSpeed(){
   document.getElementById('game-menu').style.display='none';
   var sg=document.getElementById('speed-game');sg.style.display='flex';sg.style.flexDirection='column';sg.style.gap='14px';
@@ -1869,7 +1869,7 @@ async function scanExamFile(file) {
   }
   txt.textContent = '⏳ ' + file.name;
   status.textContent = '📄 File ready! Type your instructions below and click Generate.';
-  document.getElementById('ex-upload-btn').style.borderColor = 'rgba(249,115,22,0.4)';
+  document.getElementById('ex-upload-btn').style.borderColor = 'rgba(123,140,222,0.4)';
 
   var reader = new FileReader();
   reader.onload = async function(e) {
@@ -1919,7 +1919,7 @@ function showExamPreview(examData, exam){
     section.questions.forEach(function(q, qi){
       html += '<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.04)" id="eq-'+q.id+'">';
       html += '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">';
-      html += '<span style="font-size:13px;font-weight:700;color:rgba(244,63,94,0.7);flex-shrink:0;min-width:32px">Q'+q.id+'.</span>';
+      html += '<span style="font-size:13px;font-weight:700;color:rgba(0,180,166,0.7);flex-shrink:0;min-width:32px">Q'+q.id+'.</span>';
       html += '<div style="flex:1;min-width:0;overflow:hidden"><div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:6px">'+esc(q.question)+'</div>';
 
       if(q.options){
@@ -1951,7 +1951,7 @@ function showExamPreview(examData, exam){
 
       html += '</div>';
       html += '<div style="display:flex;align-items:center;gap:8px;margin-top:6px">';
-      html += '<span style="font-size:11px;color:rgba(244,63,94,0.5);font-weight:700">ANS: <span style="color:rgba(110,231,183,0.8)">'+esc(q.answer||'')+'</span></span>';
+      html += '<span style="font-size:11px;color:rgba(0,180,166,0.6);font-weight:700">ANS: <span style="color:rgba(110,231,183,0.8)">'+esc(q.answer||'')+'</span></span>';
       html += '<span style="font-size:11px;color:var(--muted2);margin-left:auto">Points: <input type="number" min="1" max="10" value="'+(q.points||1)+'" onchange="updatePoints('+q.id+', this.value, currentExam)" style="width:50px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:12px;text-align:center;font-family:var(--font)"/></span>';
       html += '</div>';
       html += '</div></div>';
@@ -2070,9 +2070,9 @@ async function loadClassroomExams(classId, containerEl){
     var data = await res.json();
     if(!data.exams || !data.exams.length) return;
     var html = '<div style="margin-top:12px;border-top:0.5px solid var(--border2);padding-top:12px">';
-    html += '<div style="font-size:11px;font-weight:700;color:rgba(244,63,94,0.6);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">📝 Active Exams</div>';
+    html += '<div style="font-size:11px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">📝 Active Exams</div>';
     data.exams.forEach(function(e){
-      html += '<div style="background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.2);border-radius:var(--rs);padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">';
+      html += '<div style="background:rgba(0,180,166,0.08);border:1px solid rgba(0,180,166,0.2);border-radius:var(--rs);padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">';
       html += '<div><div style="font-size:13px;font-weight:700;color:var(--text)">'+esc(e.title)+'</div>';
       html += '<div style="font-size:11px;color:var(--muted);margin-top:2px">'+e.total_points+' pts · '+e.time_limit+' min · Max '+(e.max_attempts===0?'unlimited':e.max_attempts)+' attempt(s)</div></div>';
       html += '<button onclick="window.location.href=\'/exam?code='+e.code+'\'" style="padding:8px 16px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">Start Exam →</button>';
@@ -2118,8 +2118,8 @@ async function loadLiveResults(){
     var data = await res.json();
     var s = data.stats;
     document.getElementById('live-stats').innerHTML = [
-      {label:'Joined',val:s.total,color:'rgba(244,63,94,0.6)'},
-      {label:'In Progress',val:s.inProgress,color:'rgba(249,115,22,0.6)'},
+      {label:'Joined',val:s.total,color:'rgba(0,180,166,0.7)'},
+      {label:'In Progress',val:s.inProgress,color:'rgba(123,140,222,0.6)'},
       {label:'Submitted',val:s.submitted,color:'rgba(59,130,246,0.6)'},
       {label:'Avg Score',val:s.avgScore+'/'+s.maxScore,color:'rgba(16,185,129,0.6)'}
     ].map(function(item){
@@ -2130,13 +2130,13 @@ async function loadLiveResults(){
       ? '<div class="ebox">No students yet</div>'
       : data.submissions.map(function(sub){
           var name = sub.student_name || sub.guest_name || 'Anonymous';
-          var statusColor = sub.status==='graded'?'rgba(16,185,129,0.8)':sub.status==='submitted'?'rgba(59,130,246,0.8)':'rgba(249,115,22,0.8)';
+          var statusColor = sub.status==='graded'?'rgba(16,185,129,0.8)':sub.status==='submitted'?'rgba(59,130,246,0.8)':'rgba(123,140,222,0.8)';
           var statusLabel = sub.status==='graded'?'✅ Graded':sub.status==='submitted'?'📝 Submitted':'⏳ In Progress';
           return '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">'
             +'<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
             +'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+new Date(sub.started_at).toLocaleTimeString()+'</div></div>'
             +'<div style="font-size:12px;font-weight:600;color:'+statusColor+'">'+statusLabel+'</div>'
-            +(sub.status==='submitted'?'<button onclick="gradeSubmission('+sub.id+')" style="padding:5px 12px;border-radius:6px;background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.25);color:rgba(253,164,175,0.9);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">Grade →</button>':'')
+            +(sub.status==='submitted'?'<button onclick="gradeSubmission('+sub.id+')" style="padding:5px 12px;border-radius:6px;background:rgba(0,180,166,0.15);border:1px solid rgba(0,180,166,0.25);color:rgba(30,27,75,0.7);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">Grade →</button>':'')
             +'<div style="font-size:13px;font-weight:700;color:var(--text)">'+(sub.total_score||0)+'/'+sub.max_score+'</div>'
             +'</div>';
         }).join('');
@@ -2153,10 +2153,10 @@ function exportExamWord(version){
   if(!currentExam) return;
   var isTeacher = version === 'teacher';
   var css = 'body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:2cm;color:#111;line-height:1.5}'
-    +'h1{font-size:16pt;font-weight:bold;color:#F43F5E;text-align:center;margin-bottom:8px}'
-    +'h2{font-size:12pt;font-weight:bold;color:#F43F5E;margin:16px 0 8px;padding:6px 10px;background:#fff5f5;border-left:4px solid #F43F5E}'
+    +'h1{font-size:16pt;font-weight:bold;color:#00B4A6;text-align:center;margin-bottom:8px}'
+    +'h2{font-size:12pt;font-weight:bold;color:#00B4A6;margin:16px 0 8px;padding:6px 10px;background:#fff5f5;border-left:4px solid #00B4A6}'
     +'.q{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #eee}'
-    +'.qn{font-weight:bold;color:#F43F5E}.ans{color:#059669;font-weight:bold;margin-top:4px;font-size:10pt}'
+    +'.qn{font-weight:bold;color:#00B4A6}.ans{color:#059669;font-weight:bold;margin-top:4px;font-size:10pt}'
     +'table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:6px 10px;font-size:10pt}';
 
   var body = '<h1>'+currentExam.title+'</h1>';
@@ -2211,7 +2211,7 @@ async function loadMemory(){
         +'<span style="font-size:12px;font-weight:600;color:'+statusColor+'">'+statusLabel+'</span>'
         +'</div>'
         +'<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">'
-        +'<button onclick="recallExam('+e.id+')" style="padding:6px 14px;border-radius:6px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);color:rgba(253,164,175,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📝 Open</button>'
+        +'<button onclick="recallExam('+e.id+')" style="padding:6px 14px;border-radius:6px;background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.2);color:rgba(30,27,75,0.7);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📝 Open</button>'
         +(e.status==='active'?'<button onclick="viewLiveResults('+e.id+')" style="padding:6px 14px;border-radius:6px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:rgba(110,231,183,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📊 Results</button>':'')
         +'<button onclick="deleteExamFromMemory('+e.id+')" style="padding:6px 14px;border-radius:6px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);color:rgba(252,165,165,0.8);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🗑️ Delete</button>'
         +'</div>'
@@ -2315,7 +2315,7 @@ function renderExamPreview(exam, examData){
   if(previewMeta) previewMeta.textContent = exam.subject+' · Grade '+exam.grade+' · '+exam.total_points+' points · '+exam.time_limit+' min';
   var html = '';
   if(examData.instructions){
-    html += '<div class="crcard" style="background:rgba(249,115,22,0.06);border-color:rgba(249,115,22,0.15);margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:rgba(253,186,116,0.8);margin-bottom:6px">📋 INSTRUCTIONS</div><div style="font-size:13px;color:var(--muted)">'+esc(examData.instructions)+'</div></div>';
+    html += '<div class="crcard" style="background:rgba(0,180,166,0.05);border-color:rgba(123,140,222,0.15);margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:rgba(180,83,9,0.8);margin-bottom:6px">📋 INSTRUCTIONS</div><div style="font-size:13px;color:var(--muted)">'+esc(examData.instructions)+'</div></div>';
   }
   (examData.sections||[]).forEach(function(section){
     html += '<div class="crcard" style="margin-bottom:14px">';
@@ -2343,7 +2343,7 @@ function renderExamPreview(exam, examData){
         html += '<div style="font-size:12px;color:rgba(110,231,183,0.9);margin-top:4px">✓ Answer: '+esc(q.answer)+'</div>';
       }
       if(q.explanation){
-        html += '<div style="font-size:11px;color:rgba(253,186,116,0.7);margin-top:4px;font-style:italic">💡 '+esc(q.explanation)+'</div>';
+        html += '<div style="font-size:11px;color:rgba(180,83,9,0.7);margin-top:4px;font-style:italic">💡 '+esc(q.explanation)+'</div>';
       }
       html += '</div>';
     });
@@ -2372,7 +2372,7 @@ async function loadLiveResults(examId){
     document.getElementById('lr-avg').textContent = data.stats.submitted>0 ? data.stats.avgScore+'/'+data.stats.maxScore : '—';
     var html = data.submissions.map(function(s){
       var name = s.student_name || s.guest_name || 'Anonymous';
-      var statusColor = s.status==='submitted'||s.status==='graded' ? 'rgba(110,231,183,0.9)' : 'rgba(253,186,116,0.9)';
+      var statusColor = s.status==='submitted'||s.status==='graded' ? 'rgba(110,231,183,0.9)' : 'rgba(180,83,9,0.9)';
       var statusLabel = s.status==='submitted'?'Submitted':s.status==='graded'?'Graded':s.status==='in_progress'?'In Progress':'—';
       return '<div class="tccard"><div class="tcst"><span>👤 <b>'+esc(name)+'</b></span><span style="color:'+statusColor+'">'+statusLabel+'</span>'+(s.status==='graded'?'<span>Score: <b>'+s.total_score+'/'+s.max_score+'</b></span>':'')+'</div></div>';
     }).join('');
@@ -2395,15 +2395,15 @@ function exportExamWord(type){
   var isTeacher = type==='teacher';
   var title = document.getElementById('exam-preview-title') ? document.getElementById('exam-preview-title').textContent : 'Exam';
   var css = 'body{font-family:Calibri,sans-serif;font-size:11pt;margin:2cm;color:#111;line-height:1.6}'+
-    'h1{font-size:16pt;color:#F43F5E;text-align:center;margin-bottom:6px;border-bottom:2px solid #F43F5E;padding-bottom:6px}'+
+    'h1{font-size:16pt;color:#00B4A6;text-align:center;margin-bottom:6px;border-bottom:2px solid #00B4A6;padding-bottom:6px}'+
     '.subtitle{text-align:center;color:#666;font-size:10pt;margin-bottom:24px}'+
     'h2{font-size:12pt;font-weight:bold;color:#333;margin:20px 0 10px;border-bottom:1px solid #ddd;padding-bottom:4px}'+
     '.q{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #eee}'+
-    '.qn{font-weight:bold;color:#F43F5E}'+
+    '.qn{font-weight:bold;color:#00B4A6}'+
     '.opt{margin:2px 0 2px 16px;color:#333}'+
     '.ans{color:#059669;font-weight:bold;margin-top:4px;font-size:10pt}'+
     '.pts{color:#999;font-size:9pt}'+
-    '.instructions{font-style:italic;color:#555;margin-bottom:20px;padding:10px;border-left:3px solid #F43F5E}';
+    '.instructions{font-style:italic;color:#555;margin-bottom:20px;padding:10px;border-left:3px solid #00B4A6}';
   
   var html = '<html><head><meta charset="utf-8"><style>'+css+'</style></head><body>';
   html += '<h1>'+esc(title)+'</h1>';
@@ -2433,7 +2433,7 @@ function exportExamWord(type){
         html += '</ol>';
         if(isTeacher && q.answer){ html += '<div class="ans">✓ Correct order: '+esc(q.answer)+'</div>'; }
       } else if(q.passage){
-        html += '<div style="background:#f9f9f9;padding:10px;border-left:3px solid #F43F5E;margin:8px 0;font-size:10pt;line-height:1.7">'+esc(q.passage)+'</div>';
+        html += '<div style="background:#f9f9f9;padding:10px;border-left:3px solid #00B4A6;margin:8px 0;font-size:10pt;line-height:1.7">'+esc(q.passage)+'</div>';
         if(q.questions){ q.questions.forEach(function(sq,i){ html += '<div style="margin-top:6px"><b>'+(i+1)+'.</b> '+esc(sq.q||sq)+'</div>'; }); }
         if(isTeacher && q.questions){ 
           q.questions.forEach(function(sq,i){ 
@@ -2469,7 +2469,7 @@ async function loadMemory(){
       var q = e.questions;
       var qCount = 0;
       if(q&&q.sections) q.sections.forEach(function(s){qCount+=s.questions.length;});
-      var statusColor = e.status==='active'?'rgba(110,231,183,0.9)':e.status==='closed'?'rgba(252,165,165,0.9)':'rgba(253,186,116,0.9)';
+      var statusColor = e.status==='active'?'rgba(110,231,183,0.9)':e.status==='closed'?'rgba(252,165,165,0.9)':'rgba(180,83,9,0.9)';
       var statusLabel = e.status==='active'?'🟢 Live':e.status==='closed'?'🔴 Closed':'📋 Draft';
       return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(e.title)+'</div><div class="tcm">'+esc(e.subject)+' · Grade '+e.grade+' · '+qCount+' questions · '+e.total_points+' pts</div></div><span class="tcbadge" style="color:'+statusColor+'">'+statusLabel+'</span></div><div class="tcst"><span style="font-family:monospace;color:var(--primary)">'+e.code+'</span>'+(e.status==='active'?'<button class="tcvb" onclick="viewLiveResults('+e.id+')">📊 Live Results</button>':'')+'<button class="tcvb" onclick="exportMemoryExam('+e.id+')">📄 Export</button><button class="tcvb" style="color:rgba(252,165,165,0.9)" onclick="deleteMemoryExam('+e.id+')">🗑️</button></div></div>';
     }).join('');
