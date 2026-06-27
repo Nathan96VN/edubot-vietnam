@@ -1878,28 +1878,9 @@ async function scanExamFile(file) {
     examFileData = base64;
     examFileType = fileType;
 
-    try {
+    
       txt.textContent = '✅ ' + file.name; document.getElementById('ex-upload-btn').style.borderColor = 'rgba(16,185,129,0.4)'; examFileName = file.name;
-        
-        
-        
-      });
-      var data = await res.json();
-      
-      
-      
-        
-        
-        
-        var uploadBtn = document.getElementById('ex-upload-btn');
-        if(uploadBtn) uploadBtn.style.borderColor = 'rgba(16,185,129,0.4)';
-        txt.textContent = '✅ ' + file.name;
-      }
-    } catch(e) {
-      status.textContent = '❌ Could not scan: ' + e.message;
-      var uploadBtn = document.getElementById('ex-upload-btn');
-      if(uploadBtn) uploadBtn.style.borderColor = 'rgba(239,68,68,0.3)';
-    }
+
   };
   reader.readAsDataURL(file);
 }
