@@ -1480,6 +1480,36 @@ async function loadSClasses(){
     g.innerHTML=html;
   }catch(e){ g.innerHTML='<div class="ebox">Failed to load exams</div>'; }
 }
+  
+  async function openExamStudents(examId){
+  var g=document.getElementById('sgrid');
+  g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading students...</div>';
+  window._gradeClassId=window._gradeClassId||null;
+  try{
+    var res=await fetch(API+'/exam/'+examId+'/results',{headers:ah()});
+    var data=await res.json();
+    var subs=data.submissions||[];
+    var examTitle=data.exam?data.exam.title:'Exam';
+    var html='<div style="margin-bottom:14px"><button onclick="loadSClasses()" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
+    html+='<div class="stitle">👥 '+esc(examTitle)+' — Students</div>';
+    if(!subs.length){
+      html+='<div class="ebox">No students have taken this exam yet.</div>';
+    } else {
+      html+=subs.map(function(s){
+        var name=s.student_name||s.guest_name||'Anonymous';
+        var statusColor=s.status==='graded'?'rgba(16,185,129,0.8)':s.status==='submitted'?'rgba(59,130,246,0.8)':'rgba(249,115,22,0.8)';
+        var statusLabel=s.status==='graded'?'✅ Graded':s.status==='submitted'?'📝 Submitted':'⏳ In Progress';
+        var canGrade=(s.status==='submitted'||s.status==='graded');
+        return '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">'
+          +'<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
+          +'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+statusLabel+' · '+(s.total_score||0)+'/'+s.max_score+' pts</div></div>'
+          +(canGrade?'<button onclick="openGrading('+s.id+')" style="padding:7px 16px;border-radius:8px;background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.3);color:rgba(253,164,175,0.95);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Grade →</button>':'<span style="font-size:12px;color:var(--muted)">Not submitted</span>')
+          +'</div>';
+      }).join('');
+    }
+    g.innerHTML=html;
+  }catch(e){ g.innerHTML='<div class="ebox">Failed to load students</div>'; }
+}
   async function doCreate(){
   var name=document.getElementById('ncname').value.trim();if(!name){toast(L('ecn'),'err');return;}
   var btn=document.getElementById('bcreat');btn.disabled=true;btn.innerHTML='<span class="sp2"></span>';
