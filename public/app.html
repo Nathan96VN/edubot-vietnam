@@ -172,7 +172,7 @@ input[type=file]#cfi{display:none}
 #tpanel{flex:1;padding:20px;overflow-y:auto}
 .ttabs{display:flex;gap:4px;margin-bottom:18px;background:rgba(255,255,255,0.03);padding:4px;border-radius:var(--r);width:fit-content;border:1px solid var(--border2)}
 .stb{padding:7px 16px;border-radius:10px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all 0.2s}
-.stb.on{background:rgba(0,180,166,0.15);color:#00B4A6;border:1px solid rgba(0,180,166,0.3)}
+.stb.on{background:linear-gradient(135deg,rgba(0,180,166,0.35),rgba(123,140,222,0.2));color:var(--text);border:1px solid var(--border3)}
 .sp{display:none}.sp.on{display:block}
 .crcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px;backdrop-filter:var(--blur2)}
 .frow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
@@ -223,7 +223,7 @@ input[type=file]#cfi{display:none}
 .fc-back{display:none;border-top:2px solid rgba(0,180,166,0.3)}
 .fc-card.flipped .fc-front{display:none}
 .fc-card.flipped .fc-back{display:flex}
-.fc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#00B4A6;margin-bottom:8px}
+.fc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(0,180,166,0.6);margin-bottom:8px}
 .fc-q{font-size:15px;font-weight:600;color:var(--text);line-height:1.5}
 .fc-a{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:8px}
 .fc-hint{font-size:12px;color:var(--muted);font-style:italic;margin-top:6px}
@@ -239,9 +239,9 @@ input[type=file]#cfi{display:none}
 .game-badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.12);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.25)}
 
 /* ── MODALS ── */
-#overlay{position:fixed;inset:0;background:rgba(30,27,75,0.5);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+#overlay{position:fixed;inset:0;background:rgba(15,8,16,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
 #overlay.on{display:flex}
-#modal{background:#ffffff;border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
+#modal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
 #mcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;line-height:1;padding:4px 9px;font-family:var(--font)}
 .mlogo{text-align:center;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px}
 .mlogo img{height:36px}
@@ -250,7 +250,7 @@ input[type=file]#cfi{display:none}
 #msub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
 .rtog{display:flex;gap:6px;margin-bottom:12px}
 .rb{flex:1;padding:9px 6px;border-radius:var(--rs);border:1.5px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.2s;font-family:var(--font)}
-.rb.on{border-color:rgba(0,180,166,0.35);color:#00B4A6;background:rgba(0,180,166,0.08)}
+.rb.on{border-color:rgba(0,180,166,0.35);color:var(--primary);background:rgba(0,180,166,0.08)}
 .rb.ton.on{border-color:rgba(16,185,129,0.35);color:rgba(110,231,183,0.9);background:rgba(16,185,129,0.08)}
 .atabs{display:flex;gap:4px;margin-bottom:14px;background:rgba(255,255,255,0.03);padding:3px;border-radius:var(--rs);border:1px solid var(--border2)}
 .at{flex:1;padding:7px;text-align:center;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;font-family:var(--font);transition:all 0.2s}
@@ -264,9 +264,9 @@ input[type=file]#cfi{display:none}
 #aerr{color:rgba(252,165,165,0.9);font-size:13px;text-align:center;margin-top:8px;min-height:16px}
 
 /* upgrade modal */
-#upgoverlay{position:fixed;inset:0;background:rgba(30,27,75,0.6);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
+#upgoverlay{position:fixed;inset:0;background:rgba(15,8,16,0.92);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
 #upgoverlay.on{display:flex}
-#upgmodal{background:#ffffff;border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;position:relative;max-height:90vh;overflow-y:auto}
+#upgmodal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;position:relative;max-height:90vh;overflow-y:auto}
 #upgcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;padding:4px 9px;font-family:var(--font)}
 .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
 .plan-card{background:rgba(255,255,255,0.03);border:1.5px solid var(--border2);border-radius:14px;padding:16px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
@@ -2075,7 +2075,11 @@ async function loadClassroomExams(classId, containerEl){
       html += '<div style="background:rgba(0,180,166,0.08);border:1px solid rgba(0,180,166,0.2);border-radius:var(--rs);padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">';
       html += '<div><div style="font-size:13px;font-weight:700;color:var(--text)">'+esc(e.title)+'</div>';
       html += '<div style="font-size:11px;color:var(--muted);margin-top:2px">'+e.total_points+' pts · '+e.time_limit+' min · Max '+(e.max_attempts===0?'unlimited':e.max_attempts)+' attempt(s)</div></div>';
-      html += '<button onclick="window.location.href=\'/exam?code='+e.code+'\'" style="padding:8px 16px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">Start Exam →</button>';
+      var hasSubmission = e.my_submission && (e.my_submission.status === 'submitted' || e.my_submission.status === 'graded');
+      var btnHtml = hasSubmission
+        ? '<button onclick="viewMyResult(' + e.my_submission.id + ',\'' + esc(e.title) + '\')" style="padding:8px 16px;border-radius:var(--rs);background:linear-gradient(135deg,rgba(16,185,129,0.6),rgba(5,150,105,0.5));border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">📊 View Results</button>'
+        : '<button onclick="window.location.href=\'/exam?code='+e.code+'\'" style="padding:8px 16px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">Start Exam →</button>';
+      html += btnHtml;
       html += '</div>';
     });
     html += '</div>';
@@ -2492,6 +2496,70 @@ async function viewLiveResults(id){
 }
 
 function exportMemoryExam(id){ currentExamId=id; exportExamWord('student'); }
+
+
+async function viewMyResult(submissionId, examTitle) {
+  var g = document.getElementById('sgrid');
+  g.innerHTML = '<div class="ebox"><span class="sp2"></span> Loading your results...</div>';
+  g.style.display = 'block';
+  try {
+    var res = await fetch(API + '/exam/submission/' + submissionId + '/my-result', {headers: ah()});
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    var sub = data.submission;
+    var exam = data.exam;
+    var pct = sub.max_score > 0 ? Math.round((sub.total_score / sub.max_score) * 100) : 0;
+    var emoji = pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '💪';
+    var color = pct >= 80 ? 'rgba(16,185,129,0.8)' : pct >= 60 ? 'rgba(0,180,166,0.8)' : 'rgba(239,68,68,0.7)';
+
+    var html = '<div style="margin-bottom:14px"><button onclick="loadSClasses()" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classrooms</button></div>';
+
+    // Score card
+    html += '<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;margin-bottom:16px">';
+    html += '<div style="font-size:44px;margin-bottom:8px">' + emoji + '</div>';
+    html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px">' + esc(examTitle || exam.title) + '</div>';
+    html += '<div style="font-size:48px;font-weight:800;color:' + color + ';margin:12px 0">' + sub.total_score + '<span style="font-size:22px;color:var(--muted)">/' + sub.max_score + '</span></div>';
+    html += '<div style="font-size:16px;font-weight:700;color:' + color + '">' + pct + '%</div>';
+    html += '<div style="font-size:13px;color:var(--muted);margin-top:6px">Status: ' + (sub.status === 'graded' ? '✅ Graded by teacher' : '📝 Auto-graded') + '</div>';
+    html += '</div>';
+
+    // Question breakdown
+    if (exam && exam.questions && exam.questions.sections) {
+      html += '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px">📋 Question Breakdown</div>';
+      var answers = sub.answers || [];
+      var scores = sub.ai_scores || [];
+      exam.questions.sections.forEach(function(section) {
+        html += '<div style="font-size:12px;font-weight:700;color:#00B4A6;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">' + esc(section.label) + '</div>';
+        section.questions.forEach(function(q) {
+          var ans = answers.find(function(a) { return a.id === q.id; });
+          var sc = scores.find(function(s) { return s.id === q.id; });
+          var stuAns = ans ? ans.answer : '(no answer)';
+          var pts = sc ? sc.score : 0;
+          var maxPts = q.points || 1;
+          var correct = pts >= maxPts;
+          var partial = pts > 0 && pts < maxPts;
+          var bgColor = correct ? 'rgba(16,185,129,0.06)' : partial ? 'rgba(245,215,142,0.1)' : 'rgba(239,68,68,0.05)';
+          var borderColor = correct ? 'rgba(16,185,129,0.2)' : partial ? 'rgba(245,215,142,0.3)' : 'rgba(239,68,68,0.15)';
+          var icon = correct ? '✅' : partial ? '⚡' : '❌';
+
+          html += '<div style="background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:var(--rs);padding:12px;margin-bottom:8px">';
+          html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px">';
+          html += '<div style="font-size:13px;font-weight:600;color:var(--text);flex:1">' + icon + ' Q' + q.id + '. ' + esc(q.question) + '</div>';
+          html += '<span style="font-size:11px;font-weight:700;color:' + (correct ? 'rgba(16,185,129,0.9)' : 'rgba(239,68,68,0.8)') + ';white-space:nowrap">' + pts + '/' + maxPts + ' pts</span>';
+          html += '</div>';
+          html += '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">Your answer: <span style="color:var(--text);font-weight:600">' + esc(String(stuAns)) + '</span></div>';
+          if (q.answer && exam.show_answers) {
+            html += '<div style="font-size:12px;color:var(--muted)">Correct answer: <span style="color:rgba(16,185,129,0.9);font-weight:600">' + esc(String(q.answer)) + '</span></div>';
+          }
+          html += '</div>';
+        });
+      });
+    }
+    g.innerHTML = html;
+  } catch(e) {
+    g.innerHTML = '<div class="ebox">Could not load results: ' + e.message + '</div>';
+  }
+}
 
 function doLogout(){['eb_tok','eb_name','eb_role'].forEach(function(k){localStorage.removeItem(k);});location.reload();}
 function ah(){return{'Authorization':'Bearer '+tok,'Content-Type':'application/json'};}
