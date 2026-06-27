@@ -2373,7 +2373,7 @@ async function loadMemory(){
       if(q&&q.sections) q.sections.forEach(function(s){qCount+=s.questions.length;});
       var statusColor = e.status==='active'?'rgba(110,231,183,0.9)':e.status==='closed'?'rgba(252,165,165,0.9)':'rgba(253,186,116,0.9)';
       var statusLabel = e.status==='active'?'🟢 Live':e.status==='closed'?'🔴 Closed':'📋 Draft';
-      return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(e.title)+'</div><div class="tcm">'+esc(e.subject)+' · Grade '+e.grade+' · '+qCount+' questions · '+e.total_points+' pts</div></div><span class="tcbadge" style="color:'+statusColor+'">'+statusLabel+'</span></div><div class="tcst"><span style="font-family:monospace;color:var(--primary)">'+e.code+'</span>'+(e.status==='active'?'<button class="tcvb" onclick="viewLiveResults('+e.id+')">📊 Live Results</button>':'')+'<button class="tcvb" onclick="exportMemoryExam('+e.id+'">📄 Export</button><button class="tcvb" style="color:rgba(252,165,165,0.9)" onclick="deleteMemoryExam('+e.id+')">🗑️</button></div></div>';
+      return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(e.title)+'</div><div class="tcm">'+esc(e.subject)+' · Grade '+e.grade+' · '+qCount+' questions · '+e.total_points+' pts</div></div><span class="tcbadge" style="color:'+statusColor+'">'+statusLabel+'</span></div><div class="tcst"><span style="font-family:monospace;color:var(--primary)">'+e.code+'</span>'+(e.status==='active'?'<button class="tcvb" onclick="viewLiveResults('+e.id+')">📊 Live Results</button>':'')+'<button class="tcvb" onclick="exportMemoryExam('+e.id+')">📄 Export</button><button class="tcvb" style="color:rgba(252,165,165,0.9)" onclick="deleteMemoryExam('+e.id+')">🗑️</button></div></div>';
     }).join('');
   }catch(e){document.getElementById('memory-list').innerHTML='<div class="ebox">Failed to load</div>';}
 }
@@ -2389,7 +2389,7 @@ async function viewLiveResults(id){
   currentExamId = id;
   showPanel(5);
   (document.getElementById('exam-preview')||document.getElementById('ex-preview')||{style:{display:'none'}}).style.display='block';
-  document.getElementById('ex-live-results').style.display='block';
+  document.getElementById('exam-live-results').style.display='block';
   loadLiveResults(id);
 }
 
