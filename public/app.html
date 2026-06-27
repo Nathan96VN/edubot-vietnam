@@ -1456,7 +1456,7 @@ async function loadSClasses(){
 
   async function openClassExams(classId){
   var g=document.getElementById('sgrid');
-  g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading exams...</div>';
+  g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading exams...</div>';g.style.display='block';
   try{
     var res=await fetch(API+'/exam/my',{headers:ah()});
     var data=await res.json();
@@ -1483,7 +1483,7 @@ async function loadSClasses(){
   
   async function openExamStudents(examId){
   var g=document.getElementById('sgrid');
-  g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading students...</div>';
+  g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading students...</div>';g.style.display='block';
   window._gradeClassId=window._gradeClassId||null;
   try{
     var res=await fetch(API+'/exam/'+examId+'/results',{headers:ah()});
