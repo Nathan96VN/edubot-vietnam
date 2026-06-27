@@ -297,7 +297,12 @@ async function startExam(){
   var headers = {'Content-Type':'application/json'};
   if(tok) headers['Authorization'] = 'Bearer '+tok;
   var body = {};
-  if(!tok) body.guestName = document.getElementById('name-inp') ? document.getElementById('name-inp').value.trim() : 'Guest';
+  if(tok){
+    var storedId = localStorage.getItem('eb_uid');
+    if(storedId) body.studentId = storedId;
+  } else {
+    body.guestName = document.getElementById('name-inp') ? document.getElementById('name-inp').value.trim() : 'Guest';
+  }
   try{
     var res = await fetch(API+'/exam/join/'+examData.code+'/start',{method:'POST',headers,body:JSON.stringify(body)});
     var data = await res.json();
