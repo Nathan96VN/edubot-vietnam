@@ -241,7 +241,7 @@ input[type=file]#cfi{display:none}
 /* ── MODALS ── */
 #overlay{position:fixed;inset:0;background:rgba(15,8,16,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
 #overlay.on{display:flex}
-#modal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
+#modal{background:#ffffff;border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
 #mcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;line-height:1;padding:4px 9px;font-family:var(--font)}
 .mlogo{text-align:center;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px}
 .mlogo img{height:36px}
@@ -266,7 +266,7 @@ input[type=file]#cfi{display:none}
 /* upgrade modal */
 #upgoverlay{position:fixed;inset:0;background:rgba(15,8,16,0.92);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
 #upgoverlay.on{display:flex}
-#upgmodal{background:linear-gradient(135deg,#1F0D18,#180A14);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;position:relative;max-height:90vh;overflow-y:auto}
+#upgmodal{background:#ffffff;border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;position:relative;max-height:90vh;overflow-y:auto}
 #upgcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;padding:4px 9px;font-family:var(--font)}
 .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
 .plan-card{background:rgba(255,255,255,0.03);border:1.5px solid var(--border2);border-radius:14px;padding:16px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
@@ -1249,7 +1249,7 @@ function onFile(f){
   r.onerror=function(){toast('Error reading file','err');};
   r.readAsDataURL(f);
 }
-function rmFile(){cfd=null;cft=null;cfn='';document.getElementById('fbar').className='fbar';document.getElementById('battach').className='';document.getElementById('cfi').value='';}
+function rmFile(){cfd=null;cft=null;cfn='';examFileData=null;examFileType=null;examFileName='';document.getElementById('fbar').className='fbar';document.getElementById('battach').className='';document.getElementById('cfi').value='';}
 
 async function doSend(){
   if(!tok){openModal();return;}
@@ -1323,7 +1323,7 @@ function renderChart(chart){
   d.innerHTML='<div class="av">📊</div><div class="bub" style="width:100%"><div class="chart-wrap"><div class="chart-title">'+esc(chart.title)+'</div><div class="chart-desc">'+esc(chart.description)+'</div><canvas id="'+cid+'" class="chart-canvas"></canvas></div></div>';
   box.appendChild(d);box.scrollTop=box.scrollHeight;
   var ctx=document.getElementById(cid).getContext('2d');
-  new Chart(ctx,{type:chart.type,data:chart.data,options:{responsive:true,plugins:{legend:{labels:{color:'#FFF1F2'}},tooltip:{backgroundColor:'rgba(31,13,24,0.9)',titleColor:'#FFF1F2',bodyColor:'rgba(30,27,75,0.6)'}},scales:chart.type!=='pie'?{x:{ticks:{color:'rgba(45,45,45,0.6)'},grid:{color:'rgba(0,180,166,0.08)'}},y:{ticks:{color:'rgba(45,45,45,0.6)'},grid:{color:'rgba(0,180,166,0.08)'}}}:{}}});
+  new Chart(ctx,{type:chart.type,data:chart.data,options:{responsive:true,plugins:{legend:{labels:{color:'#1E1B4B'}},tooltip:{backgroundColor:'rgba(31,13,24,0.9)',titleColor:'#1E1B4B',bodyColor:'rgba(30,27,75,0.6)'}},scales:chart.type!=='pie'?{x:{ticks:{color:'rgba(45,45,45,0.6)'},grid:{color:'rgba(0,180,166,0.08)'}},y:{ticks:{color:'rgba(45,45,45,0.6)'},grid:{color:'rgba(0,180,166,0.08)'}}}:{}}});
 }
 
 function addMsg(role,txt,isHtml){
@@ -1852,6 +1852,7 @@ function endGame(type){
 // ── EXAM FILE SCANNER ────────────────────────────────────────────────────────
 var examFileData = null;
 var examFileType = null;
+var examFileName = '';
 
 async function scanExamFile(file) {
   if (!file) return;
