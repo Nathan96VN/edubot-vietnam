@@ -1454,7 +1454,7 @@ async function loadSClasses(){
 }
 
 
-  async function openClassExams(classId){
+  async function openClassExams(classId){   if(!classId){ loadSClasses(); return; }
     window._gradeClassId=classId;
   var g=document.getElementById('sgrid');
   g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading exams...</div>';g.style.display='block';
@@ -1462,7 +1462,7 @@ async function loadSClasses(){
     var res=await fetch(API+'/exam/my',{headers:ah()});
     var data=await res.json();
     var exams=(data.exams||[]).filter(function(e){ return String(e.classroom_id)===String(classId); });
-    var html='<div style="margin-bottom:14px"><button onclick="loadSClasses()" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
+    var html='<div style="margin-bottom:14px"><button onclick="openClassExams(window._gradeClassId)" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
     html+='<div class="stitle">📝 Exams for this class</div>';
     if(!exams.length){
       html+='<div class="ebox">No exams assigned to this class yet.</div>';
@@ -1491,7 +1491,7 @@ async function loadSClasses(){
     var data=await res.json();
     var subs=data.submissions||[];
     var examTitle=data.exam?data.exam.title:'Exam';
-    var html='<div style="margin-bottom:14px"><button onclick="loadSClasses()" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
+    var html='<div style="margin-bottom:14px"><button onclick="openClassExams(window._gradeClassId)" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
     html+='<div class="stitle">👥 '+esc(examTitle)+' — Students</div>';
     if(!subs.length){
       html+='<div class="ebox">No students have taken this exam yet.</div>';
