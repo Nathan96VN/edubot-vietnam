@@ -3,26 +3,26 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>EduBot — AI Partner in Education</title>
+<title>StellaStride — AI Learning Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#150810;--bg2:#1F0D18;--bg3:#180A14;
-  --primary:#F43F5E;--secondary:#F97316;
-  --pg:rgba(244,63,94,0.65);--sg:rgba(249,115,22,0.5);
-  --card:rgba(244,63,94,0.07);--card2:rgba(255,255,255,0.03);
-  --border:rgba(244,63,94,0.15);--border2:rgba(255,255,255,0.07);
+  --bg:#F5F9FF;--bg2:#ffffff;--bg3:#F5F9FF;
+  --primary:#00B4A6;--secondary:#7B8CDE;
+  --pg:rgba(0,180,166,0.8);--sg:rgba(123,140,222,0.5);
+  --card:rgba(0,180,166,0.05);--card2:rgba(255,255,255,0.03);
+  --border:rgba(0,180,166,0.15);--border2:rgba(255,255,255,0.07);
   --text:#FFF1F2;--muted:rgba(253,164,175,0.7);--muted2:rgba(255,255,255,0.5);
-  --success:#10B981;--font:'Plus Jakarta Sans',system-ui,sans-serif;
+  --success:#10B981;--font:'Poppins',system-ui,sans-serif;
 }
-html,body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
+html,body{background:#F5F9FF;background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
 .orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
-.orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(244,63,94,0.15),transparent 70%);top:-150px;right:-100px}
-.orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(249,115,22,0.12),transparent 70%);bottom:100px;left:-80px}
-.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(244,63,94,0.08),transparent 70%);top:50%;left:30%}
+.orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(0,180,166,0.15),transparent 70%);top:-150px;right:-100px}
+.orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(123,140,222,0.08),transparent 70%);bottom:100px;left:-80px}
+.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(0,180,166,0.08),transparent 70%);top:50%;left:30%}
 
 /* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;background:rgba(21,8,16,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
@@ -33,13 +33,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 40px;display:fl
 .nav-link{font-size:14px;font-weight:500;color:var(--muted2);text-decoration:none;transition:color 0.2s}
 .nav-link:hover{color:var(--text)}
 .nav-right{display:flex;align-items:center;gap:10px}
-.lang-wrap{display:flex;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:20px;overflow:hidden}
+.lang-wrap{display:flex;background:rgba(0,180,166,0.05);border:1px solid var(--border2);border-radius:20px;overflow:hidden}
 .lb{padding:5px 12px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:var(--font)}
-.lb.on{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
+.lb.on{background:linear-gradient(135deg,var(--pg),var(--sg));color:#1E1B4B}
 .btn-nav{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);text-decoration:none;transition:all 0.2s;display:inline-block}
 .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
-.btn-outline:hover{border-color:rgba(244,63,94,0.4);color:var(--primary)}
-.btn-filled{background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(244,63,94,0.4);color:#fff}
+.btn-outline:hover{border-color:rgba(0,180,166,0.4);color:var(--primary)}
+.btn-filled{background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(0,180,166,0.4);color:#1E1B4B}
 .btn-filled:hover{opacity:0.85;transform:translateY(-1px)}
 
 main{position:relative;z-index:1}
@@ -47,17 +47,17 @@ main{position:relative;z-index:1}
 /* HERO */
 .hero{min-height:100vh;display:flex;align-items:center;padding:120px 40px 80px;max-width:1200px;margin:0 auto;gap:60px}
 .hero-left{flex:1;min-width:0}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);font-size:12px;font-weight:600;color:rgba(253,164,175,0.9);margin-bottom:28px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.2);font-size:12px;font-weight:600;color:rgba(253,164,175,0.9);margin-bottom:28px}
 .pulse{width:6px;height:6px;border-radius:50%;background:var(--primary);display:inline-block;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 .hero h1{font-size:56px;font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:24px}
 .hero h1 .coral{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero-sub{font-size:17px;color:var(--muted);line-height:1.7;max-width:480px;margin-bottom:36px}
+.hero-sub{color:rgba(45,45,45,0.7);font-size:17px;color:var(--muted);line-height:1.7;max-width:480px;margin-bottom:36px}
 .hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:48px}
 .btn-hero{padding:14px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s}
-.btn-hero-p{background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(244,63,94,0.4);color:#fff}
-.btn-hero-p:hover{opacity:0.9;transform:translateY(-2px);box-shadow:0 8px 30px rgba(244,63,94,0.2)}
-.btn-hero-g{background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--text)}
+.btn-hero-p{background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(0,180,166,0.4);color:#1E1B4B}
+.btn-hero-p:hover{opacity:0.9;transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,180,166,0.2)}
+.btn-hero-g{background:rgba(0,180,166,0.05);border:1px solid var(--border2);color:var(--text)}
 .btn-hero-g:hover{border-color:var(--border);background:rgba(255,255,255,0.08)}
 
 /* STATS BAR */
@@ -70,41 +70,41 @@ main{position:relative;z-index:1}
 .hero-right{flex:1;display:flex;justify-content:center;align-items:center;position:relative;min-height:420px}
 .bubble-stage{position:relative;width:100%;height:420px}
 .chat-bubble{position:absolute;max-width:280px;padding:11px 15px;border-radius:14px;font-size:13px;line-height:1.55;opacity:0;transition:opacity 0.6s ease,transform 0.6s ease;pointer-events:none;backdrop-filter:blur(8px)}
-.chat-bubble.user{background:linear-gradient(135deg,rgba(244,63,94,0.22),rgba(249,115,22,0.14));border:1px solid rgba(244,63,94,0.25);color:#FFF1F2;border-radius:14px 14px 2px 14px}
-.chat-bubble.ai{background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.15);color:rgba(253,164,175,0.9);border-radius:2px 14px 14px 14px}
-.chat-bubble.ai strong{color:#FFF1F2}
+.chat-bubble.user{background:linear-gradient(135deg,rgba(0,180,166,0.15),rgba(123,140,222,0.1));border:1px solid rgba(0,180,166,0.25);color:#1E1B4B;border-radius:14px 14px 2px 14px}
+.chat-bubble.ai{background:rgba(0,180,166,0.08);border:1px solid rgba(0,180,166,0.15);color:rgba(253,164,175,0.9);border-radius:2px 14px 14px 14px}
+.chat-bubble.ai strong{color:#1E1B4B}
 .chat-bubble.show{opacity:1}
 .chat-bubble .katex{font-size:13px!important}
 
 /* SECTION */
 .section{padding:80px 40px;max-width:1200px;margin:0 auto}
-.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(244,63,94,0.6);margin-bottom:12px;text-align:center}
+.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(0,180,166,0.6);margin-bottom:12px;text-align:center}
 .sec-title{font-size:38px;font-weight:800;text-align:center;margin-bottom:12px;letter-spacing:-0.5px}
 .sec-sub{font-size:16px;color:var(--muted);text-align:center;max-width:500px;margin:0 auto 52px;line-height:1.7}
-.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(244,63,94,0.2),transparent);max-width:1200px;margin:0 auto}
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(0,180,166,0.2),transparent);max-width:1200px;margin:0 auto}
 
 /* FEATURES */
 .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .feat-card{background:var(--card);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:18px;padding:28px;transition:all 0.25s}
-.feat-card:hover{border-color:rgba(244,63,94,0.3);transform:translateY(-4px);background:rgba(244,63,94,0.1)}
-.feat-card.soon{border-color:rgba(249,115,22,0.2);background:rgba(249,115,22,0.05)}
-.feat-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(244,63,94,0.25),rgba(249,115,22,0.15));border:1px solid rgba(244,63,94,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
-.feat-card.soon .feat-icon{background:linear-gradient(135deg,rgba(249,115,22,0.2),rgba(244,63,94,0.1));border-color:rgba(249,115,22,0.25)}
+.feat-card:hover{border-color:rgba(0,180,166,0.3);transform:translateY(-4px);background:rgba(0,180,166,0.1)}
+.feat-card.soon{border-color:rgba(123,140,222,0.2);background:rgba(249,115,22,0.05)}
+.feat-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(0,180,166,0.25),rgba(123,140,222,0.15));border:1px solid rgba(0,180,166,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
+.feat-card.soon .feat-icon{background:linear-gradient(135deg,rgba(123,140,222,0.2),rgba(0,180,166,0.1));border-color:rgba(249,115,22,0.25)}
 .feat-title{font-size:17px;font-weight:700;margin-bottom:8px;color:var(--text)}
 .feat-text{font-size:14px;color:var(--muted);line-height:1.7}
-.soon-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);color:rgba(253,186,116,0.9);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em}
+.soon-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(123,140,222,0.15);border:1px solid rgba(123,140,222,0.3);color:rgba(253,186,116,0.9);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em}
 
 /* WHO */
 .who-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 .who-card{background:var(--card2);border:1px solid var(--border2);border-radius:20px;padding:32px;transition:all 0.25s;position:relative;overflow:hidden}
 .who-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--secondary))}
 .who-card:hover{border-color:var(--border);transform:translateY(-3px)}
-.who-role{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(244,63,94,0.6);margin-bottom:10px}
+.who-role{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(0,180,166,0.6);margin-bottom:10px}
 .who-title{font-size:24px;font-weight:800;margin-bottom:14px;color:var(--text)}
 .who-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
 .who-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--muted);line-height:1.5}
 .who-list li::before{content:'✓';color:var(--primary);font-weight:700;flex-shrink:0;margin-top:1px}
-.who-btn{display:inline-flex;align-items:center;gap:6px;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);text-decoration:none;transition:all 0.2s;background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(244,63,94,0.4);color:#fff}
+.who-btn{display:inline-flex;align-items:center;gap:6px;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);text-decoration:none;transition:all 0.2s;background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(0,180,166,0.4);color:#1E1B4B}
 .who-btn:hover{opacity:0.85;transform:translateY(-1px)}
 
 /* EXAMS */
@@ -113,14 +113,14 @@ main{position:relative;z-index:1}
 .exam-card:hover{border-color:var(--border);background:var(--card)}
 .exam-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
 .exam-sub{font-size:11px;color:var(--muted);line-height:1.5}
-.exam-tag{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.15);color:rgba(253,164,175,0.8);margin-bottom:8px}
+.exam-tag{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.15);color:rgba(253,164,175,0.8);margin-bottom:8px}
 
 /* PRICING */
 .price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .price-card{background:var(--card2);border:1.5px solid var(--border2);border-radius:18px;padding:24px;transition:all 0.25s;position:relative}
-.price-card.featured{border-color:rgba(244,63,94,0.3);background:rgba(244,63,94,0.06)}
+.price-card.featured{border-color:rgba(0,180,166,0.3);background:rgba(0,180,166,0.06)}
 .price-card:hover{transform:translateY(-4px)}
-.price-popular{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff;margin-bottom:8px}
+.price-popular{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:linear-gradient(135deg,var(--pg),var(--sg));color:#1E1B4B;margin-bottom:8px}
 .price-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
 .price-amount{font-size:28px;font-weight:800;color:var(--primary);margin-bottom:2px;letter-spacing:-0.5px}
 .price-period{font-size:11px;color:var(--muted)}
@@ -128,14 +128,14 @@ main{position:relative;z-index:1}
 .price-feats{list-style:none;display:flex;flex-direction:column;gap:8px;margin:16px 0;font-size:13px;color:var(--muted)}
 .price-feats li::before{content:'✓ ';color:var(--primary);font-weight:700}
 .price-btn{width:100%;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);border:none;margin-top:8px;transition:all 0.2s;text-decoration:none;display:block;text-align:center}
-.pb-p{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
+.pb-p{background:linear-gradient(135deg,var(--pg),var(--sg));color:#1E1B4B}
 .pb-p:hover{opacity:0.85}
-.pb-g{background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted2)}
+.pb-g{background:rgba(0,180,166,0.05);border:1px solid var(--border2);color:var(--muted2)}
 .pb-g:hover{border-color:var(--border);color:var(--text)}
 
 /* CTA */
 .cta{padding:80px 40px;text-align:center}
-.cta-inner{max-width:600px;margin:0 auto;background:rgba(244,63,94,0.08);backdrop-filter:blur(20px);border:1px solid rgba(244,63,94,0.2);border-radius:24px;padding:52px 40px}
+.cta-inner{max-width:600px;margin:0 auto;background:rgba(0,180,166,0.08);backdrop-filter:blur(20px);border:1px solid rgba(0,180,166,0.2);border-radius:24px;padding:52px 40px}
 .cta h2{font-size:38px;font-weight:800;margin-bottom:14px;letter-spacing:-0.5px}
 .cta p{font-size:16px;color:var(--muted);margin-bottom:32px;line-height:1.7}
 .cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
@@ -175,7 +175,7 @@ main{position:relative;z-index:1}
 
 <nav>
   <div class="nav-logo">
-    <span class="nav-logo-text">Edu<span>Bot</span></span>
+    <span class="nav-logo-text">Stella<span>Stride</span></span>
   </div>
   <div class="nav-links">
     <a href="#features" class="nav-link" id="nl1">Features</a>
@@ -198,7 +198,7 @@ main{position:relative;z-index:1}
   <div class="hero-left">
     <div class="hero-badge"><span class="pulse"></span> <span id="badge-txt">Gia sư AI thế hệ mới</span></div>
     <h1 id="hero-h1">Học thông minh hơn.<br><span class="coral">Tiến bộ nhanh hơn.</span><br>Với AI 24/7.</h1>
-    <p class="hero-sub" id="hero-sub">EduBot là người bạn học AI — giải thích từng bước, flashcards thông minh, biểu đồ trực quan và giáo án chuyên nghiệp. Bằng tiếng Việt hoặc tiếng Anh.</p>
+    <p class="hero-sub" id="hero-sub">StellaStride là người bạn học AI — giải thích từng bước, flashcards thông minh, biểu đồ trực quan và giáo án chuyên nghiệp. Bằng tiếng Việt hoặc tiếng Anh.</p>
     <div class="hero-btns">
       <a href="/register?role=student" class="btn-hero btn-hero-p" id="btn-s">🎒 Tôi là Học sinh</a>
       <a href="/register?role=teacher" class="btn-hero btn-hero-g" id="btn-t">👩‍🏫 Tôi là Giáo viên</a>
@@ -220,7 +220,7 @@ main{position:relative;z-index:1}
 <section class="section" id="features">
   <div class="sec-label" id="fl">Tính năng</div>
   <h2 class="sec-title" id="ft">Mọi thứ bạn cần để học tốt hơn</h2>
-  <p class="sec-sub" id="fs">Từ gia sư AI đến trò chơi học tập — EduBot có đủ công cụ cho học sinh và giáo viên.</p>
+  <p class="sec-sub" id="fs">Từ gia sư AI đến trò chơi học tập — StellaStride có đủ công cụ cho học sinh và giáo viên.</p>
   <div class="feat-grid">
     <div class="feat-card"><div class="feat-icon">💬</div><div class="feat-title" id="f1t">Gia sư AI</div><div class="feat-text" id="f1d">Hỏi bất cứ điều gì — AI tự động nhận diện môn học và lớp, giải thích từng bước rõ ràng.</div></div>
     <div class="feat-card"><div class="feat-icon">📄</div><div class="feat-title" id="f2t">Upload tài liệu</div><div class="feat-text" id="f2d">Tải lên PDF hoặc hình ảnh — AI đọc, giải thích nội dung, tạo câu hỏi và tóm tắt tức thì.</div></div>
@@ -245,7 +245,7 @@ main{position:relative;z-index:1}
 <section class="section" id="who">
   <div class="sec-label" id="wl">Dành cho ai</div>
   <h2 class="sec-title" id="wt">Phù hợp cho học sinh và giáo viên</h2>
-  <p class="sec-sub" id="ws">Dù bạn đang học bài hay soạn giáo án — EduBot có giải pháp phù hợp.</p>
+  <p class="sec-sub" id="ws">Dù bạn đang học bài hay soạn giáo án — StellaStride có giải pháp phù hợp.</p>
   <div class="who-grid">
     <div class="who-card">
       <div class="who-role" id="wsr">🎒 Học sinh</div>
@@ -280,7 +280,7 @@ main{position:relative;z-index:1}
 <section class="section">
   <div class="sec-label" id="el">Loại bài thi</div>
   <h2 class="sec-title" id="et">Hỗ trợ mọi kỳ thi</h2>
-  <p class="sec-sub" id="es">Từ chương trình trong nước đến các chứng chỉ quốc tế — EduBot chuẩn bị cho bạn mọi kỳ thi.</p>
+  <p class="sec-sub" id="es">Từ chương trình trong nước đến các chứng chỉ quốc tế — StellaStride chuẩn bị cho bạn mọi kỳ thi.</p>
   <div class="exams-grid">
     <div class="exam-card"><div class="exam-tag" id="et1tag">Trong nước</div><div class="exam-name" id="et1">Chương trình Quốc gia</div><div class="exam-sub" id="et1s">Lớp 1–12 · Toán, Khoa học, Văn</div></div>
     <div class="exam-card"><div class="exam-tag" id="et2tag">Quốc tế</div><div class="exam-name" id="et2">Tiếng Anh Quốc tế</div><div class="exam-sub" id="et2s">Trình độ A2 đến C2 · 4 kỹ năng</div></div>
@@ -341,7 +341,7 @@ main{position:relative;z-index:1}
 <section class="cta">
   <div class="cta-inner">
     <h2 id="cta-h">Sẵn sàng học thông minh hơn?</h2>
-    <p id="cta-p">Tham gia cùng hàng nghìn học sinh và giáo viên đang dùng EduBot mỗi ngày. Miễn phí để bắt đầu.</p>
+    <p id="cta-p">Tham gia cùng hàng nghìn học sinh và giáo viên đang dùng StellaStride mỗi ngày. Miễn phí để bắt đầu.</p>
     <div class="cta-btns">
       <a href="/register?role=student" class="btn-hero btn-hero-p" id="cta-s">🎒 Tôi là Học sinh</a>
       <a href="/register?role=teacher" class="btn-hero btn-hero-g" id="cta-t">👩‍🏫 Tôi là Giáo viên</a>
@@ -351,13 +351,13 @@ main{position:relative;z-index:1}
 
 <footer>
   <div class="footer-wrap">
-    <div class="footer-brand">Edu<span>Bot</span></div>
+    <div class="footer-brand">Stella<span>Stride</span></div>
     <div class="footer-links">
       <a href="#features" id="ffl1">Tính năng</a>
       <a href="#pricing" id="ffl2">Bảng giá</a>
       <a href="/login" id="ffl3">Đăng nhập</a>
     </div>
-    <div class="footer-copy" id="fcopy">© 2025 EduBot Vietnam. AI Partner in Education.</div>
+    <div class="footer-copy" id="fcopy">© 2026 StellaStride Vietnam. AI Learning Platform.</div>
   </div>
 </footer>
 </main>
@@ -443,12 +443,12 @@ var T = {
   vi: {
     'badge-txt':'Gia sư AI thế hệ mới',
     'hero-h1':'Học thông minh hơn.<br><span class="coral">Tiến bộ nhanh hơn.</span><br>Với AI 24/7.',
-    'hero-sub':'EduBot là người bạn học AI — giải thích từng bước, flashcards thông minh, biểu đồ trực quan và giáo án chuyên nghiệp. Bằng tiếng Việt hoặc tiếng Anh.',
+    'hero-sub':'StellaStride là người bạn học AI — giải thích từng bước, flashcards thông minh, biểu đồ trực quan và giáo án chuyên nghiệp. Bằng tiếng Việt hoặc tiếng Anh.',
     'btn-s':'🎒 Tôi là Học sinh','btn-t':'👩‍🏫 Tôi là Giáo viên',
     's1':'Grades 1 – 12','s2':'Vietnamese & English','s3':'Instant AI Answers',
     'nav-login':'Đăng nhập','nav-start':'Bắt đầu miễn phí',
     'nl1':'Tính năng','nl2':'Dành cho ai','nl3':'Bảng giá',
-    'fl':'Tính năng','ft':'Mọi thứ bạn cần để học tốt hơn','fs':'Từ gia sư AI đến trò chơi học tập — EduBot có đủ công cụ cho học sinh và giáo viên.',
+    'fl':'Tính năng','ft':'Mọi thứ bạn cần để học tốt hơn','fs':'Từ gia sư AI đến trò chơi học tập — StellaStride có đủ công cụ cho học sinh và giáo viên.',
     'f1t':'Gia sư AI','f1d':'Hỏi bất cứ điều gì — AI tự động nhận diện môn học và lớp, giải thích từng bước rõ ràng.',
     'f2t':'Upload tài liệu','f2d':'Tải lên PDF hoặc hình ảnh — AI đọc, giải thích, tạo câu hỏi và tóm tắt tức thì.',
     'f3t':'Games học tập','f3d':'Quiz Battle, Speed Race và Flashcard Flip — học qua trò chơi AI tạo ra theo môn và lớp.',
@@ -456,7 +456,7 @@ var T = {
     'f5t':'Biểu đồ & Hình ảnh AI','f5d':'Tạo biểu đồ và hình ảnh giáo dục AI cho bài học sinh động và trực quan hơn.',
     'f6t':'Dashboard giáo viên','f6d':'Quản lý lớp học, tạo giáo án, đề kiểm tra và xuất tài liệu Word / PDF chuyên nghiệp.',
     'sb':'Sắp ra mắt','f7t':'Cấp độ Đại học','f7d':'IELTS, TOEFL, SAT, thi tuyển sinh và các môn đại học — đang được phát triển.',
-    'wl':'Dành cho ai','wt':'Phù hợp cho học sinh và giáo viên','ws':'Dù bạn đang học bài hay soạn giáo án — EduBot có giải pháp phù hợp.',
+    'wl':'Dành cho ai','wt':'Phù hợp cho học sinh và giáo viên','ws':'Dù bạn đang học bài hay soạn giáo án — StellaStride có giải pháp phù hợp.',
     'wsr':'🎒 Học sinh','wst':'Học thông minh hơn với AI',
     'ws1':'Hỏi bất kỳ câu hỏi nào — AI giải thích từng bước','ws2':'Tải lên bài tập — AI phân tích và hướng dẫn',
     'ws3':'Chơi game để ôn luyện kiến thức','ws4':'Tạo flashcards để ghi nhớ nhanh hơn','ws5':'Học bằng tiếng Việt hoặc tiếng Anh',
@@ -465,7 +465,7 @@ var T = {
     'wt1':'Tạo giáo án chi tiết trong vài giây','wt2':'Soạn đề kiểm tra với đáp án tự động',
     'wt3':'Quản lý lớp học và học sinh dễ dàng','wt4':'Xuất tài liệu ra Word hoặc PDF chuyên nghiệp','wt5':'Trợ lý AI hỗ trợ mọi môn học lớp 1–12',
     'wtb':'Dùng thử cho giáo viên →',
-    'el':'Loại bài thi','et':'Hỗ trợ mọi kỳ thi','es':'Từ chương trình trong nước đến các chứng chỉ quốc tế — EduBot chuẩn bị cho bạn mọi kỳ thi.',
+    'el':'Loại bài thi','et':'Hỗ trợ mọi kỳ thi','es':'Từ chương trình trong nước đến các chứng chỉ quốc tế — StellaStride chuẩn bị cho bạn mọi kỳ thi.',
     'et1tag':'Trong nước','et1':'Chương trình Quốc gia','et1s':'Lớp 1–12 · Toán, Khoa học, Văn',
     'et2tag':'Quốc tế','et2':'Tiếng Anh Quốc tế','et2s':'Trình độ A2 đến C2 · 4 kỹ năng',
     'et3tag':'Chứng chỉ','et3':'Năng lực Tiếng Anh','et3s':'Band 1–9 · Academic & General',
@@ -479,20 +479,20 @@ var T = {
     'p1n':'Student Basic','p1p':'VND / tháng','p1f1':'Câu hỏi không giới hạn','p1f2':'Upload PDF','p1f3':'Biểu đồ AI','p1f4':'VI + EN','p1b':'Đăng ký ngay',
     'p2n':'Student Plus','p2p':'VND / tháng','p2f1':'Tất cả Basic','p2f2':'Ảnh AI','p2f3':'Ưu tiên hỗ trợ','p2b':'Chọn gói này',
     'p3n':'Teacher Pro','p3p':'VND / tháng','p3f1':'Dashboard giáo viên','p3f2':'Tạo giáo án & đề thi','p3f3':'Xuất Word / PDF','p3f4':'Quản lý lớp học','p3b':'Dành cho giáo viên',
-    'cta-h':'Sẵn sàng học thông minh hơn?','cta-p':'Tham gia cùng hàng nghìn học sinh và giáo viên đang dùng EduBot mỗi ngày. Miễn phí để bắt đầu.',
+    'cta-h':'Sẵn sàng học thông minh hơn?','cta-p':'Tham gia cùng hàng nghìn học sinh và giáo viên đang dùng StellaStride mỗi ngày. Miễn phí để bắt đầu.',
     'cta-s':'🎒 Tôi là Học sinh','cta-t':'👩‍🏫 Tôi là Giáo viên',
     'ffl1':'Tính năng','ffl2':'Bảng giá','ffl3':'Đăng nhập',
-    'fcopy':'© 2025 EduBot Vietnam. AI Partner in Education.'
+    'fcopy':'© 2026 StellaStride Vietnam. AI Learning Platform.'
   },
   en: {
     'badge-txt':'Next Generation AI Tutor',
     'hero-h1':'Learn Smarter.<br><span class="coral">Progress Faster.</span><br>With AI 24/7.',
-    'hero-sub':'EduBot is your AI learning companion — step-by-step explanations, smart flashcards, visual charts, and professional lesson plans for teachers. In Vietnamese or English.',
+    'hero-sub':'StellaStride is your AI learning companion — step-by-step explanations, smart flashcards, visual charts, and professional lesson plans for teachers. In Vietnamese or English.',
     'btn-s':"🎒 I'm a Student",'btn-t':"👩‍🏫 I'm a Teacher",
     's1':'Grades 1 – 12','s2':'Vietnamese & English','s3':'Instant AI Answers',
     'nav-login':'Login','nav-start':'Start for Free',
     'nl1':'Features','nl2':'For Who','nl3':'Pricing',
-    'fl':'Features','ft':'Everything you need to learn better','fs':'From AI tutor to educational games — EduBot has all the tools for students and teachers.',
+    'fl':'Features','ft':'Everything you need to learn better','fs':'From AI tutor to educational games — StellaStride has all the tools for students and teachers.',
     'f1t':'AI Tutor','f1d':'Ask anything — AI automatically detects subject and grade, explains step by step clearly.',
     'f2t':'Document Upload','f2d':'Upload a PDF or image — AI reads, explains content, creates questions and summarizes instantly.',
     'f3t':'Learning Games','f3d':'Quiz Battle, Speed Race and Flashcard Flip — learn through AI-generated games by subject and grade.',
@@ -500,7 +500,7 @@ var T = {
     'f5t':'Charts & AI Images','f5d':'Generate charts and educational AI images for more engaging and visual lessons.',
     'f6t':'Teacher Dashboard','f6d':'Manage classrooms, create lesson plans, exams and export professional Word / PDF documents.',
     'sb':'Coming Soon','f7t':'University Level','f7d':'English proficiency exams, university entrance, and higher education subjects — coming soon.',
-    'wl':'For Who','wt':'Perfect for students and teachers','ws':'Whether you are studying or creating lesson plans — EduBot has the right solution.',
+    'wl':'For Who','wt':'Perfect for students and teachers','ws':'Whether you are studying or creating lesson plans — StellaStride has the right solution.',
     'wsr':'🎒 Students','wst':'Learn smarter with AI',
     'ws1':'Ask any question — AI explains step by step','ws2':'Upload homework — AI analyzes and guides',
     'ws3':'Play games to review knowledge','ws4':'Create flashcards to remember faster','ws5':'Study in Vietnamese or English',
@@ -509,7 +509,7 @@ var T = {
     'wt1':'Create detailed lesson plans in seconds','wt2':'Write exam papers with automatic answer keys',
     'wt3':'Manage classrooms and students easily','wt4':'Export documents to professional Word or PDF','wt5':'AI assistant for all subjects grades 1–12',
     'wtb':'Try it for teachers →',
-    'el':'Exam Types','et':'Supports every exam','es':'From national curriculum to international certificates — EduBot prepares you for every exam.',
+    'el':'Exam Types','et':'Supports every exam','es':'From national curriculum to international certificates — StellaStride prepares you for every exam.',
     'et1tag':'National','et1':'National Curriculum','et1s':'Grades 1–12 · Math, Science, Literature',
     'et2tag':'International','et2':'International English','et2s':'Level A2 to C2 · All 4 skills',
     'et3tag':'Certificate','et3':'English Proficiency','et3s':'Band 1–9 · Academic & General',
@@ -523,10 +523,10 @@ var T = {
     'p1n':'Student Basic','p1p':'VND / month','p1f1':'Unlimited questions','p1f2':'PDF upload','p1f3':'AI Charts','p1f4':'VI + EN','p1b':'Sign up now',
     'p2n':'Student Plus','p2p':'VND / month','p2f1':'Everything in Basic','p2f2':'AI Images','p2f3':'Priority support','p2b':'Choose this plan',
     'p3n':'Teacher Pro','p3p':'VND / month','p3f1':'Teacher dashboard','p3f2':'Lesson plans & exams','p3f3':'Export Word / PDF','p3f4':'Classroom management','p3b':'For teachers',
-    'cta-h':'Ready to learn smarter?','cta-p':'Join thousands of students and teachers using EduBot every day. Free to start.',
+    'cta-h':'Ready to learn smarter?','cta-p':'Join thousands of students and teachers using StellaStride every day. Free to start.',
     'cta-s':'🎒 I am a Student','cta-t':'👩‍🏫 I am a Teacher',
     'ffl1':'Features','ffl2':'Pricing','ffl3':'Login',
-    'fcopy':'© 2025 EduBot Vietnam. AI Partner in Education.'
+    'fcopy':'© 2026 StellaStride Vietnam. AI Learning Platform.'
   }
 };
 
