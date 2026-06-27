@@ -1479,7 +1479,7 @@ app.post('/exam/generate', authenticate, async (req, res) => {
     const contextLabel = context === 'international' ? 'International curriculum (Cambridge, IELTS style)' : 'Vietnamese national curriculum (MOET style)';
     const purposeLabel = purpose === 'exam' ? 'formal end-of-term exam' : 'class test';
     const adaptNote = adaptForWeak ? 'IMPORTANT: Adapt questions for underperforming students — simpler language, more scaffolding, clearer instructions.' : '';
-    const typesLabel = (questionTypes || ['mcq', 'truefalse', 'fillinblank']).join(', ');
+    const typesLabel = (questionTypes || ['mcq', 'truefalse', 'fillinblank']).join(', '); const fileData = req.body.fileData || null; const fileType = req.body.fileType || null;
 
     const prompt = `You are an expert ${contextLabel} exam creator for Grade ${grade} ${subject}.
 
