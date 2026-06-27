@@ -1868,7 +1868,7 @@ async function scanExamFile(file) {
     return;
   }
   txt.textContent = '⏳ ' + file.name;
-  status.textContent = 'Scanning file with AI...';
+  status.textContent = '📄 File ready! Type your instructions below and click Generate.';
   document.getElementById('ex-upload-btn').style.borderColor = 'rgba(249,115,22,0.4)';
 
   var reader = new FileReader();
@@ -1879,18 +1879,18 @@ async function scanExamFile(file) {
     examFileType = fileType;
 
     try {
-      var res = await fetch(API+'/exam/scan-file', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json',...ah()},
-        body: JSON.stringify({ fileData: base64, fileType: fileType, fileName: file.name })
+      txt.textContent = '✅ ' + file.name; document.getElementById('ex-upload-btn').style.borderColor = 'rgba(16,185,129,0.4)'; examFileName = file.name;
+        
+        
+        
       });
       var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Scan failed');
-      var topics = data.topics || '';
-      if (topics) {
-        var topicsEl = document.getElementById('exam-topics') || document.getElementById('ex-topics');
-        if(topicsEl) topicsEl.value = topics;
-        status.textContent = '✅ Topics extracted! Review and edit if needed.';
+      
+      
+      
+        
+        
+        
         var uploadBtn = document.getElementById('ex-upload-btn');
         if(uploadBtn) uploadBtn.style.borderColor = 'rgba(16,185,129,0.4)';
         txt.textContent = '✅ ' + file.name;
