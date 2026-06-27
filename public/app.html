@@ -1482,7 +1482,7 @@ async function loadSClasses(){
   }catch(e){ g.innerHTML='<div class="ebox">Failed to load exams</div>'; }
 }
   
-  async function openExamStudents(examId){
+  async function openExamStudents(examId){   window._gradeExamId=examId;
   var g=document.getElementById('sgrid');
   g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading students...</div>';g.style.display='block';
   window._gradeClassId=window._gradeClassId||null;
@@ -1510,6 +1510,65 @@ async function loadSClasses(){
     }
     g.innerHTML=html;
   }catch(e){ g.innerHTML='<div class="ebox">Failed to load students</div>'; }
+}
+  
+  async function openGrading(subId){
+  var g=document.getElementById('sgrid');
+  g.style.display='block';
+  g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading submission...</div>';
+  try{
+    var res=await fetch(API+'/exam/'+window._gradeExamId+'/results',{headers:ah()});
+    var data=await res.json();
+    var sub=(data.submissions||[]).find(function(s){ return String(s.id)===String(subId); });
+    if(!sub){ g.innerHTML='<div class="ebox">Submission not found</div>'; return; }
+    var exam=data.exam;
+    var questions=exam.questions;
+    var aiScores=sub.ai_scores||[];
+    var answers=sub.answers||[];
+    var name=sub.student_name||sub.guest_name||'Anonymous';
+    window._gradeSub=sub; window._gradeScores={};
+    var html='<div style="margin-bottom:14px"><button onclick="openExamStudents(window._gradeExamId)" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to students</button></div>';
+    html+='<div class="stitle">✏️ Grading: '+esc(name)+'</div>';
+    var qNum=0;
+    (questions.sections||[]).forEach(function(section){
+      html+='<div style="font-size:13px;font-weight:700;color:var(--primary);margin:14px 0 8px">'+esc(section.label||section.type)+'</div>';
+      (section.questions||[]).forEach(function(q){
+        qNum++;
+        var sc=aiScores.find(function(a){ return a.id===q.id; })||{};
+        var stuAns=answers.find(function(a){ return a.id===q.id; });
+        var stuVal=stuAns?stuAns.answer:'(no answer)';
+        var aiScore=(sc.score!==undefined&&sc.score!==null)?sc.score:0;
+        var maxP=q.points||1;
+        window._gradeScores[q.id]=aiScore;
+        var correct=q.answer!==undefined?q.answer:(sc.correctAnswer||'');
+        html+='<div style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:10px">'
+          +'<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">Q'+q.id+'. '+esc(q.question)+'</div>'
+          +'<div style="font-size:13px;color:var(--muted);margin-bottom:4px">Student answer: <span style="color:var(--text)">'+esc(String(stuVal))+'</span></div>'
+          +(correct!==''?'<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Correct answer: <span style="color:rgba(16,185,129,0.9)">'+esc(String(correct))+'</span></div>':'')
+          +'<div style="display:flex;align-items:center;gap:8px"><label style="font-size:13px;color:var(--muted)">Score:</label>'
+          +'<input type="number" min="0" max="'+maxP+'" value="'+aiScore+'" onchange="window._gradeScores['+q.id+']=parseFloat(this.value)||0" style="width:60px;padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--card);color:var(--text);font-family:var(--font);font-size:13px"/>'
+          +'<span style="font-size:13px;color:var(--muted)">/ '+maxP+' pts</span></div>'
+          +'</div>';
+      });
+    });
+    html+='<button onclick="saveGrades('+subId+')" style="margin-top:8px;padding:11px 24px;border-radius:10px;background:linear-gradient(135deg,rgba(16,185,129,0.7),rgba(5,150,105,0.6));border:1px solid rgba(16,185,129,0.4);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">💾 Save Grades</button>';
+    g.innerHTML=html;
+  }catch(e){ g.innerHTML='<div class="ebox">Failed to load: '+e.message+'</div>'; }
+}
+
+async function saveGrades(subId){
+  var sub=window._gradeSub;
+  var finalScores=[];
+  (sub.ai_scores||[]).forEach(function(a){
+    finalScores.push({ id:a.id, score:(window._gradeScores[a.id]!==undefined?window._gradeScores[a.id]:a.score) });
+  });
+  try{
+    var res=await fetch(API+'/exam/submission/'+subId+'/grade',{method:'PUT',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({finalScores:finalScores})});
+    var data=await res.json();
+    if(!res.ok) throw new Error(data.error);
+    toast('✅ Grades saved! Total: '+data.totalScore,'ok');
+    openExamStudents(window._gradeExamId);
+  }catch(e){ toast('❌ '+e.message,'err'); }
 }
   async function doCreate(){
   var name=document.getElementById('ncname').value.trim();if(!name){toast(L('ecn'),'err');return;}
