@@ -239,7 +239,7 @@ input[type=file]#cfi{display:none}
 .game-badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:10px;background:rgba(16,185,129,0.12);color:rgba(110,231,183,0.9);border:1px solid rgba(16,185,129,0.25)}
 
 /* ── MODALS ── */
-#overlay{position:fixed;inset:0;background:rgba(15,8,16,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+#overlay{position:fixed;inset:0;background:rgba(30,27,75,0.5);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
 #overlay.on{display:flex}
 #modal{background:#ffffff;border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:390px;position:relative;max-height:90vh;overflow-y:auto}
 #mcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;line-height:1;padding:4px 9px;font-family:var(--font)}
@@ -264,7 +264,7 @@ input[type=file]#cfi{display:none}
 #aerr{color:rgba(252,165,165,0.9);font-size:13px;text-align:center;margin-top:8px;min-height:16px}
 
 /* upgrade modal */
-#upgoverlay{position:fixed;inset:0;background:rgba(15,8,16,0.92);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
+#upgoverlay{position:fixed;inset:0;background:rgba(30,27,75,0.6);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:99999;padding:16px}
 #upgoverlay.on{display:flex}
 #upgmodal{background:#ffffff;border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;position:relative;max-height:90vh;overflow-y:auto}
 #upgcls{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:18px;cursor:pointer;padding:4px 9px;font-family:var(--font)}
@@ -2499,6 +2499,7 @@ async function viewLiveResults(id){
 function exportMemoryExam(id){ currentExamId=id; exportExamWord('student'); }
 
 
+
 async function viewMyResult(submissionId, examTitle) {
   var g = document.getElementById('sgrid');
   g.innerHTML = '<div class="ebox"><span class="sp2"></span> Loading your results...</div>';
@@ -2511,54 +2512,81 @@ async function viewMyResult(submissionId, examTitle) {
     var exam = data.exam;
     var pct = sub.max_score > 0 ? Math.round((sub.total_score / sub.max_score) * 100) : 0;
     var emoji = pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '💪';
-    var color = pct >= 80 ? 'rgba(16,185,129,0.8)' : pct >= 60 ? 'rgba(0,180,166,0.8)' : 'rgba(239,68,68,0.7)';
+    var grade = pct >= 80 ? 'Excellent!' : pct >= 60 ? 'Good job!' : 'Keep practising!';
+    var scoreColor = pct >= 80 ? 'rgba(16,185,129,0.9)' : pct >= 60 ? 'rgba(0,180,166,0.8)' : 'rgba(239,68,68,0.8)';
+    var barColor = pct >= 80 ? '#10B981' : pct >= 60 ? '#00B4A6' : '#EF4444';
 
     var html = '<div style="margin-bottom:14px"><button onclick="loadSClasses()" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classrooms</button></div>';
 
-    // Score card
-    html += '<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;margin-bottom:16px">';
-    html += '<div style="font-size:44px;margin-bottom:8px">' + emoji + '</div>';
-    html += '<div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px">' + esc(examTitle || exam.title) + '</div>';
-    html += '<div style="font-size:48px;font-weight:800;color:' + color + ';margin:12px 0">' + sub.total_score + '<span style="font-size:22px;color:var(--muted)">/' + sub.max_score + '</span></div>';
-    html += '<div style="font-size:16px;font-weight:700;color:' + color + '">' + pct + '%</div>';
-    html += '<div style="font-size:13px;color:var(--muted);margin-top:6px">Status: ' + (sub.status === 'graded' ? '✅ Graded by teacher' : '📝 Auto-graded') + '</div>';
+    // Score overview card
+    html += '<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;margin-bottom:14px">';
+    html += '<div style="font-size:48px;margin-bottom:6px">'+emoji+'</div>';
+    html += '<div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:2px">'+esc(examTitle || exam.title)+'</div>';
+    html += '<div style="font-size:13px;color:var(--muted);margin-bottom:16px">'+esc(exam.subject||'')+(exam.grade?' · Grade '+exam.grade:'')+'</div>';
+    // Big score
+    html += '<div style="font-size:52px;font-weight:800;color:'+scoreColor+';line-height:1">'+sub.total_score+'<span style="font-size:22px;color:var(--muted);font-weight:400">/'+sub.max_score+'</span></div>';
+    html += '<div style="font-size:15px;font-weight:700;color:'+scoreColor+';margin:4px 0 12px">'+pct+'% — '+grade+'</div>';
+    // Progress bar
+    html += '<div style="background:rgba(0,0,0,0.06);border-radius:20px;height:10px;margin:0 auto;max-width:300px;overflow:hidden">';
+    html += '<div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:20px;transition:width .6s ease"></div></div>';
+    html += '<div style="font-size:12px;color:var(--muted);margin-top:10px">'+(sub.status==='graded'?'✅ Graded by teacher':'📝 Auto-graded')+'</div>';
+    html += '</div>';
+
+    // Quick stats row
+    var answers = sub.answers || [];
+    var scores = sub.ai_scores || [];
+    var correct = 0; var partial = 0; var wrong = 0;
+    scores.forEach(function(sc){
+      var q = null;
+      if(exam.questions && exam.questions.sections){
+        exam.questions.sections.forEach(function(s){ s.questions.forEach(function(qq){ if(qq.id===sc.id) q=qq; }); });
+      }
+      var maxP = q ? (q.points||1) : 1;
+      if(sc.score >= maxP) correct++;
+      else if(sc.score > 0) partial++;
+      else wrong++;
+    });
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">';
+    html += '<div style="background:#fff;border:1px solid rgba(16,185,129,0.2);border-radius:var(--rs);padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:rgba(16,185,129,0.9)">'+correct+'</div><div style="font-size:11px;color:var(--muted)">✅ Correct</div></div>';
+    html += '<div style="background:#fff;border:1px solid rgba(245,215,142,0.3);border-radius:var(--rs);padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:rgba(180,83,9,0.8)">'+partial+'</div><div style="font-size:11px;color:var(--muted)">⚡ Partial</div></div>';
+    html += '<div style="background:#fff;border:1px solid rgba(239,68,68,0.15);border-radius:var(--rs);padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:rgba(239,68,68,0.8)">'+wrong+'</div><div style="font-size:11px;color:var(--muted)">❌ Wrong</div></div>';
     html += '</div>';
 
     // Question breakdown
     if (exam && exam.questions && exam.questions.sections) {
-      html += '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px">📋 Question Breakdown</div>';
-      var answers = sub.answers || [];
-      var scores = sub.ai_scores || [];
+      html += '<div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden">';
+      html += '<div style="padding:14px 16px;border-bottom:1px solid var(--border2);font-size:14px;font-weight:700;color:var(--text)">📋 Question Breakdown</div>';
       exam.questions.sections.forEach(function(section) {
-        html += '<div style="font-size:12px;font-weight:700;color:#00B4A6;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">' + esc(section.label) + '</div>';
+        html += '<div style="padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border2);font-size:11px;font-weight:700;color:#00B4A6;text-transform:uppercase;letter-spacing:.05em">'+esc(section.label)+'</div>';
         section.questions.forEach(function(q) {
           var ans = answers.find(function(a) { return a.id === q.id; });
           var sc = scores.find(function(s) { return s.id === q.id; });
-          var stuAns = ans ? ans.answer : '(no answer)';
+          var stuAns = ans ? String(ans.answer) : '(no answer)';
           var pts = sc ? sc.score : 0;
           var maxPts = q.points || 1;
-          var correct = pts >= maxPts;
-          var partial = pts > 0 && pts < maxPts;
-          var bgColor = correct ? 'rgba(16,185,129,0.06)' : partial ? 'rgba(245,215,142,0.1)' : 'rgba(239,68,68,0.05)';
-          var borderColor = correct ? 'rgba(16,185,129,0.2)' : partial ? 'rgba(245,215,142,0.3)' : 'rgba(239,68,68,0.15)';
-          var icon = correct ? '✅' : partial ? '⚡' : '❌';
+          var isCorrect = pts >= maxPts;
+          var isPartial = pts > 0 && pts < maxPts;
+          var icon = isCorrect ? '✅' : isPartial ? '⚡' : '❌';
+          var rowBg = isCorrect ? 'rgba(16,185,129,0.03)' : isPartial ? 'rgba(245,215,142,0.05)' : 'rgba(239,68,68,0.03)';
+          var ptColor = isCorrect ? 'rgba(16,185,129,0.9)' : isPartial ? 'rgba(180,83,9,0.8)' : 'rgba(239,68,68,0.8)';
 
-          html += '<div style="background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:var(--rs);padding:12px;margin-bottom:8px">';
-          html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px">';
-          html += '<div style="font-size:13px;font-weight:600;color:var(--text);flex:1">' + icon + ' Q' + q.id + '. ' + esc(q.question) + '</div>';
-          html += '<span style="font-size:11px;font-weight:700;color:' + (correct ? 'rgba(16,185,129,0.9)' : 'rgba(239,68,68,0.8)') + ';white-space:nowrap">' + pts + '/' + maxPts + ' pts</span>';
+          html += '<div style="padding:12px 16px;border-bottom:1px solid var(--border2);background:'+rowBg+'">';
+          html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">';
+          html += '<div style="font-size:13px;font-weight:600;color:var(--text);flex:1">'+icon+' Q'+q.id+'. '+esc(q.question)+'</div>';
+          html += '<span style="font-size:11px;font-weight:700;color:'+ptColor+';white-space:nowrap;flex-shrink:0">'+pts+'/'+maxPts+' pts</span>';
           html += '</div>';
-          html += '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">Your answer: <span style="color:var(--text);font-weight:600">' + esc(String(stuAns)) + '</span></div>';
+          html += '<div style="font-size:12px;color:var(--muted)">Your answer: <span style="color:var(--text);font-weight:600">'+esc(stuAns)+'</span></div>';
           if (q.answer && exam.show_answers) {
-            html += '<div style="font-size:12px;color:var(--muted)">Correct answer: <span style="color:rgba(16,185,129,0.9);font-weight:600">' + esc(String(q.answer)) + '</span></div>';
+            html += '<div style="font-size:12px;color:var(--muted);margin-top:2px">Correct: <span style="color:rgba(16,185,129,0.9);font-weight:600">'+esc(String(q.answer))+'</span></div>';
           }
           html += '</div>';
         });
       });
+      html += '</div>';
     }
     g.innerHTML = html;
   } catch(e) {
-    g.innerHTML = '<div class="ebox">Could not load results: ' + e.message + '</div>';
+    g.innerHTML = '<div class="ebox">Could not load results: ' + esc(e.message) + '</div>';
   }
 }
 
