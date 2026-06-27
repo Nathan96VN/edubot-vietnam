@@ -1483,7 +1483,7 @@ app.post('/exam/generate', authenticate, async (req, res) => {
 
     const prompt = `You are an expert ${contextLabel} exam creator for Grade ${grade} ${subject}.
 
-Create a ${purposeLabel} covering these topics: ${topics}
+Create a ${purposeLabel} covering these topics: ${topics}${fileData ? ' Use the uploaded document as the primary source for questions.' : ''}
 Difficulty: ${difficulty}
 Question types to include: ${typesLabel}
 Total questions: ${questionCount || 10}
