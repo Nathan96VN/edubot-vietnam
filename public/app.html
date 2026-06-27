@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>EduBot</title>
+<title>StellaStride</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 /* ── RESET ── */
@@ -456,8 +456,8 @@ input[type=file]#cfi{display:none}
       </div>
       <div id="msgs">
         <div class="wcard" id="wcard">
-          <div class="ic" style="font-size:48px;margin-bottom:14px">🤖</div>
-          <h3 id="wt">Chào mừng đến EduBot!</h3>
+          <div class="ic" style="font-size:48px;margin-bottom:14px"></div>
+          <h3 id="wt">Chào mừng đến StellaStride!</h3>
           <p id="wd">Gia sư AI cá nhân cho học sinh lớp 1–12. Đăng nhập để bắt đầu học!</p>
           <button id="wbtn">Đăng nhập / Đăng ký miễn phí</button>
         </div>
@@ -883,7 +883,7 @@ input[type=file]#cfi{display:none}
 <div id="upgoverlay">
   <div id="upgmodal">
     <button id="upgcls" onclick="closeUpgrade()">✕</button>
-    <div style="text-align:center;margin-bottom:16px"><div style="font-size:28px;margin-bottom:8px">🚀</div><div style="font-size:18px;font-weight:800;color:var(--text)" id="upg-title">Nâng cấp EduBot</div><div style="font-size:13px;color:var(--muted);margin-top:4px" id="upg-sub">Chọn gói phù hợp với bạn</div></div>
+    <div style="text-align:center;margin-bottom:16px"><div style="font-size:28px;margin-bottom:8px">🚀</div><div style="font-size:18px;font-weight:800;color:var(--text)" id="upg-title">Nâng cấp StellaStride</div><div style="font-size:13px;color:var(--muted);margin-top:4px" id="upg-sub">Chọn gói phù hợp với bạn</div></div>
     <div style="display:flex;gap:4px;margin-bottom:16px;background:rgba(255,255,255,0.03);padding:4px;border-radius:var(--r);border:1px solid var(--border2)">
       <button id="upg-tab0" onclick="showUpgTab(0)" style="flex:1;padding:8px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)">📦 Gói tháng</button>
       <button id="upg-tab1" onclick="showUpgTab(1)" style="flex:1;padding:8px;border-radius:10px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)">⚡ Mua Credits</button>
@@ -936,7 +936,7 @@ var VI={
   login:'Đăng nhập',reg:'Đăng ký',logout:'Đăng xuất',loginbtn:'Đăng nhập',std:'Học sinh',tch:'Giáo viên',adm:'Quản trị',
   t0:'💬 AI Tutor',t1:'🏫 Lớp học',t2:'👩‍🏫 Dashboard',t3:'📚 Flashcards',t4:'🎮 Games',
   ls:'Môn học:',lg:'Lớp:',m:'Toán',sc:'Khoa học',en:'Tiếng Anh',today:'Hôm nay:',
-  wt:'Chào mừng đến EduBot!',wd:'Gia sư AI cá nhân cho học sinh lớp 1–12. Đăng nhập để bắt đầu học!',wb:'Đăng nhập / Đăng ký miễn phí',
+  wt:'Chào mừng đến StellaStride!',wd:'Gia sư AI cá nhân cho học sinh lớp 1–12. Đăng nhập để bắt đầu học!',wb:'Đăng nhập / Đăng ký miễn phí',
   cph:'Hỏi tôi bất cứ điều gì...',send:'Gửi ✈️',
   jt:'Tham gia lớp học',jd:'Nhập mã EDU-XXXX do giáo viên cung cấp',jph:'VD: EDU-4B2K',jbtn:'Tham gia lớp',
   mct:'🏫 Lớp học của tôi',sempty:'Bạn chưa tham gia lớp học nào.',
@@ -959,13 +959,13 @@ var VI={
   pn1:'Student Plus ⭐',pm1:'VND/tháng',pf1a:'Tất cả Basic',pf1b:'Ảnh AI',pf1c:'Ưu tiên hỗ trợ',
   pn2:'Teacher',pm2:'VND/tháng',pf2a:'Dashboard + Lớp học',pf2b:'Trợ lý AI giáo viên',pf2c:'Câu hỏi không giới hạn',
   pn3:'Teacher Pro ⭐',pm3:'VND/tháng',pf3a:'Tất cả Teacher',pf3b:'Ảnh AI',pf3c:'Ưu tiên hỗ trợ',
-  upgtitle:'Nâng cấp EduBot',upgsub:'Chọn gói phù hợp với bạn'
+  upgtitle:'Nâng cấp StellaStride',upgsub:'Chọn gói phù hợp với bạn'
 };
 var EN={
   login:'Login',reg:'Register',logout:'Log out',loginbtn:'Login',std:'Student',tch:'Teacher',adm:'Admin',
   t0:'💬 AI Tutor',t1:'🏫 Classroom',t2:'👩‍🏫 Dashboard',t3:'📚 Flashcards',t4:'🎮 Games',
   ls:'Subject:',lg:'Grade:',m:'Math',sc:'Science',en:'English',today:'Today:',
-  wt:'Welcome to EduBot!',wd:'Your personal AI tutor for grades 1–12. Log in to start learning!',wb:'Login / Sign up free',
+  wt:'Welcome to StellaStride!',wd:'Your personal AI tutor for grades 1–12. Log in to start learning!',wb:'Login / Sign up free',
   cph:'Ask me anything...',send:'Send ✈️',
   jt:'Join a Classroom',jd:'Enter the EDU-XXXX code from your teacher',jph:'e.g. EDU-4B2K',jbtn:'Join Class',
   mct:'🏫 My Classrooms',sempty:"You haven't joined any classrooms yet.",
@@ -988,7 +988,7 @@ var EN={
   pn1:'Student Plus ⭐',pm1:'VND/month',pf1a:'Everything in Basic',pf1b:'AI Images',pf1c:'Priority support',
   pn2:'Teacher',pm2:'VND/month',pf2a:'Dashboard + Classrooms',pf2b:'AI Teaching Assistant',pf2c:'Unlimited questions',
   pn3:'Teacher Pro ⭐',pm3:'VND/month',pf3a:'Everything in Teacher',pf3b:'AI Images',pf3c:'Priority support',
-  upgtitle:'Upgrade EduBot',upgsub:'Choose the right plan for you'
+  upgtitle:'Upgrade StellaStride',upgsub:'Choose the right plan for you'
 };
 
 function L(k){return(lang==='en'?EN:VI)[k]||(VI)[k]||k;}
@@ -1336,7 +1336,7 @@ function addMsg(role,txt,isHtml){
     d.innerHTML='<div class="av">👤</div><div class="bub">'+(isHtml?txt:esc(txt))+'</div>';
   } else {
     contentId='ai-'+Date.now();
-    d.innerHTML='<div class="av">🤖</div><div class="bub" style="width:100%;overflow-x:auto"><div class="ai-out" id="'+contentId+'">'+txt+'</div></div>';
+    d.innerHTML='<div class="av" style="background:linear-gradient(135deg,rgba(0,180,166,0.6),rgba(123,140,222,0.4))"></div><div class="bub" style="width:100%;overflow-x:auto"><div class="ai-out" id="'+contentId+'">'+txt+'</div></div>';
   }
   box.appendChild(d);box.scrollTop=box.scrollHeight;
   return contentId;
@@ -1345,7 +1345,7 @@ function addMsg(role,txt,isHtml){
 function addTyping(bid){
   var box=document.getElementById(bid);var id='ty'+Date.now();
   var d=document.createElement('div');d.className='m a';d.id=id;
-  d.innerHTML='<div class="av">🤖</div><div class="bub"><div class="dots"><span></span><span></span><span></span></div></div>';
+  d.innerHTML='<div class="av" style="background:linear-gradient(135deg,rgba(0,180,166,0.6),rgba(123,140,222,0.4))"></div><div class="bub"><div class="stars-loading"><span>✨</span><span>✨</span><span>✨</span></div></div>';
   box.appendChild(d);box.scrollTop=box.scrollHeight;return id;
 }
 
@@ -1373,7 +1373,7 @@ function getRandomAccentColor(){
 function buildExportHTML(contentId){
   var el=document.getElementById(contentId);if(!el)return null;
   var clone=el.cloneNode(true);
-  var title='EDUBOT DOCUMENT';
+  var title='STELLASTRIDE DOCUMENT';
   var h2=clone.querySelector('h2');if(h2){title=h2.textContent.toUpperCase();h2.remove();}
   var css=[
     'body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:1.5cm;color:#111;line-height:1.5;background:#fff}',
@@ -1398,10 +1398,10 @@ function barExportPDF(){
   if(!lastAiContentId)return;
   var b=buildExportHTML(lastAiContentId);if(!b)return;
   var w=window.open('','_blank');
-  w.document.write('<html><head><title>EduBot Export</title><style>'+b.css+'</style></head><body>'+
-    '<div class="doc-header"><div class="doc-brand">EduBot</div><div style="font-size:9pt;color:#888">AI Teaching Platform</div></div>'+
+  w.document.write('<html><head><title>StellaStride Export</title><style>'+b.css+'</style></head><body>'+
+    '<div class="doc-header"><div class="doc-brand">StellaStride</div><div style="font-size:9pt;color:#888">AI Teaching Platform</div></div>'+
     '<div class="doc-title">'+b.title+'</div>'+b.clone.innerHTML+
-    '<div class="doc-footer"><span>EduBot — AI Teaching Assistant</span><span>edubot-vietnam.onrender.com</span></div>'+
+    '<div class="doc-footer"><span>StellaStride — AI Teaching Platform</span><span>edubot-vietnam.onrender.com</span></div>'+
     '</body></html>');
   w.document.close();w.focus();setTimeout(function(){w.print();w.close();},500);
 }
@@ -1411,13 +1411,13 @@ function barExportWord(){
   var b=buildExportHTML(lastAiContentId);if(!b)return;
   var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">'+
     '<head><meta charset="utf-8"><style>'+b.css+'</style></head><body>'+
-    '<div class="doc-header"><div class="doc-brand">EduBot</div><div style="font-size:9pt;color:#888">AI Teaching Platform</div></div>'+
+    '<div class="doc-header"><div class="doc-brand">StellaStride</div><div style="font-size:9pt;color:#888">AI Teaching Platform</div></div>'+
     '<div class="doc-title">'+b.title+'</div>'+b.clone.innerHTML+
-    '<div class="doc-footer"><span>EduBot — AI Teaching Assistant</span><span>edubot-vietnam.onrender.com</span></div>'+
+    '<div class="doc-footer"><span>StellaStride — AI Teaching Platform</span><span>edubot-vietnam.onrender.com</span></div>'+
     '</body></html>';
   var blob=new Blob([html],{type:'application/msword'});
   var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download='EduBot-Export.doc';a.click();
+  var a=document.createElement('a');a.href=url;a.download='StellaStride-Export.doc';a.click();
   URL.revokeObjectURL(url);
 }
 
@@ -1603,10 +1603,10 @@ async function doTSend(){
     var res=await fetch(API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify({message:msg,subject:'General',grade:10,role:'teacher',lang:lang})});
     var data=await res.json();var te=document.getElementById(tid);if(te)te.remove();
     var r=document.createElement('div');r.className='m a';var copyId='cp'+Date.now();
-    r.innerHTML='<div class="av">🤖</div><div class="bub" style="width:100%"><div class="ai-out" id="'+copyId+'">'+(data.reply||data.response||'<p>'+esc(data.error||'Error')+'</p>')+'</div></div>';
+    r.innerHTML='<div class="av" style="background:linear-gradient(135deg,rgba(0,180,166,0.6),rgba(123,140,222,0.4))"></div><div class="bub" style="width:100%"><div class="ai-out" id="'+copyId+'">'+(data.reply||data.response||'<p>'+esc(data.error||'Error')+'</p>')+'</div></div>';
     box.appendChild(r);box.scrollTop=box.scrollHeight;
     lastAiContentId=copyId;
-  }catch(e){var te=document.getElementById(tid);if(te)te.remove();var r=document.createElement('div');r.className='m a';r.innerHTML='<div class="av">🤖</div><div class="bub">❌ '+L('cerr')+'</div>';box.appendChild(r);}
+  }catch(e){var te=document.getElementById(tid);if(te)te.remove();var r=document.createElement('div');r.className='m a';r.innerHTML='<div class="av" style="background:linear-gradient(135deg,rgba(0,180,166,0.6),rgba(123,140,222,0.4))"></div><div class="bub">❌ '+L('cerr')+'</div>';box.appendChild(r);}
   finally{btn.disabled=false;}
 }
 
