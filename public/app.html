@@ -1455,6 +1455,7 @@ async function loadSClasses(){
 
 
   async function openClassExams(classId){
+    window._gradeClassId=classId;
   var g=document.getElementById('sgrid');
   g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading exams...</div>';g.style.display='block';
   try{
