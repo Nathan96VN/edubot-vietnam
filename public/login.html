@@ -3,52 +3,52 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>EduBot — Đăng nhập</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<title>StellaStride — Đăng nhập</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#150810;--primary:#F43F5E;--secondary:#F97316;
-  --pg:rgba(244,63,94,0.65);--sg:rgba(249,115,22,0.5);
-  --card:rgba(244,63,94,0.07);--border:rgba(244,63,94,0.15);
-  --border2:rgba(255,255,255,0.07);--text:#FFF1F2;
-  --muted:rgba(253,164,175,0.7);--muted2:rgba(255,255,255,0.45);
-  --font:'Plus Jakarta Sans',system-ui,sans-serif;
+  --bg:#F5F9FF;--primary:#00B4A6;--secondary:#7B8CDE;
+  --pg:rgba(0,180,166,0.8);--sg:rgba(123,140,222,0.6);
+  --card:rgba(0,180,166,0.05);--border:rgba(0,180,166,0.15);
+  --border2:rgba(0,180,166,0.08);--text:#1E1B4B;
+  --muted:rgba(45,45,45,0.6);--muted2:rgba(30,27,75,0.4);
+  --font:'Poppins',system-ui,sans-serif;
 }
-html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden}
+html,body{min-height:100vh;background:#F5F9FF;color:var(--text);font-family:var(--font);display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden}
 .orb{position:fixed;border-radius:50%;pointer-events:none}
-.o1{width:500px;height:500px;background:radial-gradient(circle,rgba(244,63,94,0.18),transparent 70%);top:-150px;right:-100px}
-.o2{width:350px;height:350px;background:radial-gradient(circle,rgba(249,115,22,0.14),transparent 70%);bottom:-80px;left:-60px}
-.card{background:rgba(244,63,94,0.06);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:100%;max-width:400px;position:relative;z-index:1}
-.lang-wrap{display:flex;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:20px;overflow:hidden;width:fit-content;margin:0 auto 24px}
+.o1{width:500px;height:500px;background:radial-gradient(circle,rgba(0,180,166,0.12),transparent 70%);top:-150px;right:-100px}
+.o2{width:350px;height:350px;background:radial-gradient(circle,rgba(123,140,222,0.1),transparent 70%);bottom:-80px;left:-60px}
+.card{background:#ffffff;backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:100%;max-width:400px;position:relative;z-index:1}
+.lang-wrap{display:flex;justify-content:center;background:rgba(0,180,166,0.05);border:1px solid var(--border);border-radius:20px;overflow:hidden;width:fit-content;margin:0 auto 24px}
 .lb{padding:6px 16px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:var(--font)}
 .lb.on{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
 .brand{text-align:center;margin-bottom:24px}
-.brand-text{font-size:26px;font-weight:800;color:var(--text)}
-.brand-text span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.brand-text{font-size:26px;font-weight:800;color:#1E1B4B}
+.brand-text span{color:#00B4A6;-webkit-text-fill-color:#00B4A6}
 .title{font-size:22px;font-weight:700;text-align:center;margin-bottom:6px;color:var(--text)}
 .subtitle{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px}
-.tabs{display:flex;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:10px;padding:3px;margin-bottom:22px}
+.tabs{display:flex;background:rgba(0,180,166,0.04);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:22px}
 .tab{flex:1;padding:8px;text-align:center;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;font-family:var(--font);transition:all 0.2s}
 .tab.on{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
-.field input,.field select{width:100%;padding:11px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--font);outline:none;transition:border-color 0.2s}
-.field input:focus,.field select:focus{border-color:rgba(244,63,94,0.4)}
+.field input,.field select{width:100%;padding:11px 14px;background:#F5F9FF;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--font);outline:none;transition:border-color 0.2s}
+.field input:focus,.field select:focus{border-color:rgba(0,180,166,0.4)}
 .field input::placeholder{color:var(--muted2)}
-.field select option{background:#1F0D18;color:var(--text)}
+.field select option{background:#F5F9FF;color:var(--text)}
 .role-wrap{display:flex;gap:8px;margin-bottom:18px}
 .role-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.2s;font-family:var(--font)}
-.role-btn.on{border-color:rgba(244,63,94,0.4);color:var(--primary);background:rgba(244,63,94,0.08)}
+.role-btn.on{border-color:rgba(0,180,166,0.4);color:var(--primary);background:rgba(0,180,166,0.08)}
 .role-btn.ton.on{border-color:rgba(16,185,129,0.4);color:rgba(110,231,183,0.9);background:rgba(16,185,129,0.08)}
-.submit{width:100%;padding:13px;background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(244,63,94,0.4);border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);margin-top:4px;transition:opacity 0.2s}
+.submit{width:100%;padding:13px;background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(0,180,166,0.3);border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);margin-top:4px;transition:opacity 0.2s}
 .submit:hover{opacity:0.88}
 .submit:disabled{opacity:0.5;cursor:not-allowed}
 .err{color:rgba(252,165,165,0.9);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
 .switch{text-align:center;margin-top:18px;font-size:13px;color:var(--muted2)}
-.switch a{color:var(--primary);text-decoration:none;font-weight:600}
+.switch a{color:#00B4A6;text-decoration:none;font-weight:600}
 .switch a:hover{text-decoration:underline}
-.divider{height:1px;background:rgba(255,255,255,0.06);margin:18px 0}
+.divider{height:1px;background:rgba(0,180,166,0.1);margin:18px 0}
 .sp2{width:16px;height:16px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:rn .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
 @keyframes rn{to{transform:rotate(360deg)}}
 </style>
@@ -62,7 +62,7 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:va
     <button class="lb on" id="lvi" onclick="setLang('vi')">🇻🇳 VI</button>
     <button class="lb" id="len" onclick="setLang('en')">🇬🇧 EN</button>
   </div>
-  <div class="brand"><span class="brand-text">Edu<span>Bot</span></span></div>
+  <div class="brand"><span class="brand-text">Stella<span>Stride</span></span></div>
   <div class="tabs">
     <button class="tab on" id="tab-login" onclick="setMode('login')"><span id="t0">Đăng nhập</span></button>
     <button class="tab" id="tab-reg" onclick="setMode('reg')"><span id="t1">Đăng ký</span></button>
