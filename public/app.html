@@ -2290,7 +2290,7 @@ async function generateExam(){
       topics,
       adaptForWeak:(document.getElementById('exam-adapt')||document.getElementById('ex-adapt')||{checked:false}).checked,
       timeLimit:parseInt((document.getElementById('exam-time')||document.getElementById('ex-time')||{value:'30'}).value)||30,
-      showAnswers:(document.getElementById('exam-show-answers')||document.getElementById('ex-showanswers')||{checked:false}).checked
+      showAnswers:(document.getElementById('exam-show-answers')||document.getElementById('ex-showanswers')||{checked:false}).checked,fileData:examFileData||null,fileType:examFileType||null,fileName:examFileName||''
     })});
     var data = await res.json();
     if(!res.ok) throw new Error(data.error||'Failed');
