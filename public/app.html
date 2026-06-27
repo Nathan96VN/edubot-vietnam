@@ -1453,7 +1453,34 @@ async function loadSClasses(){
   }catch(e){}
 }
 
-async function doCreate(){
+
+  async function openClassExams(classId){
+  var g=document.getElementById('sgrid');
+  g.innerHTML='<div class="ebox"><span class="sp2"></span> Loading exams...</div>';
+  try{
+    var res=await fetch(API+'/exam/my',{headers:ah()});
+    var data=await res.json();
+    var exams=(data.exams||[]).filter(function(e){ return String(e.classroom_id)===String(classId); });
+    var html='<div style="margin-bottom:14px"><button onclick="loadSClasses()" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
+    html+='<div class="stitle">📝 Exams for this class</div>';
+    if(!exams.length){
+      html+='<div class="ebox">No exams assigned to this class yet.</div>';
+    } else {
+      html+=exams.map(function(e){
+        var statusColor=e.status==='active'?'rgba(16,185,129,0.8)':e.status==='closed'?'rgba(239,68,68,0.7)':'rgba(255,255,255,0.4)';
+        var statusLabel=e.status==='active'?'🟢 Live':e.status==='closed'?'🔒 Closed':'📋 Draft';
+        return '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:10px;cursor:pointer" onclick="openExamStudents('+e.id+')">'
+          +'<div style="display:flex;align-items:flex-start;gap:10px">'
+          +'<div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--text)">'+esc(e.title)+'</div>'
+          +'<div style="font-size:12px;color:var(--muted);margin-top:4px">'+esc(e.subject)+' · Grade '+e.grade+' · '+e.total_points+' pts · Code: '+e.code+'</div></div>'
+          +'<span style="font-size:12px;font-weight:600;color:'+statusColor+'">'+statusLabel+'</span></div>'
+          +'<div style="margin-top:10px;font-size:12px;color:var(--primary)">👥 Click to see students & grade →</div></div>';
+      }).join('');
+    }
+    g.innerHTML=html;
+  }catch(e){ g.innerHTML='<div class="ebox">Failed to load exams</div>'; }
+}
+  async function doCreate(){
   var name=document.getElementById('ncname').value.trim();if(!name){toast(L('ecn'),'err');return;}
   var btn=document.getElementById('bcreat');btn.disabled=true;btn.innerHTML='<span class="sp2"></span>';
   try{
