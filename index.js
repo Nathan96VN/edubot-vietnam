@@ -1659,6 +1659,51 @@ app.get('/exam/classroom/:classId', authenticate, async (req, res) => {
   }
 });
 
+app.get('/exam/submission/:id/my-result', authenticate, async (req, res) => {
+  try {
+    const subId = req.params.id;
+    const userId = req.user.id;
+
+    const subResult = await pool.query(
+      `SELECT s.*, e.questions, e.title, e.show_answers, e.subject, e.grade
+       FROM exam_submissions s
+       JOIN exams e ON e.id = s.exam_id
+       WHERE s.id = $1 AND s.student_id = $2`,
+      [subId, userId]
+    );
+
+    if (!subResult.rows.length) {
+      return res.status(404).json({ error: 'Result not found' });
+    }
+
+    const row = subResult.rows[0];
+    const scores = (row.status === 'graded' && row.final_scores && row.final_scores.length)
+      ? row.final_scores : row.ai_scores;
+
+    res.json({
+      submission: {
+        id: row.id,
+        status: row.status,
+        total_score: row.total_score,
+        max_score: row.max_score,
+        answers: row.answers,
+        ai_scores: scores,
+        submitted_at: row.submitted_at
+      },
+      exam: {
+        title: row.title,
+        subject: row.subject,
+        grade: row.grade,
+        questions: row.questions,
+        show_answers: row.show_answers
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Get teacher classrooms
 app.get('/classroom/teacher', authenticate, async (req, res) => {
   try {
@@ -1827,53 +1872,6 @@ app.put('/exam/submission/:id/grade', authenticate, async (req, res) => {
 // Get live results for teacher
 
 // Student: view own submission result
-app.get('/exam/submission/:id/my-result', authenticate, async (req, res) => {
-  try {
-    const subId = req.params.id;
-    const userId = req.user.id;
-
-    // Get submission - must belong to this student
-    const subResult = await pool.query(
-      `SELECT s.*, e.questions, e.title, e.show_answers
-       FROM exam_submissions s
-       JOIN exams e ON e.id = s.exam_id
-       WHERE s.id = $1 AND s.student_id = $2`,
-      [subId, userId]
-    );
-
-    if (!subResult.rows.length) {
-      return res.status(404).json({ error: 'Result not found' });
-    }
-
-    const row = subResult.rows[0];
-
-    // Use final_scores if graded, otherwise ai_scores
-    const scores = (row.status === 'graded' && row.final_scores && row.final_scores.length)
-      ? row.final_scores
-      : row.ai_scores;
-
-    res.json({
-      submission: {
-        id: row.id,
-        status: row.status,
-        total_score: row.total_score,
-        max_score: row.max_score,
-        answers: row.answers,
-        ai_scores: scores,
-        submitted_at: row.submitted_at
-      },
-      exam: {
-        title: row.title,
-        questions: row.questions,
-        show_answers: row.show_answers
-      }
-    });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: e.message });
-  }
-});
-
 
 app.get('/exam/:id/results', authenticate, async (req, res) => {
   try {
