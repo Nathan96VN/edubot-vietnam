@@ -437,7 +437,7 @@ input[type=file]#cfi{display:none}
       <div id="zodiac-bg"><canvas id="zc-stella"></canvas><div id="zodiac-blur"></div></div>
       <div id="stella-header">
         <div id="stella-avatar">S</div>
-        <div><div id="stella-name">Ask Stella</div><div id="stella-sub">AI Tutor · Toán · Khoa học · Tiếng Anh</div></div>
+        <div><div id="stella-name">Ask Stella</div><div id="stella-sub">AI Tutor</div></div>
         <div id="cctrl" style="margin-left:auto;display:flex;gap:8px">
           <label id="lsub" style="font-size:11px;color:var(--muted);font-weight:600;align-self:center">Môn:</label>
           <select id="selsub"><option value="Math" id="om">Toán</option><option value="Science" id="os">Khoa học</option><option value="English" id="oe">Tiếng Anh</option></select>
@@ -577,7 +577,7 @@ input[type=file]#cfi{display:none}
     <div class="panel" id="p3">
       <div id="fcpanel">
         <div class="fc-gen-box">
-          <div class="stitle">📚 Generate Flashcards</div>
+          <div class="stitle" id="fcgen-label">📚 Generate Flashcards</div>
           <div class="fc-controls">
             <select id="fcsub"><option value="Math">Toán / Math</option><option value="Science">Khoa học / Science</option><option value="English">Tiếng Anh / English</option></select>
             <select id="fcgrd"><option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option><option value="4">Grade 4</option><option value="5">Grade 5</option><option value="6">Grade 6</option><option value="7">Grade 7</option><option value="8">Grade 8</option><option value="9">Grade 9</option><option value="10">Grade 10</option><option value="11">Grade 11</option><option value="12">Grade 12</option></select>
@@ -600,17 +600,17 @@ input[type=file]#cfi{display:none}
 
           <!-- Step 1: Context & Subject -->
           <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;backdrop-filter:var(--blur2)">
-            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 1 — Context & Subject</div>
+            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px" id="exam-step1">Step 1 — Context & Subject</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
               <div>
-                <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Context</div>
+                <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em" id="exam-context-label">Context</div>
                 <select id="exam-context" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)">
                   <option value="local">🇻🇳 Vietnamese National</option>
                   <option value="international">🌍 International</option>
                 </select>
               </div>
               <div>
-                <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Subject</div>
+                <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em" id="exam-subject-label">Subject</div>
                 <select id="exam-subject" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)">
                   <option value="Math">Math / Toán</option>
                   <option value="Science">Science / Khoa học</option>
@@ -775,8 +775,8 @@ input[type=file]#cfi{display:none}
       <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
           <div>
-            <div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)" id="memory-title">🗂️ Memory</div>
-            <div style="font-size:13px;color:var(--muted)" id="memory-sub">Your saved exams — recall, edit, assign or export</div>
+            <div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)" id="memory-title" id="memory-title">🗂️ Memory</div>
+            <div style="font-size:13px;color:var(--muted)" id="memory-sub" id="memory-sub">Your saved exams — recall, edit, assign or export</div>
           </div>
           <button onclick="showPanel(5)" style="padding:9px 18px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">+ New Exam</button>
         </div>
@@ -788,8 +788,8 @@ input[type=file]#cfi{display:none}
         <!-- TAB 6: MEMORY -->
     <div class="panel" id="p6">
       <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent">
-        <div class="stitle" id="memory-title2">🗂️ Memory — Saved Exams</div>
-        <div id="memory-list"><div class="ebox" id="memory-empty">No exams saved yet. Generate an exam and save it here!</div></div>
+        <div class="stitle" id="memory-title2" id="memory-title2">🗂️ Memory — Saved Exams</div>
+        <div id="memory-list"><div class="ebox" id="memory-empty" id="memory-empty">No exams saved yet. Generate an exam and save it here!</div></div>
       </div>
     </div>
 
@@ -934,9 +934,9 @@ var VI={
   't0':'✨ Ask Stella','t1':'🏫 Lớp học','t2':'👩‍🏫 Dashboard','t3':'📚 Flashcards','t4':'🎮 Games','t5':'📝 Tạo đề thi','t6':'🗂️ Bộ nhớ',
   ls:'Môn:',lg:'Lớp:',m:'Toán',sc:'Khoa học',en:'Tiếng Anh',today:'Hôm nay:',
   'stella-name':'Ask Stella',
-  'stella-sub':'Trợ lý AI · Toán · Khoa học · Tiếng Anh',
+  'stella-sub':'Trợ lý AI',
   wt:'Chào mừng đến StellaStride!',
-  wd:'Trợ lý AI thông minh. Đăng nhập để bắt đầu học!',
+  wd:'Trợ lý AI thông minh. Đăng nhập để bắt đầu!',
   wb:'Đăng nhập / Đăng ký miễn phí',
   cph:'Hỏi Stella bất cứ điều gì...',send:'Gửi ✈️',
   'export-label':'📤 Xuất:',
@@ -1017,9 +1017,9 @@ var EN={
   't0':'✨ Ask Stella','t1':'🏫 Classroom','t2':'👩‍🏫 Dashboard','t3':'📚 Flashcards','t4':'🎮 Games','t5':'📝 Exam Generator','t6':'🗂️ Memory',
   ls:'Subject:',lg:'Grade:',m:'Math',sc:'Science',en:'English',today:'Today:',
   'stella-name':'Ask Stella',
-  'stella-sub':'AI Assistant · Math · Science · English',
+  'stella-sub':'AI Assistant',
   wt:'Welcome to StellaStride!',
-  wd:'Your smart AI companion. Log in to start learning!',
+  wd:'Your smart AI companion. Log in to get started!',
   wb:'Login / Sign up free',
   cph:'Ask Stella anything...',send:'Send ✈️',
   'export-label':'📤 Export:',
@@ -1252,6 +1252,30 @@ function applyLang(){
     var bn4=document.getElementById('bn4');if(bn4)bn4.textContent=L('bn4');
     // Logout
     var sl=document.getElementById('side-logout');if(sl)sl.textContent=L('side-logout');
+
+    // Extra translations
+    var sn=document.getElementById('stella-name');if(sn)sn.textContent=L('stella-name')||'Ask Stella';
+    var ss=document.getElementById('stella-sub');if(ss)ss.textContent=L('stella-sub');
+    var fcgl=document.getElementById('fcgen-label');if(fcgl)fcgl.textContent=L('fcgen-label');
+    var mt=document.getElementById('memory-title');if(mt)mt.textContent=L('memory-title');
+    var ms=document.getElementById('memory-sub');if(ms)ms.textContent=L('memory-sub');
+    var me=document.getElementById('memory-empty');if(me)me.textContent=L('memory-empty');
+    var mt2=document.getElementById('memory-title2');if(mt2)mt2.textContent=L('memory-title2');
+    var gt=document.getElementById('games-title');if(gt)gt.textContent=L('games-title');
+    var gsub=document.getElementById('games-sub');if(gsub)gsub.textContent=L('games-sub');
+    var g1n=document.getElementById('game1-name');if(g1n)g1n.textContent=L('game1-name');
+    var g2n=document.getElementById('game2-name');if(g2n)g2n.textContent=L('game2-name');
+    var g3n=document.getElementById('game3-name');if(g3n)g3n.textContent=L('game3-name');
+    var g1d=document.getElementById('game1-desc');if(g1d)g1d.textContent=L('game1-desc');
+    var g2d=document.getElementById('game2-desc');if(g2d)g2d.textContent=L('game2-desc');
+    var g3d=document.getElementById('game3-desc');if(g3d)g3d.textContent=L('game3-desc');
+    var egt=document.getElementById('exam-gen-title');if(egt)egt.textContent=L('exam-gen-title');
+    var egs=document.getElementById('exam-gen-sub');if(egs)egs.textContent=L('exam-gen-sub');
+    var bn0=document.getElementById('bn0');if(bn0)bn0.textContent=L('bn0');
+    var bn1=document.getElementById('bn1');if(bn1)bn1.textContent=L('bn1');
+    var bn2=document.getElementById('bn2');if(bn2)bn2.textContent=L('bn2');
+    var bn3=document.getElementById('bn3');if(bn3)bn3.textContent=L('bn3');
+    var bn4=document.getElementById('bn4');if(bn4)bn4.textContent=L('bn4');
     if(tok)buildSidebar();
   }catch(e){console.warn('applyLang err',e);}
 }
@@ -2792,7 +2816,7 @@ function viewMyResult(subId,examTitle){
 }
 
 function goToExam(c){ window.location.href='/exam?code='+c; }
-function doLogout(){['eb_tok','eb_name','eb_role'].forEach(function(k){localStorage.removeItem(k);});location.reload();}
+function doLogout(){['eb_tok','eb_name','eb_role','eb_uid'].forEach(function(k){localStorage.removeItem(k);});location.href='/';}
 function ah(){return{'Authorization':'Bearer '+tok,'Content-Type':'application/json'};}
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 var tT;
