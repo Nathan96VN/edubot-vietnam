@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StellaStride — IELTS Practice</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#00B4A6;--secondary:#7B8CDE;--text:#1E1B4B;--muted:rgba(45,45,45,0.6);
+  --border:rgba(0,180,166,0.15);--bg:#F5F9FF;--white:#ffffff;
+  --success:rgba(16,185,129,0.9);--warn:rgba(180,83,9,0.8);--danger:rgba(239,68,68,0.8);
+  --font:'Poppins',system-ui,sans-serif;--rs:4px;--r:8px;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
+
+/* TOP BAR */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px}
+.topbar-logo{font-size:18px;font-weight:800;color:var(--text)}
+.topbar-logo span{color:var(--primary)}
+.topbar-center{display:flex;align-items:center;gap:16px}
+.topbar-title{font-size:14px;font-weight:600;color:var(--text)}
+.timer-box{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:var(--rs);padding:6px 14px;font-size:15px;font-weight:700;color:rgba(239,68,68,0.9);font-variant-numeric:tabular-nums}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.btn{padding:8px 16px;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);border:none;transition:opacity .2s}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-danger{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:rgba(239,68,68,0.9)}
+
+/* SECTION TABS */
+.section-tabs{position:fixed;top:56px;left:0;right:0;z-index:99;background:var(--white);border-bottom:1px solid var(--border);display:flex;padding:0 24px}
+.stab{padding:12px 20px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.stab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.stab.done{color:var(--success)}
+.stab.locked{color:var(--muted);opacity:0.5;cursor:not-allowed}
+
+/* MAIN */
+.main{padding-top:112px;min-height:100vh}
+
+/* HOME SCREEN */
+.home{max-width:780px;margin:0 auto;padding:40px 24px}
+.home-hero{text-align:center;margin-bottom:40px}
+.home-hero h1{font-size:36px;font-weight:800;color:var(--text);margin-bottom:8px}
+.home-hero h1 span{color:var(--primary)}
+.home-hero p{font-size:16px;color:var(--muted);max-width:460px;margin:0 auto 24px}
+.test-type{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px}
+.type-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:20px;cursor:pointer;transition:all .2s}
+.type-card.selected{border-color:var(--primary);background:rgba(0,180,166,0.04)}
+.type-card h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.type-card p{font-size:12px;color:var(--muted)}
+.section-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:32px}
+.sec-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px;text-align:center}
+.sec-icon{font-size:24px;margin-bottom:8px}
+.sec-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.sec-info{font-size:11px;color:var(--muted)}
+.start-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:var(--rs);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--font)}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid rgba(0,180,166,0.2);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{font-size:14px;color:var(--muted)}
+
+/* READING */
+.reading-wrap{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 112px);overflow:hidden}
+.reading-passage{border-right:1px solid var(--border);overflow-y:auto;padding:24px}
+.reading-questions{overflow-y:auto;padding:24px}
+.pane-label{font-size:10px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.passage-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:16px}
+.passage-body{font-size:14px;line-height:1.9;color:var(--text)}
+.passage-body p{margin-bottom:14px}
+.q-section-label{font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border-radius:var(--rs);padding:8px 12px;margin-bottom:12px;border:1px solid var(--border)}
+.q-item{margin-bottom:14px;padding:14px;border:1px solid var(--border);border-radius:var(--r);background:var(--white)}
+.q-item.active{border-color:var(--primary)}
+.q-item.answered{border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.02)}
+.q-num{font-size:11px;font-weight:700;color:var(--primary);margin-bottom:6px}
+.q-text{font-size:13px;color:var(--text);margin-bottom:10px;line-height:1.6}
+.q-options{display:flex;flex-direction:column;gap:6px}
+.q-opt{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;padding:6px 8px;border-radius:var(--rs);border:1px solid transparent}
+.q-opt:hover{background:var(--bg);border-color:var(--border)}
+.q-opt input[type=radio]{accent-color:var(--primary)}
+.q-fill{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:var(--font);color:var(--text);background:var(--bg)}
+.q-fill:focus{outline:none;border-color:var(--primary)}
+.tfng-opts{display:flex;gap:8px}
+.tfng-btn{flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);background:var(--white);color:var(--muted);text-align:center}
+.tfng-btn.selected{border-color:var(--primary);color:var(--primary);background:rgba(0,180,166,0.06)}
+
+/* Q NAVIGATOR */
+.q-nav{display:flex;gap:4px;flex-wrap:wrap;padding:12px 24px;background:var(--white);border-bottom:1px solid var(--border);position:fixed;top:112px;left:0;right:0;z-index:98}
+.qn{width:28px;height:28px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:var(--white)}
+.qn.ans{background:rgba(16,185,129,0.1);color:var(--success);border-color:rgba(16,185,129,0.3)}
+.qn.flag{background:rgba(245,158,11,0.1);color:var(--warn);border-color:rgba(245,158,11,0.3)}
+.qn.cur{background:rgba(0,180,166,0.1);color:var(--primary);border-color:var(--primary)}
+
+/* LISTENING */
+.listening-wrap{max-width:800px;margin:0 auto;padding:24px}
+.audio-player{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:24px;text-align:center}
+.audio-status{font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px}
+.audio-progress{background:var(--bg);border-radius:20px;height:8px;margin:12px 0;overflow:hidden}
+.audio-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:20px;transition:width .5s}
+.audio-controls{display:flex;gap:10px;justify-content:center;margin-top:12px}
+.play-btn{padding:10px 24px;background:var(--primary);border:none;border-radius:var(--rs);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.play-btn:disabled{opacity:0.5;cursor:not-allowed}
+.warning-box{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:var(--rs);padding:12px 16px;font-size:13px;color:var(--warn);margin-bottom:16px}
+.speaker-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:8px}
+.speaker-f{background:rgba(244,167,185,0.15);color:rgba(200,80,120,0.9)}
+.speaker-m{background:rgba(123,140,222,0.15);color:rgba(80,100,200,0.9)}
+
+/* WRITING */
+.writing-wrap{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 112px);overflow:hidden}
+.writing-prompt{border-right:1px solid var(--border);overflow-y:auto;padding:24px}
+.writing-area{display:flex;flex-direction:column;padding:24px;overflow:hidden}
+.writing-task-badge{display:inline-block;background:rgba(0,180,166,0.1);color:var(--primary);border-radius:var(--rs);padding:4px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
+.writing-question{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:16px}
+.chart-wrap{background:var(--bg);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.word-count{font-size:12px;color:var(--muted);text-align:right;margin-bottom:8px}
+.word-count span{font-weight:700;color:var(--primary)}
+.writing-textarea{flex:1;padding:16px;border:1px solid var(--border);border-radius:var(--r);font-size:14px;font-family:var(--font);color:var(--text);resize:none;line-height:1.7;background:var(--white)}
+.writing-textarea:focus{outline:none;border-color:var(--primary)}
+.writing-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.task-switch{display:flex;gap:8px}
+.task-btn{padding:8px 16px;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);border:1px solid var(--border);background:var(--white);color:var(--muted)}
+.task-btn.active{border-color:var(--primary);color:var(--primary);background:rgba(0,180,166,0.06)}
+
+/* SPEAKING */
+.speaking-wrap{max-width:680px;margin:0 auto;padding:24px}
+.speaking-parts{display:flex;gap:8px;margin-bottom:24px}
+.sp-tab{flex:1;padding:10px;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);border:1px solid var(--border);background:var(--white);color:var(--muted);text-align:center}
+.sp-tab.active{border-color:var(--primary);color:var(--primary);background:rgba(0,180,166,0.06)}
+.cue-card{background:rgba(0,180,166,0.04);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.cue-card h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px}
+.cue-points{list-style:none;display:flex;flex-direction:column;gap:6px}
+.cue-points li{font-size:13px;color:var(--muted);display:flex;gap:8px}
+.cue-points li::before{content:'•';color:var(--primary)}
+.record-area{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;margin-bottom:16px}
+.record-btn{width:72px;height:72px;border-radius:50%;border:none;background:var(--primary);color:#fff;font-size:28px;cursor:pointer;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.record-btn.recording{background:rgba(239,68,68,0.9);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.record-status{font-size:13px;color:var(--muted)}
+.transcript-area{width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:var(--font);color:var(--text);resize:none;height:100px;background:var(--bg);line-height:1.6}
+.prep-timer{font-size:32px;font-weight:800;color:var(--primary);text-align:center;margin:16px 0}
+
+/* RESULTS */
+.results-wrap{max-width:680px;margin:0 auto;padding:24px}
+.band-hero{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:32px;text-align:center;margin-bottom:20px}
+.band-score{font-size:72px;font-weight:800;color:var(--primary);line-height:1}
+.band-label{font-size:16px;color:var(--muted);margin-top:4px}
+.band-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.band-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.band-card h4{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.band-card .score{font-size:28px;font-weight:800;color:var(--primary)}
+.band-card p{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}
+.feedback-box{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.feedback-box h4{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px}
+.feedback-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.feedback-list li{font-size:13px;color:var(--muted);display:flex;gap:8px;line-height:1.5}
+.strength li::before{content:'✓';color:var(--success);font-weight:700}
+.improve li::before{content:'→';color:var(--primary);font-weight:700}
+.q-result{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
+.q-result:last-child{border-bottom:none}
+.q-result-icon{flex-shrink:0;font-size:14px}
+.q-result-text{font-size:12px;color:var(--text);line-height:1.5}
+.q-result-ans{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* FOOTER NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+.flag-btn-sm{display:flex;align-items:center;gap:6px;font-size:12px;padding:7px 14px;border-radius:var(--rs);border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);color:var(--warn);cursor:pointer;font-family:var(--font)}
+.nav-pair{display:flex;gap:8px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">Stella<span>Stride</span></div>
+  <div class="topbar-center">
+    <div class="topbar-title" id="topbar-title">IELTS Practice Test</div>
+    <div class="timer-box" id="timer" style="display:none">60:00</div>
+  </div>
+  <div class="topbar-right">
+    <a href="/app" class="btn btn-outline">← Back</a>
+    <button class="btn btn-primary" id="submit-btn" style="display:none" onclick="submitSection()">Submit Section</button>
+  </div>
+</div>
+
+<!-- SECTION TABS -->
+<div class="section-tabs" id="section-tabs" style="display:none">
+  <div class="stab active" data-sec="reading" onclick="goSection('reading')">📖 Reading</div>
+  <div class="stab locked" data-sec="listening" onclick="goSection('listening')">🎧 Listening</div>
+  <div class="stab locked" data-sec="writing" onclick="goSection('writing')">✏️ Writing</div>
+  <div class="stab locked" data-sec="speaking" onclick="goSection('speaking')">🎤 Speaking</div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+
+<!-- HOME SCREEN -->
+<div id="screen-home" class="home">
+  <div class="home-hero">
+    <h1>IELTS <span>Practice Test</span></h1>
+    <p>AI-generated full mock test. Choose Academic or General Training below.</p>
+  </div>
+
+  <div class="test-type" style="margin-bottom:24px">
+    <div class="type-card selected" id="type-academic" onclick="selectType('academic')">
+      <h3>Academic</h3>
+      <p>For university admission and professional registration</p>
+    </div>
+    <div class="type-card" id="type-general" onclick="selectType('general')">
+      <h3>General Training</h3>
+      <p>For work experience, training programs or migration</p>
+    </div>
+  </div>
+
+  <div class="section-cards">
+    <div class="sec-card">
+      <div class="sec-icon">📖</div>
+      <div class="sec-name">Reading</div>
+      <div class="sec-info">60 min · 40 Q</div>
+    </div>
+    <div class="sec-card">
+      <div class="sec-icon">🎧</div>
+      <div class="sec-name">Listening</div>
+      <div class="sec-info">30 min · 40 Q</div>
+    </div>
+    <div class="sec-card">
+      <div class="sec-icon">✏️</div>
+      <div class="sec-name">Writing</div>
+      <div class="sec-info">60 min · 2 tasks</div>
+    </div>
+    <div class="sec-card">
+      <div class="sec-icon">🎤</div>
+      <div class="sec-name">Speaking</div>
+      <div class="sec-info">15 min · 3 parts</div>
+    </div>
+  </div>
+
+  <div style="background:rgba(0,180,166,0.06);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:24px">
+    ⏱️ Full test takes approximately <strong>2 hours 45 minutes</strong>. You can also practice individual sections by clicking the tabs after starting.
+  </div>
+
+  <button class="start-btn" onclick="startTest()">Start Full Mock Test →</button>
+</div>
+
+<!-- READING SCREEN -->
+<div id="screen-reading" style="display:none">
+  <div class="q-nav" id="reading-qnav" style="top:156px"></div>
+  <div class="reading-wrap" style="margin-top:48px">
+    <div class="reading-passage" id="reading-passage">
+      <div class="loading"><div class="spinner"></div><p>Generating reading passage...</p></div>
+    </div>
+    <div class="reading-questions" id="reading-questions">
+      <div class="loading"><div class="spinner"></div><p>Loading questions...</p></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="flag-btn-sm" onclick="flagQuestion()">🚩 Flag for review</button>
+    <div style="font-size:12px;color:var(--muted)" id="reading-progress">Question 1 of 13</div>
+    <div class="nav-pair">
+      <button class="btn btn-outline" onclick="prevQ()">Previous</button>
+      <button class="btn btn-primary" onclick="nextQ()">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- LISTENING SCREEN -->
+<div id="screen-listening" style="display:none">
+  <div class="listening-wrap">
+    <div style="margin-bottom:16px">
+      <div style="display:flex;gap:8px;margin-bottom:16px" id="listening-part-tabs"></div>
+    </div>
+    <div class="warning-box">⚠️ In the real IELTS, the audio plays ONCE. Practice listening carefully before answering.</div>
+    <div class="audio-player" id="audio-player">
+      <div class="audio-status" id="audio-status">Ready to play</div>
+      <div class="audio-progress"><div class="audio-bar" id="audio-bar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">
+        <span id="audio-time">0:00</span>
+        <span id="audio-total">0:00</span>
+      </div>
+      <div class="audio-controls">
+        <button class="play-btn" id="play-btn" onclick="toggleAudio()">▶ Play Recording</button>
+        <button class="btn btn-outline" onclick="replayAudio()" id="replay-btn" style="display:none">↺ Replay (penalty)</button>
+      </div>
+    </div>
+    <div id="listening-questions"></div>
+    <div class="bottom-nav">
+      <div style="font-size:12px;color:var(--muted)" id="listening-progress">Section 1 of 4</div>
+      <div class="nav-pair">
+        <button class="btn btn-outline" id="prev-listen" onclick="prevListenPart()">Previous</button>
+        <button class="btn btn-primary" id="next-listen" onclick="nextListenPart()">Next Section</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WRITING SCREEN -->
+<div id="screen-writing" style="display:none">
+  <div class="writing-wrap">
+    <div class="writing-prompt" id="writing-prompt">
+      <div class="loading"><div class="spinner"></div><p>Generating writing task...</p></div>
+    </div>
+    <div class="writing-area">
+      <div class="writing-footer" style="margin-bottom:12px">
+        <div class="task-switch">
+          <button class="task-btn active" id="task1-btn" onclick="switchWritingTask(1)">Task 1 (20 min)</button>
+          <button class="task-btn" id="task2-btn" onclick="switchWritingTask(2)">Task 2 (40 min)</button>
+        </div>
+        <div class="word-count">Words: <span id="word-count">0</span> / <span id="word-min">150</span></div>
+      </div>
+      <textarea class="writing-textarea" id="writing-textarea" placeholder="Write your answer here..." oninput="countWords()"></textarea>
+      <div class="writing-footer" style="margin-top:12px">
+        <div style="font-size:12px;color:var(--muted)">Tip: Plan before you write. Spend 5 minutes planning your response.</div>
+        <button class="btn btn-primary" onclick="gradeWriting()">Submit for AI Grading →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SPEAKING SCREEN -->
+<div id="screen-speaking" style="display:none">
+  <div class="speaking-wrap">
+    <div class="speaking-parts">
+      <div class="sp-tab active" id="sp1" onclick="switchSpeakPart(1)">Part 1 — Introduction</div>
+      <div class="sp-tab" id="sp2" onclick="switchSpeakPart(2)">Part 2 — Cue Card</div>
+      <div class="sp-tab" id="sp3" onclick="switchSpeakPart(3)">Part 3 — Discussion</div>
+    </div>
+    <div id="speaking-content">
+      <div class="loading"><div class="spinner"></div><p>Loading speaking questions...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div id="screen-results" style="display:none">
+  <div class="results-wrap">
+    <div class="band-hero">
+      <div class="band-score" id="result-band">--</div>
+      <div class="band-label">Overall Band Score</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px" id="result-summary"></div>
+    </div>
+    <div class="band-grid" id="result-sections"></div>
+    <div id="result-detail"></div>
+    <div style="text-align:center;margin-top:24px;display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-outline" onclick="location.reload()">Try Another Test</button>
+      <a href="/app" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center">Back to StellaStride</a>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<script>
+var API = 'https://edubot-vietnam.onrender.com';
+var tok = localStorage.getItem('eb_tok') || '';
+function ah(){ return tok ? {'Content-Type':'application/json','Authorization':'Bearer '+tok} : {'Content-Type':'application/json'}; }
+
+var testType = 'academic';
+var currentSection = 'home';
+var timerInterval = null;
+var timerSeconds = 0;
+var sectionsDone = {};
+
+// Reading state
+var readingData = null;
+var readingAnswers = {};
+var readingFlags = {};
+var allQuestions = [];
+var currentQ = 0;
+
+// Listening state
+var listeningData = {};
+var listeningAnswers = {};
+var currentListenPart = 0;
+var synth = window.speechSynthesis;
+var utterance = null;
+var audioPlaying = false;
+var audioProgress = 0;
+var audioInterval = null;
+var replayCount = 0;
+
+// Writing state
+var writingTask = 1;
+var writingData = {1: null, 2: null};
+var writingAnswers = {1: '', 2: ''};
+var writingResults = {1: null, 2: null};
+
+// Speaking state
+var speakPart = 1;
+var speakData = {1: null, 2: null, 3: null};
+var speakAnswers = {1: [], 2: '', 3: []};
+var mediaRecorder = null;
+var audioChunks = [];
+var isRecording = false;
+var prepCountdown = null;
+
+// Section scores
+var sectionScores = {};
+
+function selectType(t){
+  testType = t;
+  document.getElementById('type-academic').className = 'type-card' + (t==='academic'?' selected':'');
+  document.getElementById('type-general').className = 'type-card' + (t==='general'?' selected':'');
+}
+
+function startTest(){
+  if(!tok){ alert('Please log in to take the IELTS test.'); return; }
+  document.getElementById('section-tabs').style.display = 'flex';
+  document.getElementById('submit-btn').style.display = 'block';
+  showSection('reading');
+  loadReading();
+}
+
+function showSection(sec){
+  currentSection = sec;
+  ['home','reading','listening','writing','speaking','results'].forEach(function(s){
+    document.getElementById('screen-'+s).style.display = s===sec?'block':'none';
+  });
+  document.querySelectorAll('.stab').forEach(function(t){
+    t.classList.remove('active');
+    if(t.dataset.sec===sec) t.classList.add('active');
+  });
+  if(sec==='home'){
+    document.getElementById('topbar-title').textContent = 'IELTS Practice Test';
+    document.getElementById('timer').style.display = 'none';
+    document.getElementById('submit-btn').style.display = 'none';
+  }
+}
+
+function goSection(sec){
+  var tab = document.querySelector('[data-sec="'+sec+'"]');
+  if(tab && tab.classList.contains('locked')) return;
+  stopTimer();
+  showSection(sec);
+  if(sec==='reading' && !readingData) loadReading();
+  else if(sec==='listening') loadListening();
+  else if(sec==='writing' && !writingData[1]) loadWriting(1);
+  else if(sec==='speaking' && !speakData[1]) loadSpeaking(1);
+  startSectionTimer(sec);
+}
+
+function unlockSection(sec){
+  var tab = document.querySelector('[data-sec="'+sec+'"]');
+  if(tab) tab.classList.remove('locked');
+}
+
+function startSectionTimer(sec){
+  var times = {reading:3600, listening:1800, writing:3600, speaking:900};
+  timerSeconds = times[sec] || 3600;
+  document.getElementById('topbar-title').textContent = sec.charAt(0).toUpperCase()+sec.slice(1);
+  document.getElementById('timer').style.display = 'block';
+  updateTimerDisplay();
+  timerInterval = setInterval(function(){
+    timerSeconds--;
+    updateTimerDisplay();
+    if(timerSeconds<=0){ clearInterval(timerInterval); submitSection(); }
+  }, 1000);
+}
+
+function stopTimer(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
+
+function updateTimerDisplay(){
+  var m = Math.floor(timerSeconds/60), s = timerSeconds%60;
+  document.getElementById('timer').textContent = pad(m)+':'+pad(s);
+  document.getElementById('timer').style.color = timerSeconds<300 ? 'rgba(239,68,68,0.9)' : 'rgba(239,68,68,0.9)';
+}
+function pad(n){ return n<10?'0'+n:n; }
+
+function submitSection(){
+  stopTimer();
+  sectionsDone[currentSection] = true;
+  var tab = document.querySelector('[data-sec="'+currentSection+'"]');
+  if(tab){ tab.classList.add('done'); tab.classList.remove('active'); }
+  var next = {reading:'listening', listening:'writing', writing:'speaking', speaking:'results'};
+  var nextSec = next[currentSection];
+  if(nextSec){
+    if(nextSec !== 'results') unlockSection(nextSec);
+    if(nextSec === 'results') showResults();
+    else{ showSection(nextSec); goSection(nextSec); }
+  }
+}
+
+// ── READING ───────────────────────────────────────────────────────────────
+async function loadReading(){
+  document.getElementById('screen-reading').style.display = 'block';
+  startSectionTimer('reading');
+  try{
+    var topics = ['Climate Change and the Environment','Artificial Intelligence in Society','Urban Planning and Architecture','The Psychology of Decision Making','Marine Biology Discoveries'];
+    var topic = topics[Math.floor(Math.random()*topics.length)];
+    var res = await fetch(API+'/ielts/reading/generate',{method:'POST',headers:ah(),body:JSON.stringify({topic,difficulty:testType==='academic'?'Academic':'General Training'})});
+    var data = await res.json();
+    readingData = data;
+    renderReading();
+  }catch(e){
+    document.getElementById('reading-passage').innerHTML = '<div style="padding:20px;color:rgba(239,68,68,0.8)">Failed to load passage. Please try again.</div>';
+  }
+}
+
+function renderReading(){
+  if(!readingData) return;
+
+  // Render passage
+  var passHTML = '<div class="pane-label">Reading passage</div>';
+  passHTML += '<div class="passage-title">'+esc(readingData.title)+'</div>';
+  passHTML += '<div class="passage-body">'+readingData.passage.replace(/\[([A-E])\]/g,'<strong>[$1]</strong>').replace(/\n\n/g,'</p><p>').replace(/^/,'<p>').replace(/$/,'</p>')+'</div>';
+  document.getElementById('reading-passage').innerHTML = passHTML;
+
+  // Build flat questions list
+  allQuestions = [];
+  readingData.sections.forEach(function(sec){
+    sec.questions.forEach(function(q){ allQuestions.push({...q, type:sec.type, instructions:sec.instructions}); });
+  });
+
+  renderQNav();
+  renderReadingQuestions();
+}
+
+function renderQNav(){
+  var nav = document.getElementById('reading-qnav');
+  nav.innerHTML = '';
+  allQuestions.forEach(function(q,i){
+    var d = document.createElement('div');
+    d.className = 'qn'+(readingAnswers[q.id]?' ans':'')+(readingFlags[q.id]?' flag':'')+(i===currentQ?' cur':'');
+    d.textContent = q.id;
+    d.onclick = function(){ currentQ=i; renderReadingQuestions(); renderQNav(); };
+    nav.appendChild(d);
+  });
+  var legend = document.createElement('div');
+  legend.style.cssText = 'margin-left:auto;display:flex;gap:10px;align-items:center;font-size:11px;color:var(--muted)';
+  legend.innerHTML = '<span style="width:10px;height:10px;background:rgba(16,185,129,0.1);border-radius:2px;display:inline-block"></span>Answered <span style="width:10px;height:10px;background:rgba(245,158,11,0.1);border-radius:2px;display:inline-block;margin-left:6px"></span>Flagged';
+  nav.appendChild(legend);
+  document.getElementById('reading-progress').textContent = 'Question '+(currentQ+1)+' of '+allQuestions.length;
+}
+
+function renderReadingQuestions(){
+  var qArea = document.getElementById('reading-questions');
+  if(!allQuestions.length) return;
+
+  // Group by instructions
+  var sections = {};
+  readingData.sections.forEach(function(sec){
+    sec.questions.forEach(function(q){ sections[q.id] = {type:sec.type, instr:sec.instructions}; });
+  });
+
+  var html = '<div class="pane-label">Questions</div>';
+  var lastInstr = '';
+  allQuestions.forEach(function(q,i){
+    var info = sections[q.id];
+    if(info && info.instr !== lastInstr){
+      html += '<div class="q-section-label"><strong>'+esc(info.type.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase()}))+'</strong> — '+esc(info.instr)+'</div>';
+      lastInstr = info.instr;
+    }
+    var isActive = i===currentQ, isAnswered = !!readingAnswers[q.id], isFlagged = !!readingFlags[q.id];
+    html += '<div class="q-item'+(isActive?' active':'')+(isAnswered?' answered':'')+(isFlagged?' flagged':'')+'" id="qi-'+q.id+'">';
+    html += '<div class="q-num">Q'+q.id+(isFlagged?' 🚩':'')+'</div>';
+    html += '<div class="q-text">'+esc(q.text)+'</div>';
+
+    if(info && info.type==='multiple_choice' && q.options){
+      html += '<div class="q-options">';
+      Object.keys(q.options).forEach(function(k){
+        html += '<label class="q-opt"><input type="radio" name="q'+q.id+'" value="'+k+'"'+(readingAnswers[q.id]===k?' checked':'')+' onchange="readingAnswers['+q.id+']='+"'"+k+"'"+';renderQNav();document.getElementById(\'qi-'+q.id+'\').classList.add(\'answered\')"/> '+k+'. '+esc(q.options[k])+'</label>';
+      });
+      html += '</div>';
+    } else if(info && info.type==='true_false_ng'){
+      html += '<div class="tfng-opts">';
+      ['TRUE','FALSE','NOT GIVEN'].forEach(function(opt){
+        html += '<div class="tfng-btn'+(readingAnswers[q.id]===opt?' selected':'')+'" onclick="readingAnswers['+q.id+']='+"'"+opt+"'"+';this.parentNode.querySelectorAll(\'.tfng-btn\').forEach(function(b){b.classList.remove(\'selected\')});this.classList.add(\'selected\');renderQNav();document.getElementById(\'qi-'+q.id+'\').classList.add(\'answered\')">'+opt+'</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<input class="q-fill" id="qf-'+q.id+'" placeholder="Your answer..." value="'+(readingAnswers[q.id]||'')+'" oninput="readingAnswers['+q.id+']=this.value;renderQNav();document.getElementById(\'qi-'+q.id+'\').classList.add(\'answered\')"/>';
+    }
+    html += '</div>';
+  });
+  qArea.innerHTML = html;
+
+  // Scroll to current question
+  if(currentQ >= 0){
+    var el = document.getElementById('qi-'+allQuestions[currentQ].id);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+}
+
+function prevQ(){ if(currentQ>0){currentQ--;renderQNav();renderReadingQuestions();} }
+function nextQ(){ if(currentQ<allQuestions.length-1){currentQ++;renderQNav();renderReadingQuestions();} }
+function flagQuestion(){
+  if(!allQuestions[currentQ]) return;
+  var id = allQuestions[currentQ].id;
+  readingFlags[id] = !readingFlags[id];
+  renderQNav();
+  renderReadingQuestions();
+}
+
+// ── LISTENING ─────────────────────────────────────────────────────────────
+var listenParts = [];
+var currentListeningPart = 0;
+
+async function loadListening(){
+  listenParts = [];
+  currentListeningPart = 0;
+  renderListeningParts();
+  await loadListenPart(1);
+}
+
+async function loadListenPart(partNum){
+  document.getElementById('listening-questions').innerHTML = '<div class="loading"><div class="spinner"></div><p>Generating Section '+partNum+'...</p></div>';
+  document.getElementById('audio-status').textContent = 'Generating script...';
+  try{
+    var res = await fetch(API+'/ielts/listening/generate',{method:'POST',headers:ah(),body:JSON.stringify({section:partNum})});
+    var data = await res.json();
+    listenParts[partNum-1] = data;
+    if(!listeningAnswers[partNum]) listeningAnswers[partNum] = {};
+    renderListeningSection(data);
+  }catch(e){
+    document.getElementById('listening-questions').innerHTML = '<div style="padding:20px;color:rgba(239,68,68,0.8)">Failed to load section.</div>';
+  }
+}
+
+function renderListeningParts(){
+  var tabs = document.getElementById('listening-part-tabs');
+  tabs.innerHTML = '';
+  for(var i=1;i<=4;i++){
+    var d = document.createElement('button');
+    d.className = 'sp-tab'+(currentListeningPart===i-1?' active':'');
+    d.textContent = 'Section '+i;
+    d.dataset.part = i;
+    d.onclick = (function(p){ return function(){ switchListenPart(p); }; })(i);
+    tabs.appendChild(d);
+  }
+}
+
+function renderListeningSection(data){
+  var partNum = data.section;
+  // Build full script text
+  var scriptText = data.script.map(function(line){ return line.speaker+': '+line.text; }).join(' ');
+
+  // Setup TTS
+  document.getElementById('audio-status').textContent = 'Ready to play — Section '+partNum;
+  document.getElementById('play-btn').disabled = false;
+  document.getElementById('play-btn').textContent = '▶ Play Recording';
+  audioPlaying = false;
+
+  window._currentScript = data;
+  window._currentScriptText = scriptText;
+  window._currentPartNum = partNum;
+
+  // Render questions
+  var html = '';
+  data.sections.forEach(function(sec){
+    html += '<div class="q-section-label"><strong>'+esc(sec.type.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase()}))+'</strong> — '+esc(sec.instructions)+'</div>';
+    sec.questions.forEach(function(q){
+      html += '<div class="q-item" id="lq-'+partNum+'-'+q.id+'">';
+      html += '<div class="q-num">Q'+q.id+'</div>';
+      html += '<div class="q-text">'+esc(q.text)+'</div>';
+      if(q.options){
+        html += '<div class="q-options">';
+        Object.keys(q.options).forEach(function(k){
+          html += '<label class="q-opt"><input type="radio" name="lq'+partNum+'_'+q.id+'" value="'+k+'" onchange="listeningAnswers['+partNum+']['+q.id+']='+"'"+k+"'"/> '+k+'. '+esc(q.options[k])+'</label>';
+        });
+        html += '</div>';
+      } else {
+        html += '<input class="q-fill" placeholder="Your answer..." oninput="listeningAnswers['+partNum+']['+q.id+']=this.value"/>';
+      }
+      html += '</div>';
+    });
+  });
+  document.getElementById('listening-questions').innerHTML = html;
+  document.getElementById('listening-progress').textContent = 'Section '+partNum+' of 4';
+}
+
+function toggleAudio(){
+  if(!window._currentScript) return;
+  if(audioPlaying){ pauseAudio(); return; }
+  playAudio();
+}
+
+function playAudio(){
+  if(!window._currentScriptText) return;
+  synth.cancel();
+  var script = window._currentScript;
+  var voices = synth.getVoices();
+
+  // Find voices for each speaker
+  var speakerVoices = {};
+  if(script.speakers){
+    script.speakers.forEach(function(sp){
+      var gender = sp.gender || 'female';
+      var accent = (sp.accent || 'British').toLowerCase();
+      var found = voices.find(function(v){
+        var lang = v.lang.toLowerCase();
+        var name = v.name.toLowerCase();
+        if(accent.includes('british') && !lang.includes('en-gb') && !name.includes('daniel') && !name.includes('kate')) return false;
+        if(accent.includes('australian') && !name.includes('karen') && !name.includes('lee')) return false;
+        return (gender==='male' && (name.includes('daniel')||name.includes('david')||name.includes('lee')||name.includes('james'))) ||
+               (gender==='female' && (name.includes('kate')||name.includes('karen')||name.includes('samantha')||name.includes('victoria')));
+      }) || voices.find(function(v){
+        return gender==='male' ? v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('david') : v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('samantha');
+      }) || voices[0];
+      speakerVoices[sp.name] = found;
+    });
+  }
+
+  var lines = script.script || [];
+  var lineIdx = 0;
+  var totalLines = lines.length;
+
+  function speakLine(){
+    if(lineIdx >= totalLines){ audioPlaying=false; document.getElementById('play-btn').textContent='▶ Play Recording'; clearInterval(audioInterval); document.getElementById('audio-bar').style.width='100%'; return; }
+    var line = lines[lineIdx];
+    var u = new SpeechSynthesisUtterance(line.text);
+    var spVoice = speakerVoices[line.speaker];
+    if(spVoice) u.voice = spVoice;
+    var sp = script.speakers ? script.speakers.find(function(s){ return s.name===line.speaker; }) : null;
+    if(sp){
+      u.rate = 0.92;
+      u.pitch = sp.gender==='male' ? 0.85 : 1.1;
+    }
+    u.onend = function(){ lineIdx++; speakLine(); };
+    synth.speak(u);
+    var pct = Math.round((lineIdx/totalLines)*100);
+    document.getElementById('audio-bar').style.width = pct+'%';
+    var elapsed = Math.round((lineIdx/totalLines)*180);
+    document.getElementById('audio-time').textContent = Math.floor(elapsed/60)+':'+(elapsed%60<10?'0':'')+elapsed%60;
+    document.getElementById('audio-total').textContent = '3:00';
+  }
+
+  audioPlaying = true;
+  document.getElementById('play-btn').textContent = '⏸ Pause';
+  document.getElementById('audio-status').textContent = 'Playing...';
+  speakLine();
+}
+
+function pauseAudio(){
+  if(synth.speaking){ synth.pause(); audioPlaying=false; document.getElementById('play-btn').textContent='▶ Resume'; document.getElementById('audio-status').textContent='Paused'; }
+  else if(synth.paused){ synth.resume(); audioPlaying=true; document.getElementById('play-btn').textContent='⏸ Pause'; document.getElementById('audio-status').textContent='Playing...'; }
+}
+
+function replayAudio(){
+  replayCount++;
+  if(replayCount>2){ alert('Maximum replays reached. In the real test, audio plays once only.'); return; }
+  synth.cancel();
+  audioPlaying=false;
+  playAudio();
+}
+
+async function switchListenPart(partNum){
+  currentListeningPart = partNum-1;
+  renderListeningParts();
+  if(listenParts[partNum-1]){ renderListeningSection(listenParts[partNum-1]); }
+  else{ await loadListenPart(partNum); }
+}
+
+function prevListenPart(){ if(currentListeningPart>0) switchListenPart(currentListeningPart); }
+function nextListenPart(){
+  synth.cancel();
+  if(currentListeningPart<3) switchListenPart(currentListeningPart+2);
+  else submitSection();
+}
+
+// ── WRITING ───────────────────────────────────────────────────────────────
+async function loadWriting(task){
+  document.getElementById('writing-prompt').innerHTML = '<div class="loading"><div class="spinner"></div><p>Generating Task '+task+'...</p></div>';
+  try{
+    var res = await fetch(API+'/ielts/writing/generate',{method:'POST',headers:ah(),body:JSON.stringify({task})});
+    var data = await res.json();
+    writingData[task] = data;
+    renderWritingPrompt(task);
+  }catch(e){
+    document.getElementById('writing-prompt').innerHTML = '<div style="padding:20px;color:rgba(239,68,68,0.8)">Failed to load task.</div>';
+  }
+}
+
+function renderWritingPrompt(task){
+  var data = writingData[task];
+  if(!data) return;
+  var html = '';
+  html += '<div class="writing-task-badge">Task '+task+(task===1?' — Minimum 150 words':' — Minimum 250 words')+'</div>';
+  html += '<div class="writing-question">'+esc(data.description||data.question)+'</div>';
+
+  if(task===1 && data.data){
+    html += '<div class="chart-wrap"><canvas id="writing-chart" height="180"></canvas></div>';
+  }
+  document.getElementById('writing-prompt').innerHTML = html;
+
+  if(task===1 && data.data){
+    var ctx = document.getElementById('writing-chart').getContext('2d');
+    new Chart(ctx,{
+      type: data.type==='bar_chart'?'bar':'line',
+      data:{
+        labels:data.data.labels,
+        datasets:data.data.datasets.map(function(ds,i){
+          return{label:ds.label,data:ds.values,backgroundColor:i===0?'rgba(0,180,166,0.3)':'rgba(123,140,222,0.3)',borderColor:i===0?'#00B4A6':'#7B8CDE',borderWidth:2};
+        })
+      },
+      options:{responsive:true,plugins:{legend:{labels:{color:'#1E1B4B',font:{family:'Poppins'}}}},scales:{y:{ticks:{color:'#1E1B4B'},title:{display:true,text:data.data.yAxisLabel||'',color:'#1E1B4B'}},x:{ticks:{color:'#1E1B4B'}}}}
+    });
+  }
+
+  document.getElementById('word-min').textContent = task===1?'150':'250';
+  document.getElementById('writing-textarea').value = writingAnswers[task] || '';
+  countWords();
+}
+
+function switchWritingTask(task){
+  writingAnswers[writingTask] = document.getElementById('writing-textarea').value;
+  writingTask = task;
+  document.getElementById('task1-btn').className = 'task-btn'+(task===1?' active':'');
+  document.getElementById('task2-btn').className = 'task-btn'+(task===2?' active':'');
+  if(!writingData[task]) loadWriting(task);
+  else{ renderWritingPrompt(task); }
+}
+
+function countWords(){
+  var txt = document.getElementById('writing-textarea').value.trim();
+  var count = txt ? txt.split(/\s+/).length : 0;
+  var el = document.getElementById('word-count');
+  el.textContent = count;
+  var min = writingTask===1?150:250;
+  el.style.color = count>=min ? 'var(--success)' : 'var(--danger)';
+}
+
+async function gradeWriting(){
+  var txt = document.getElementById('writing-textarea').value.trim();
+  if(txt.split(/\s+/).length < 10){ alert('Please write more before submitting.'); return; }
+  writingAnswers[writingTask] = txt;
+
+  var data = writingData[writingTask];
+  if(!data) return;
+
+  document.getElementById('writing-prompt').innerHTML = '<div class="loading"><div class="spinner"></div><p>AI is grading your response...</p></div>';
+
+  try{
+    var res = await fetch(API+'/ielts/writing/grade',{method:'POST',headers:ah(),body:JSON.stringify({
+      task:writingTask,
+      question:data.description||data.question,
+      answer:txt,
+      wordCount:txt.split(/\s+/).length
+    })});
+    var result = await res.json();
+    writingResults[writingTask] = result;
+    showWritingResult(result);
+  }catch(e){
+    document.getElementById('writing-prompt').innerHTML = '<div style="padding:20px;color:rgba(239,68,68,0.8)">Grading failed. Please try again.</div>';
+  }
+}
+
+function showWritingResult(result){
+  var html = '<div class="band-hero" style="padding:20px">';
+  html += '<div class="band-score" style="font-size:48px">'+result.band+'</div>';
+  html += '<div class="band-label">Task '+writingTask+' Band Score</div></div>';
+
+  var criteria = [
+    {key:'taskAchievement',label:'Task Achievement'},
+    {key:'coherenceCohesion',label:'Coherence & Cohesion'},
+    {key:'lexicalResource',label:'Lexical Resource'},
+    {key:'grammaticalRange',label:'Grammatical Range'}
+  ];
+  html += '<div class="band-grid">';
+  criteria.forEach(function(c){
+    if(result[c.key]){
+      html += '<div class="band-card"><h4>'+c.label+'</h4><div class="score">'+result[c.key].band+'</div><p>'+esc(result[c.key].feedback)+'</p></div>';
+    }
+  });
+  html += '</div>';
+
+  if(result.overallFeedback) html += '<div class="feedback-box"><h4>Overall Feedback</h4><p style="font-size:13px;color:var(--muted);line-height:1.6">'+esc(result.overallFeedback)+'</p></div>';
+  if(result.strengths) html += '<div class="feedback-box"><h4>Strengths</h4><ul class="feedback-list strength">'+result.strengths.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ul></div>';
+  if(result.improvements) html += '<div class="feedback-box"><h4>Areas to Improve</h4><ul class="feedback-list improve">'+result.improvements.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ul></div>';
+
+  html += '<div style="display:flex;gap:8px;margin-top:16px">';
+  html += '<button class="btn btn-outline" onclick="loadWriting('+writingTask+')">Try Again</button>';
+  html += '<button class="btn btn-primary" onclick="switchWritingTask('+(writingTask===1?2:1)+')">Go to Task '+(writingTask===1?2:1)+'</button>';
+  html += '</div>';
+
+  document.getElementById('writing-prompt').innerHTML = html;
+  sectionScores['writing_t'+writingTask] = result.band;
+}
+
+// ── SPEAKING ──────────────────────────────────────────────────────────────
+async function loadSpeaking(part){
+  document.getElementById('speaking-content').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading Part '+part+' questions...</p></div>';
+  if(speakData[part]){ renderSpeaking(part); return; }
+  try{
+    var res = await fetch(API+'/ielts/speaking/generate',{method:'POST',headers:ah(),body:JSON.stringify({part})});
+    var data = await res.json();
+    speakData[part] = data;
+    renderSpeaking(part);
+  }catch(e){
+    document.getElementById('speaking-content').innerHTML = '<div style="padding:20px;color:rgba(239,68,68,0.8)">Failed to load questions.</div>';
+  }
+}
+
+function switchSpeakPart(part){
+  speakPart = part;
+  [1,2,3].forEach(function(p){ document.getElementById('sp'+p).className='sp-tab'+(p===part?' active':''); });
+  loadSpeaking(part);
+}
+
+function renderSpeaking(part){
+  var data = speakData[part];
+  if(!data){ document.getElementById('speaking-content').innerHTML=''; return; }
+  var html = '';
+
+  if(part===1){
+    html += '<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px">';
+    html += '<h3 style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">Part 1 — Introduction & Interview</h3>';
+    html += '<p style="font-size:13px;color:var(--muted);margin-bottom:16px">Answer each question naturally. You have 1-2 minutes per question.</p>';
+    (data.questions||[]).forEach(function(q,i){
+      html += '<div class="q-item" style="margin-bottom:12px">';
+      html += '<div class="q-num">Q'+(i+1)+'</div>';
+      html += '<div class="q-text">'+esc(q)+'</div>';
+      html += '<textarea class="transcript-area" placeholder="Type or record your answer..." oninput="speakAnswers[1]['+i+']=this.value">'+(speakAnswers[1][i]||'')+'</textarea>';
+      html += '<div style="display:flex;gap:8px;margin-top:8px">';
+      html += '<button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="speakQuestion(\''+q.replace(/'/g,'')+'\','+i+')">🔊 Hear question</button>';
+      html += '<button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="toggleRecord('+i+')">🎤 Record</button>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  if(part===2 && data.cueCard){
+    var cc = data.cueCard;
+    html += '<div class="cue-card">';
+    html += '<h3>'+esc(cc.topic)+'</h3>';
+    html += '<p style="font-size:12px;color:var(--muted);margin-bottom:10px">You should say:</p>';
+    html += '<ul class="cue-points">';
+    (cc.points||[]).forEach(function(p){ html += '<li>'+esc(p)+'</li>'; });
+    html += '</ul></div>';
+    html += '<div class="record-area">';
+    html += '<div class="prep-timer" id="prep-timer" style="display:none">1:00</div>';
+    html += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px">You have 1 minute to prepare, then speak for 1-2 minutes.</p>';
+    html += '<button class="btn btn-primary" onclick="startCuePrepare()" id="prep-btn">Start Preparation (1 min)</button>';
+    html += '</div>';
+    html += '<textarea class="transcript-area" style="height:120px;margin-top:12px" placeholder="Or type your response here..." oninput="speakAnswers[2]=this.value">'+( speakAnswers[2]||'')+'</textarea>';
+    if(data.followUp){
+      html += '<div style="margin-top:16px"><h4 style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">Follow-up questions:</h4>';
+      data.followUp.forEach(function(q){ html += '<p style="font-size:13px;color:var(--muted);margin-bottom:6px">• '+esc(q)+'</p>'; });
+      html += '</div>';
+    }
+  }
+
+  if(part===3){
+    html += '<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:20px">';
+    html += '<h3 style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Part 3 — Two-way Discussion</h3>';
+    html += '<p style="font-size:13px;color:var(--muted);margin-bottom:16px">Topic: <strong>'+esc(data.topic||'')+'</strong></p>';
+    (data.questions||[]).forEach(function(q,i){
+      html += '<div class="q-item" style="margin-bottom:12px">';
+      html += '<div class="q-text">'+esc(q)+'</div>';
+      html += '<textarea class="transcript-area" placeholder="Your answer..." oninput="speakAnswers[3]['+i+']=this.value">'+(speakAnswers[3][i]||'')+'</textarea>';
+      html += '</div>';
+    });
+    html += '<div style="margin-top:16px">';
+    html += '<button class="btn btn-primary" onclick="gradeSpeaking()">Submit for AI Grading →</button>';
+    html += '</div></div>';
+  }
+
+  document.getElementById('speaking-content').innerHTML = html;
+}
+
+function speakQuestion(text){
+  synth.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.9;
+  synth.speak(u);
+}
+
+function startCuePrepare(){
+  var btn = document.getElementById('prep-btn');
+  var timerEl = document.getElementById('prep-timer');
+  if(!btn || !timerEl) return;
+  btn.style.display = 'none';
+  timerEl.style.display = 'block';
+  var secs = 60;
+  timerEl.textContent = '1:00';
+  prepCountdown = setInterval(function(){
+    secs--;
+    timerEl.textContent = Math.floor(secs/60)+':'+(secs%60<10?'0':'')+secs%60;
+    if(secs<=0){
+      clearInterval(prepCountdown);
+      timerEl.textContent = 'Speak now!';
+      timerEl.style.color = 'var(--success)';
+    }
+  }, 1000);
+}
+
+async function toggleRecord(idx){
+  if(isRecording){ stopRecording(idx); return; }
+  try{
+    var stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = function(e){ audioChunks.push(e.data); };
+    mediaRecorder.onstop = async function(){
+      var blob = new Blob(audioChunks,{type:'audio/webm'});
+      // For now just show transcription placeholder
+      var ta = document.querySelectorAll('.transcript-area')[idx];
+      if(ta) ta.value = '[Recording captured — transcription would appear here in production]';
+    };
+    mediaRecorder.start();
+    isRecording = true;
+  }catch(e){
+    alert('Microphone access denied. Please type your answer instead.');
+  }
+}
+
+function stopRecording(idx){
+  if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(function(t){ t.stop(); });
+  }
+  isRecording = false;
+}
+
+async function gradeSpeaking(){
+  var allAnswers = [];
+  var allQuestions = [];
+  if(speakData[1] && speakData[1].questions) allQuestions = allQuestions.concat(speakData[1].questions);
+  if(speakData[3] && speakData[3].questions) allQuestions = allQuestions.concat(speakData[3].questions);
+  var transcript = (speakAnswers[1]||[]).concat(speakAnswers[2]||[]).concat(speakAnswers[3]||[]).filter(Boolean).join('\n\n');
+
+  if(!transcript.trim()){ alert('Please answer some questions before submitting.'); return; }
+
+  document.getElementById('speaking-content').innerHTML = '<div class="loading"><div class="spinner"></div><p>AI is evaluating your speaking...</p></div>';
+
+  try{
+    var res = await fetch(API+'/ielts/speaking/grade',{method:'POST',headers:ah(),body:JSON.stringify({
+      part:3,
+      question:'IELTS Speaking Full Test',
+      transcript:transcript
+    })});
+    var result = await res.json();
+    sectionScores['speaking'] = result.band;
+    showSpeakingResult(result);
+  }catch(e){
+    document.getElementById('speaking-content').innerHTML = '<div style="padding:20px;color:rgba(239,68,68,0.8)">Grading failed.</div>';
+  }
+}
+
+function showSpeakingResult(result){
+  var html = '<div class="band-hero" style="padding:20px;margin-bottom:16px">';
+  html += '<div class="band-score" style="font-size:48px">'+result.band+'</div>';
+  html += '<div class="band-label">Speaking Band Score</div></div>';
+  var criteria = [{key:'fluencyCoherence',label:'Fluency & Coherence'},{key:'lexicalResource',label:'Lexical Resource'},{key:'grammaticalRange',label:'Grammatical Range'},{key:'pronunciation',label:'Pronunciation'}];
+  html += '<div class="band-grid">';
+  criteria.forEach(function(c){
+    if(result[c.key]) html += '<div class="band-card"><h4>'+c.label+'</h4><div class="score">'+result[c.key].band+'</div><p>'+esc(result[c.key].feedback)+'</p></div>';
+  });
+  html += '</div>';
+  if(result.overallFeedback) html += '<div class="feedback-box"><h4>Overall Feedback</h4><p style="font-size:13px;color:var(--muted);line-height:1.6">'+esc(result.overallFeedback)+'</p></div>';
+  if(result.improvements) html += '<div class="feedback-box"><h4>Areas to Improve</h4><ul class="feedback-list improve">'+result.improvements.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ul></div>';
+  html += '<div style="margin-top:16px"><button class="btn btn-primary" onclick="showResults()">See Overall Results →</button></div>';
+  document.getElementById('speaking-content').innerHTML = html;
+}
+
+// ── RESULTS ───────────────────────────────────────────────────────────────
+async function showResults(){
+  showSection('results');
+  stopTimer();
+
+  // Auto-grade reading if not done
+  var readingBand = sectionScores['reading'] || null;
+  if(!readingBand && readingData && allQuestions.length){
+    var correct = [];
+    var studentAnswers = [];
+    allQuestions.forEach(function(q){
+      correct.push({id:q.id,answer:q.answer});
+      studentAnswers.push(readingAnswers[q.id]||'');
+    });
+    try{
+      var res = await fetch(API+'/ielts/autograde',{method:'POST',headers:ah(),body:JSON.stringify({answers:studentAnswers,correctAnswers:correct})});
+      var data = await res.json();
+      readingBand = data.band;
+      sectionScores['reading'] = data.band;
+      window._readingResults = data;
+    }catch(e){}
+  }
+
+  // Calculate overall band
+  var bands = Object.values(sectionScores).filter(function(b){ return typeof b==='number'; });
+  var overall = bands.length ? Math.round((bands.reduce(function(a,b){return a+b;},0)/bands.length)*2)/2 : '--';
+
+  document.getElementById('result-band').textContent = overall;
+  document.getElementById('result-summary').textContent = 'Based on '+bands.length+' section(s) completed';
+
+  var secHTML = '';
+  var secDefs = [{key:'reading',label:'Reading'},{key:'listening',label:'Listening'},{key:'writing_t1',label:'Writing T1'},{key:'writing_t2',label:'Writing T2'},{key:'speaking',label:'Speaking'}];
+  secDefs.forEach(function(s){
+    if(sectionScores[s.key]!==undefined){
+      secHTML += '<div class="band-card"><h4>'+s.label+'</h4><div class="score">'+sectionScores[s.key]+'</div></div>';
+    }
+  });
+  document.getElementById('result-sections').innerHTML = secHTML;
+
+  // Reading detail
+  var detail = '';
+  if(window._readingResults){
+    var rd = window._readingResults;
+    detail += '<div class="feedback-box"><h4>Reading — '+rd.correct+'/'+rd.total+' correct (Band '+rd.band+')</h4>';
+    detail += '<div style="border-top:1px solid var(--border);margin-top:10px">';
+    (rd.results||[]).forEach(function(r){
+      detail += '<div class="q-result"><div class="q-result-icon">'+(r.correct?'✅':'❌')+'</div><div class="q-result-text">Q'+r.id+': '+(r.correct?'Correct':'Incorrect')+'<div class="q-result-ans">Your answer: '+(r.studentAnswer||'(blank)')+' • Correct: '+r.correctAnswer+'</div></div></div>';
+    });
+    detail += '</div></div>';
+  }
+  document.getElementById('result-detail').innerHTML = detail;
+}
+
+function esc(str){
+  if(!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init
+if(!tok){ document.getElementById('screen-home').innerHTML += '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:4px;padding:12px 16px;font-size:13px;color:rgba(239,68,68,0.9);margin-top:16px">Please <a href="/login" style="color:var(--primary);font-weight:600">log in</a> to take the IELTS test.</div>'; }
+
+// Load voices
+if(synth) synth.getVoices();
+window.speechSynthesis && window.speechSynthesis.addEventListener && window.speechSynthesis.addEventListener('voiceschanged', function(){});
+</script>
+</body>
+</html>
