@@ -814,7 +814,7 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
             max_tokens: 1500,
             messages: [{ role: 'user', content: [
               { type: 'document', source: docSource },
-              { type: 'text', text: `Extract all learning objectives for these topics from the PDF: ${batch.join(', ')}. Return ONLY JSON: [{"strand":"topic","substrand":"sub-topic or empty","objective":"specific learning objective"}]` }
+              { type: 'text', text: `Extract the TOP 3 most important learning objectives for each of these topics from the PDF: ${batch.join(', ')}. Maximum 3 objectives per topic. Return ONLY JSON array: [{"strand":"topic","substrand":"sub-topic or empty","objective":"specific learning objective"}]. Keep objectives concise, max 20 words each.` }
             ]}]
           });
           const items = parseItems(r2.content[0].text);
@@ -843,7 +843,8 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
 
     // Deduplicate
     const seen = new Set();
-    const uniqueItems = allItems.filter(item => {
+    const cappedItems = allItems.slice(0, 100);
+    const uniqueItems = cappedItems.filter(item => {
       if (!item || typeof item.objective !== 'string' || !item.objective.trim()) return false;
       const key = item.objective.trim().toLowerCase().slice(0, 120);
       if (seen.has(key)) return false;
