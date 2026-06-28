@@ -1,558 +1,1919 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>StellaStride — AI Learning Platform</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"/>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#F5F9FF;--bg2:#ffffff;--bg3:#F5F9FF;
-  --primary:#00B4A6;--secondary:#7B8CDE;
-  --pg:rgba(0,180,166,0.8);--sg:rgba(123,140,222,0.5);
-  --card:rgba(0,180,166,0.05);--card2:rgba(0,180,166,0.03);
-  --border:rgba(0,180,166,0.15);--border2:rgba(0,180,166,0.08);
-  --text:#1E1B4B;--muted:rgba(45,45,45,0.6);--muted2:rgba(30,27,75,0.4);
-  --success:#10B981;--font:'Poppins',system-ui,sans-serif;
-}
-html,body{background:#F5F9FF;color:var(--text);font-family:var(--font);overflow-x:hidden}
-.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
-.orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(0,180,166,0.15),transparent 70%);top:-150px;right:-100px}
-.orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(123,140,222,0.08),transparent 70%);bottom:100px;left:-80px}
-.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(0,180,166,0.08),transparent 70%);top:50%;left:30%}
+const express = require('express');
+const cors = require('cors');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');  
+const Anthropic = require('@anthropic-ai/sdk');
+const crypto = require('crypto');
+const querystring = require('querystring');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const OpenAI = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let pdfParse; try { pdfParse = require("pdf-parse"); } catch(e) { console.log("pdf-parse not installed"); }
 
-/* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
-.nav-logo{display:flex;align-items:center;gap:10px}
-.nav-logo-text{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.3px}
-.nav-logo-text span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav-links{display:flex;align-items:center;gap:28px}
-.nav-link{font-size:14px;font-weight:500;color:var(--muted2);text-decoration:none;transition:color 0.2s}
-.nav-link:hover{color:var(--text)}
-.nav-right{display:flex;align-items:center;gap:10px}
-.lang-wrap{display:flex;background:rgba(0,180,166,0.05);border:1px solid var(--border2);border-radius:20px;overflow:hidden}
-.lb{padding:5px 12px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:var(--font)}
-.lb.on{background:linear-gradient(135deg,var(--pg),var(--sg));color:#1E1B4B}
-.btn-nav{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);text-decoration:none;transition:all 0.2s;display:inline-block}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
-.btn-outline:hover{border-color:rgba(0,180,166,0.4);color:var(--primary)}
-.btn-filled{background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(0,180,166,0.4);color:#1E1B4B}
-.btn-filled:hover{opacity:0.85;transform:translateY(-1px)}
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: '150mb' }));
+app.use(express.urlencoded({ limit: '150mb', extended: true }));
+app.use(express.static('public'));
+app.get('/exam', (req, res) => res.sendFile(__dirname + '/public/exam.html'));
 
-main{position:relative;z-index:1}
+// ─── DB + AI clients ──────────────────────────────────────────────────────────
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-/* HERO */
-.hero{min-height:100vh;display:flex;align-items:center;padding:120px 40px 80px;max-width:1200px;margin:0 auto;gap:60px}
-.hero-left{flex:1;min-width:0}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.2);font-size:12px;font-weight:600;color:rgba(30,27,75,0.8);margin-bottom:28px}
-.pulse{width:6px;height:6px;border-radius:50%;background:var(--primary);display:inline-block;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-.hero h1{font-size:56px;font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:24px}
-.hero h1 .coral{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero-sub{font-size:17px;color:rgba(45,45,45,0.7);line-height:1.7;max-width:480px;margin-bottom:36px}
-.hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:48px}
-.btn-hero{padding:14px 28px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s}
-.btn-hero-p{background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(0,180,166,0.4);color:#1E1B4B}
-.btn-hero-p:hover{opacity:0.9;transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,180,166,0.2)}
-.btn-hero-g{background:rgba(0,180,166,0.05);border:1px solid var(--border2);color:var(--text)}
-.btn-hero-g:hover{border-color:var(--border);background:rgba(255,255,255,0.08)}
+// ─── Pricing config ───────────────────────────────────────────────────────────
+const PLANS = {
+  student_basic: { vnd: 79000,  usd_cents: 320,  label: 'Student Basic', plan: 'basic'       },
+  student_plus:  { vnd: 149000, usd_cents: 599,  label: 'Student Plus',  plan: 'plus'        },
+  teacher:       { vnd: 249000, usd_cents: 999,  label: 'Teacher',       plan: 'teacher'     },
+  teacher_pro:   { vnd: 299000, usd_cents: 1299, label: 'Teacher Pro',   plan: 'teacher_pro' },
+};
 
-/* STATS BAR */
-.stats-bar{display:flex;align-items:center;gap:0;flex-wrap:wrap}
-.stat-item{font-size:14px;font-weight:500;color:var(--muted2);padding-right:24px;margin-right:24px;border-right:1px solid rgba(255,255,255,0.1)}
-.stat-item:last-child{border-right:none;padding-right:0;margin-right:0}
-.stat-item strong{color:var(--text);font-weight:700}
+// ─── Credit costs per action ──────────────────────────────────────────────────
+const CREDIT_COSTS = {
+  question: 1,
+  advanced_question: 2,
+  quiz: 5,
+  exam: 10,
+  ai_image: 5,
+  flashcards: 2,
+};
 
-/* HERO RIGHT — chat bubbles */
-.hero-right{flex:1;display:flex;justify-content:center;align-items:center;position:relative;min-height:420px}
-.bubble-stage{position:relative;width:100%;height:420px}
-.chat-bubble{position:absolute;max-width:280px;padding:11px 15px;border-radius:14px;font-size:13px;line-height:1.55;opacity:0;transition:opacity 0.6s ease,transform 0.6s ease;pointer-events:none;backdrop-filter:blur(8px)}
-.chat-bubble.user{background:linear-gradient(135deg,rgba(0,180,166,0.15),rgba(123,140,222,0.1));border:1px solid rgba(0,180,166,0.25);color:#1E1B4B;border-radius:14px 14px 2px 14px}
-.chat-bubble.ai{background:rgba(0,180,166,0.08);border:1px solid rgba(0,180,166,0.15);color:rgba(30,27,75,0.8);border-radius:2px 14px 14px 14px}
-.chat-bubble.ai strong{color:#1E1B4B}
-.chat-bubble.show{opacity:1}
-.chat-bubble .katex{font-size:13px!important}
+// ─── Credits per plan ─────────────────────────────────────────────────────────
+const PLAN_CREDITS = {
+  basic: 100,
+  plus: 250,
+  teacher: 400,
+  teacher_pro: 600,
+};
 
-/* SECTION */
-.section{padding:80px 40px;max-width:1200px;margin:0 auto}
-.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(0,180,166,0.6);margin-bottom:12px;text-align:center}
-.sec-title{font-size:38px;font-weight:800;text-align:center;margin-bottom:12px;letter-spacing:-0.5px}
-.sec-sub{font-size:16px;color:var(--muted);text-align:center;max-width:500px;margin:0 auto 52px;line-height:1.7}
-.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(0,180,166,0.2),transparent);max-width:1200px;margin:0 auto}
-
-/* FEATURES */
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.feat-card{background:var(--card);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:18px;padding:28px;transition:all 0.25s}
-.feat-card:hover{border-color:rgba(0,180,166,0.3);transform:translateY(-4px);background:rgba(0,180,166,0.1)}
-.feat-card.soon{border-color:rgba(123,140,222,0.2);background:rgba(123,140,222,0.05)}
-.feat-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(0,180,166,0.25),rgba(123,140,222,0.15));border:1px solid rgba(0,180,166,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
-.feat-card.soon .feat-icon{background:linear-gradient(135deg,rgba(123,140,222,0.2),rgba(0,180,166,0.1));border-color:rgba(123,140,222,0.2)}
-.feat-title{font-size:17px;font-weight:700;margin-bottom:8px;color:var(--text)}
-.feat-text{font-size:14px;color:var(--muted);line-height:1.7}
-.soon-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(123,140,222,0.15);border:1px solid rgba(123,140,222,0.3);color:rgba(253,186,116,0.9);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em}
-
-/* WHO */
-.who-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-.who-card{background:var(--card2);border:1px solid var(--border2);border-radius:20px;padding:32px;transition:all 0.25s;position:relative;overflow:hidden}
-.who-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--secondary))}
-.who-card:hover{border-color:var(--border);transform:translateY(-3px)}
-.who-role{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(0,180,166,0.6);margin-bottom:10px}
-.who-title{font-size:24px;font-weight:800;margin-bottom:14px;color:var(--text)}
-.who-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
-.who-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--muted);line-height:1.5}
-.who-list li::before{content:'✓';color:var(--primary);font-weight:700;flex-shrink:0;margin-top:1px}
-.who-btn{display:inline-flex;align-items:center;gap:6px;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);text-decoration:none;transition:all 0.2s;background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(0,180,166,0.4);color:#1E1B4B}
-.who-btn:hover{opacity:0.85;transform:translateY(-1px)}
-
-/* EXAMS */
-.exams-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.exam-card{background:var(--card2);border:1px solid var(--border2);border-radius:14px;padding:20px;text-align:center;transition:all 0.2s}
-.exam-card:hover{border-color:var(--border);background:var(--card)}
-.exam-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
-.exam-sub{font-size:11px;color:var(--muted);line-height:1.5}
-.exam-tag{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.15);color:rgba(45,45,45,0.7);margin-bottom:8px}
-
-/* PRICING */
-.price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.price-card{background:var(--card2);border:1.5px solid var(--border2);border-radius:18px;padding:24px;transition:all 0.25s;position:relative}
-.price-card.featured{border-color:rgba(0,180,166,0.3);background:rgba(0,180,166,0.06)}
-.price-card:hover{transform:translateY(-4px)}
-.price-popular{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:linear-gradient(135deg,var(--pg),var(--sg));color:#1E1B4B;margin-bottom:8px}
-.price-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
-.price-amount{font-size:28px;font-weight:800;color:var(--primary);margin-bottom:2px;letter-spacing:-0.5px}
-.price-period{font-size:11px;color:var(--muted)}
-.price-credits{font-size:12px;color:rgba(110,231,183,0.9);font-weight:600;margin:10px 0;padding:3px 10px;background:rgba(16,185,129,0.1);border-radius:20px;display:inline-block;border:1px solid rgba(16,185,129,0.2)}
-.price-feats{list-style:none;display:flex;flex-direction:column;gap:8px;margin:16px 0;font-size:13px;color:var(--muted)}
-.price-feats li::before{content:'✓ ';color:var(--primary);font-weight:700}
-.price-btn{width:100%;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);border:none;margin-top:8px;transition:all 0.2s;text-decoration:none;display:block;text-align:center}
-.pb-p{background:linear-gradient(135deg,var(--pg),var(--sg));color:#1E1B4B}
-.pb-p:hover{opacity:0.85}
-.pb-g{background:rgba(0,180,166,0.05);border:1px solid var(--border2);color:var(--muted2)}
-.pb-g:hover{border-color:var(--border);color:var(--text)}
-
-/* CTA */
-.cta{padding:80px 40px;text-align:center}
-.cta-inner{max-width:600px;margin:0 auto;background:rgba(0,180,166,0.08);backdrop-filter:blur(20px);border:1px solid rgba(0,180,166,0.2);border-radius:24px;padding:52px 40px}
-.cta h2{font-size:38px;font-weight:800;margin-bottom:14px;letter-spacing:-0.5px}
-.cta p{font-size:16px;color:var(--muted);margin-bottom:32px;line-height:1.7}
-.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-
-/* FOOTER */
-.footer-wrap{padding:40px;border-top:1px solid var(--border2);max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
-.footer-brand{font-size:16px;font-weight:800;color:var(--text)}
-.footer-brand span{background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.footer-links{display:flex;gap:24px}
-.footer-links a{font-size:13px;color:var(--muted2);text-decoration:none}
-.footer-links a:hover{color:var(--text)}
-.footer-copy{font-size:12px;color:var(--muted2)}
-
-@media(max-width:900px){
-  .hero{flex-direction:column;padding:100px 20px 60px;text-align:center}
-  .hero h1{font-size:36px}
-  .hero-right{display:none}
-  .hero-btns,.stats-bar{justify-content:center}
-  .feat-grid{grid-template-columns:1fr 1fr}
-  .who-grid{grid-template-columns:1fr}
-  .exams-grid{grid-template-columns:repeat(2,1fr)}
-  .price-grid{grid-template-columns:1fr 1fr}
-  nav{padding:12px 20px}
-  .nav-links{display:none}
-  .section{padding:60px 20px}
-}
-@media(max-width:600px){
-  .feat-grid,.price-grid{grid-template-columns:1fr}
-  .exams-grid{grid-template-columns:repeat(2,1fr)}
-}
-</style>
-</head>
-<body>
-<div class="orb orb1"></div>
-<div class="orb orb2"></div>
-<div class="orb orb3"></div>
-
-<nav>
-  <div class="nav-logo">
-    <span class="nav-logo-text">Stella<span>Stride</span></span>
-  </div>
-  <div class="nav-links">
-    <a href="#features" class="nav-link" id="nl1">Features</a>
-    <a href="#who" class="nav-link" id="nl2">For Who</a>
-    <a href="#pricing" class="nav-link" id="nl3">Pricing</a>
-  </div>
-  <div class="nav-right">
-    <div class="lang-wrap">
-      <button class="lb on" id="lvi" onclick="setLang('vi')">🇻🇳 VI</button>
-      <button class="lb" id="len" onclick="setLang('en')">🇬🇧 EN</button>
-    </div>
-    <a href="/login" class="btn-nav btn-outline" id="nav-login">Đăng nhập</a>
-    <a href="/register" class="btn-nav btn-filled" id="nav-start">Bắt đầu miễn phí</a>
-  </div>
-</nav>
-
-<main>
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-left">
-    <div class="hero-badge"><span class="pulse"></span> <span id="badge-txt">Gia sư AI thế hệ mới</span></div>
-    <h1 id="hero-h1">Học thông minh hơn.<br><span class="coral">Tiến bộ nhanh hơn.</span><br>Với AI 24/7.</h1>
-    <p class="hero-sub" id="hero-sub">StellaStride là người bạn học AI — giải thích từng bước, flashcards thông minh, biểu đồ trực quan và giáo án chuyên nghiệp. Bằng tiếng Việt hoặc tiếng Anh.</p>
-    <div class="hero-btns">
-      <a href="/register?role=student" class="btn-hero btn-hero-p" id="btn-s">🎒 Tôi là Học sinh</a>
-      <a href="/register?role=teacher" class="btn-hero btn-hero-g" id="btn-t">👩‍🏫 Tôi là Giáo viên</a>
-    </div>
-    <div class="stats-bar">
-      <div class="stat-item"><strong id="s1">Grades 1 – 12</strong></div>
-      <div class="stat-item" id="s2">Vietnamese &amp; English</div>
-      <div class="stat-item" id="s3">Instant AI Answers</div>
-    </div>
-  </div>
-  <div class="hero-right">
-    <div class="bubble-stage" id="bubble-stage"></div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- FEATURES -->
-<section class="section" id="features">
-  <div class="sec-label" id="fl">Tính năng</div>
-  <h2 class="sec-title" id="ft">Mọi thứ bạn cần để học tốt hơn</h2>
-  <p class="sec-sub" id="fs">Từ gia sư AI đến trò chơi học tập — StellaStride có đủ công cụ cho học sinh và giáo viên.</p>
-  <div class="feat-grid">
-    <div class="feat-card"><div class="feat-icon">💬</div><div class="feat-title" id="f1t">Gia sư AI</div><div class="feat-text" id="f1d">Hỏi bất cứ điều gì — AI tự động nhận diện môn học và lớp, giải thích từng bước rõ ràng.</div></div>
-    <div class="feat-card"><div class="feat-icon">📄</div><div class="feat-title" id="f2t">Upload tài liệu</div><div class="feat-text" id="f2d">Tải lên PDF hoặc hình ảnh — AI đọc, giải thích nội dung, tạo câu hỏi và tóm tắt tức thì.</div></div>
-    <div class="feat-card"><div class="feat-icon">🎮</div><div class="feat-title" id="f3t">Games học tập</div><div class="feat-text" id="f3d">Quiz Battle, Speed Race và Flashcard Flip — học qua trò chơi AI tạo ra theo môn và lớp.</div></div>
-    <div class="feat-card"><div class="feat-icon">📚</div><div class="feat-title" id="f4t">Flashcards AI</div><div class="feat-text" id="f4d">Tạo thẻ ghi nhớ thông minh cho bất kỳ chủ đề nào. Lật thẻ, học và nhớ lâu hơn.</div></div>
-    <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title" id="f5t">Biểu đồ & Hình ảnh AI</div><div class="feat-text" id="f5d">Tạo biểu đồ và hình ảnh giáo dục AI cho bài học sinh động và trực quan hơn.</div></div>
-    <div class="feat-card"><div class="feat-icon">👩‍🏫</div><div class="feat-title" id="f6t">Dashboard giáo viên</div><div class="feat-text" id="f6d">Quản lý lớp học, tạo giáo án, đề kiểm tra và xuất tài liệu Word / PDF chuyên nghiệp.</div></div>
-    <div class="feat-card soon" style="grid-column:1/-1;display:flex;align-items:center;gap:24px;padding:22px 28px">
-      <div class="feat-icon" style="flex-shrink:0;margin-bottom:0">🎓</div>
-      <div>
-        <div class="soon-badge" id="sb">Sắp ra mắt</div>
-        <div class="feat-title" id="f7t">Cấp độ Đại học</div>
-        <div class="feat-text" id="f7d">IELTS, TOEFL, SAT, thi tuyển sinh đại học và các môn học đại học cương — đang được phát triển.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- WHO -->
-<section class="section" id="who">
-  <div class="sec-label" id="wl">Dành cho ai</div>
-  <h2 class="sec-title" id="wt">Phù hợp cho học sinh và giáo viên</h2>
-  <p class="sec-sub" id="ws">Dù bạn đang học bài hay soạn giáo án — StellaStride có giải pháp phù hợp.</p>
-  <div class="who-grid">
-    <div class="who-card">
-      <div class="who-role" id="wsr">🎒 Học sinh</div>
-      <div class="who-title" id="wst">Học thông minh hơn với AI</div>
-      <ul class="who-list">
-        <li id="ws1">Hỏi bất kỳ câu hỏi nào — AI giải thích từng bước</li>
-        <li id="ws2">Tải lên bài tập — AI phân tích và hướng dẫn</li>
-        <li id="ws3">Chơi game để ôn luyện kiến thức</li>
-        <li id="ws4">Tạo flashcards để ghi nhớ nhanh hơn</li>
-        <li id="ws5">Học bằng tiếng Việt hoặc tiếng Anh</li>
-      </ul>
-      <a href="/register?role=student" class="who-btn" id="wsb">Bắt đầu học miễn phí →</a>
-    </div>
-    <div class="who-card">
-      <div class="who-role" id="wtr">👩‍🏫 Giáo viên</div>
-      <div class="who-title" id="wtt">Dạy hiệu quả hơn với AI</div>
-      <ul class="who-list">
-        <li id="wt1">Tạo giáo án chi tiết trong vài giây</li>
-        <li id="wt2">Soạn đề kiểm tra với đáp án tự động</li>
-        <li id="wt3">Quản lý lớp học và học sinh dễ dàng</li>
-        <li id="wt4">Xuất tài liệu ra Word hoặc PDF chuyên nghiệp</li>
-        <li id="wt5">Trợ lý AI hỗ trợ mọi môn học lớp 1–12</li>
-      </ul>
-      <a href="/register?role=teacher" class="who-btn" id="wtb">Dùng thử cho giáo viên →</a>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- EXAM TYPES -->
-<section class="section">
-  <div class="sec-label" id="el">Loại bài thi</div>
-  <h2 class="sec-title" id="et">Hỗ trợ mọi kỳ thi</h2>
-  <p class="sec-sub" id="es">Từ chương trình trong nước đến các chứng chỉ quốc tế — StellaStride chuẩn bị cho bạn mọi kỳ thi.</p>
-  <div class="exams-grid">
-    <div class="exam-card"><div class="exam-tag" id="et1tag">Trong nước</div><div class="exam-name" id="et1">Chương trình Quốc gia</div><div class="exam-sub" id="et1s">Lớp 1–12 · Toán, Khoa học, Văn</div></div>
-    <div class="exam-card"><div class="exam-tag" id="et2tag">Quốc tế</div><div class="exam-name" id="et2">Tiếng Anh Quốc tế</div><div class="exam-sub" id="et2s">Trình độ A2 đến C2 · 4 kỹ năng</div></div>
-    <div class="exam-card"><div class="exam-tag" id="et3tag">Chứng chỉ</div><div class="exam-name" id="et3">Năng lực Tiếng Anh</div><div class="exam-sub" id="et3s">Band 1–9 · Academic & General</div></div>
-    <div class="exam-card"><div class="exam-tag" id="et4tag">Chứng chỉ</div><div class="exam-name" id="et4">Tiếng Anh Học thuật</div><div class="exam-sub" id="et4s">Reading · Writing · Speaking · Listening</div></div>
-    <div class="exam-card"><div class="exam-tag" id="et5tag">Kỹ thuật số</div><div class="exam-name" id="et5">Bài thi Tiếng Anh Online</div><div class="exam-sub" id="et5s">Mô phỏng đầy đủ · Adaptive test</div></div>
-    <div class="exam-card"><div class="exam-tag" id="et6tag">Đại học</div><div class="exam-name" id="et6">Tuyển sinh Đại học</div><div class="exam-sub" id="et6s">Toán & Tiếng Anh · Luyện đề</div></div>
-    <div class="exam-card"><div class="exam-tag" id="et7tag">Chứng chỉ</div><div class="exam-name" id="et7">Tiếng Anh Giao tiếp</div><div class="exam-sub" id="et7s">Cả 4 kỹ năng · Speaking focus</div></div>
-    <div class="exam-card"><div class="exam-tag" id="et8tag">Trường học</div><div class="exam-name" id="et8">Thi học kỳ & Kiểm tra</div><div class="exam-sub" id="et8s">Lớp 1–12 · Tất cả môn học</div></div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- PRICING -->
-<section class="section" id="pricing">
-  <div class="sec-label" id="prl">Bảng giá</div>
-  <h2 class="sec-title" id="prt">Giá phù hợp với mọi học sinh</h2>
-  <p class="sec-sub" id="prs">Bắt đầu miễn phí. Nâng cấp khi cần thêm tính năng.</p>
-  <div class="price-grid">
-    <div class="price-card">
-      <div class="price-name" id="p0n">Miễn phí</div>
-      <div class="price-amount">0đ</div>
-      <div class="price-period" id="p0p">Mãi mãi</div>
-      <div class="price-credits">5 câu hỏi / ngày</div>
-      <ul class="price-feats"><li id="p0f1">AI Tutor cơ bản</li><li id="p0f2">Flashcards</li><li id="p0f3">Games học tập</li></ul>
-      <a href="/register" class="price-btn pb-g" id="p0b">Bắt đầu miễn phí</a>
-    </div>
-    <div class="price-card featured">
-      <div class="price-popular">⭐ Phổ biến nhất</div>
-      <div class="price-name" id="p1n">Student Basic</div>
-      <div class="price-amount">79k</div>
-      <div class="price-period" id="p1p">VND / tháng</div>
-      <div class="price-credits">⚡ 100 credits</div>
-      <ul class="price-feats"><li id="p1f1">Câu hỏi không giới hạn</li><li id="p1f2">Upload PDF</li><li id="p1f3">Biểu đồ AI</li><li id="p1f4">VI + EN</li></ul>
-      <a href="/register" class="price-btn pb-p" id="p1b">Đăng ký ngay</a>
-    </div>
-    <div class="price-card">
-      <div class="price-name" id="p2n">Student Plus</div>
-      <div class="price-amount">149k</div>
-      <div class="price-period" id="p2p">VND / tháng</div>
-      <div class="price-credits">⚡ 250 credits</div>
-      <ul class="price-feats"><li id="p2f1">Tất cả Basic</li><li id="p2f2">Ảnh AI</li><li id="p2f3">Ưu tiên hỗ trợ</li></ul>
-      <a href="/register" class="price-btn pb-g" id="p2b">Chọn gói này</a>
-    </div>
-    <div class="price-card">
-      <div class="price-name" id="p3n">Teacher Pro</div>
-      <div class="price-amount">299k</div>
-      <div class="price-period" id="p3p">VND / tháng</div>
-      <div class="price-credits">⚡ 600 credits</div>
-      <ul class="price-feats"><li id="p3f1">Dashboard giáo viên</li><li id="p3f2">Tạo giáo án & đề thi</li><li id="p3f3">Xuất Word / PDF</li><li id="p3f4">Quản lý lớp học</li></ul>
-      <a href="/register?role=teacher" class="price-btn pb-g" id="p3b">Dành cho giáo viên</a>
-    </div>
-  </div>
-</section>
-
-<!-- CTA -->
-<section class="cta">
-  <div class="cta-inner">
-    <h2 id="cta-h">Sẵn sàng học thông minh hơn?</h2>
-    <p id="cta-p">Tham gia cùng hàng nghìn học sinh và giáo viên đang dùng StellaStride mỗi ngày. Miễn phí để bắt đầu.</p>
-    <div class="cta-btns">
-      <a href="/register?role=student" class="btn-hero btn-hero-p" id="cta-s">🎒 Tôi là Học sinh</a>
-      <a href="/register?role=teacher" class="btn-hero btn-hero-g" id="cta-t">👩‍🏫 Tôi là Giáo viên</a>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div class="footer-wrap">
-    <div class="footer-brand">Stella<span>Stride</span></div>
-    <div class="footer-links">
-      <a href="#features" id="ffl1">Tính năng</a>
-      <a href="#pricing" id="ffl2">Bảng giá</a>
-      <a href="/login" id="ffl3">Đăng nhập</a>
-    </div>
-    <div class="footer-copy" id="fcopy">© 2026 StellaStride Vietnam. AI Learning Platform.</div>
-  </div>
-</footer>
-</main>
-
-<script>
-var lang = localStorage.getItem('eb_lang') || 'vi';
-
-// ── BUBBLE DATA ──
-var bubbles = [
-  { lang:'vi', user:'Giải thích quang hợp cho lớp 5', ai:'Cây dùng ánh sáng mặt trời để tạo ra thức ăn từ nước và CO₂ 🌿' },
-  { lang:'en', user:'Create a lesson plan on fractions', ai:'✅ 45-minute lesson plan created with activities and answer key!' },
-  { lang:'vi', user:'Tóm tắt tài liệu này cho tôi', ai:'✅ Đã tóm tắt! Tài liệu có 3 phần chính về địa lý Việt Nam.' },
-  { lang:'en', user:'Help me understand the water cycle', ai:'Water evaporates → forms clouds → falls as rain → collects → repeats! 🌧️' },
-  { lang:'vi', user:'Tạo 10 câu hỏi trắc nghiệm Tiếng Anh lớp 8', ai:'✅ Đã tạo 10 câu hỏi với đáp án — sẵn sàng xuất PDF!' },
-  { lang:'en', user:'Explain gravity for Grade 6', ai:"Gravity pulls everything toward Earth's center — it's why we don't float away! 🌍" },
-  { lang:'vi', user:'Viết đoạn văn về bảo vệ môi trường', ai:'✅ Đoạn văn 150 chữ đã tạo — sẵn sàng xuất Word!' },
-  { lang:'en', user:'Make flashcards on the solar system', ai:'✅ 10 flashcards generated — Sun, Mercury, Venus, Earth and more!' },
-  { lang:'vi', user:'Tạo giáo án tiếng Anh lớp 7', ai:'✅ Giáo án 45 phút đã tạo với bài tập và hoạt động nhóm!' },
-  { lang:'en', user:'What causes earthquakes?', ai:"Tectonic plates shift and release energy — that's what we feel as shaking! 🌋" },
-];
-
-// Positions — right side of screen, never over headline (which is left side)
-// All positions are within the right hero panel
-var currentBubble = 0;
-var userEl = null, aiEl = null;
-var lastUTop = -1, lastATop = -1;
-
-function randPos() {
-  // Generate random positions for user and AI bubbles
-  // Never in top 15% (headline area) or overlapping each other
-  var uTop, aTop, left;
-  do { uTop = Math.floor(Math.random() * 45) + 10; } while (Math.abs(uTop - lastUTop) < 15);
-  do { aTop = uTop + Math.floor(Math.random() * 15) + 18; } while (aTop > 88 || Math.abs(aTop - lastATop) < 15);
-  left = Math.floor(Math.random() * 15) + 2;
-  lastUTop = uTop; lastATop = aTop;
-  return { utop: uTop+'%', uleft: left+'%', atop: aTop+'%', aleft: (left+3)+'%' };
-}
-
-function showBubble() {
-  var stage = document.getElementById('bubble-stage');
-  var b = bubbles[currentBubble % bubbles.length];
-  var pos = randPos();
-  var upos = { top: pos.utop, left: pos.uleft };
-  var apos = { top: pos.atop, left: pos.aleft };
-
-  // Remove old bubbles
-  if (userEl) { userEl.style.opacity = '0'; userEl.style.transform = 'translateY(-8px)'; setTimeout(function(el){ return function(){ if(el && el.parentNode) el.parentNode.removeChild(el); }; }(userEl), 700); }
-  if (aiEl)   { aiEl.style.opacity = '0';   aiEl.style.transform = 'translateY(-8px)';   setTimeout(function(el){ return function(){ if(el && el.parentNode) el.parentNode.removeChild(el); }; }(aiEl),   700); }
-
-  // Create user bubble
-  userEl = document.createElement('div');
-  userEl.className = 'chat-bubble user';
-  userEl.style.top = upos.top;
-  userEl.style.left = upos.left;
-  userEl.style.transform = 'translateY(8px)';
-  userEl.textContent = b.user;
-  stage.appendChild(userEl);
-  setTimeout(function() { userEl.classList.add('show'); userEl.style.transform = 'translateY(0)'; }, 50);
-
-  // Create AI bubble after delay
-  setTimeout(function() {
-    if (!aiEl || !aiEl.parentNode) {
-      aiEl = document.createElement('div');
-      aiEl.className = 'chat-bubble ai';
-      aiEl.style.top = apos.top;
-      aiEl.style.left = apos.left;
-      aiEl.style.transform = 'translateY(8px)';
-      aiEl.innerHTML = b.ai;
-      stage.appendChild(aiEl);
-      setTimeout(function() { aiEl.classList.add('show'); aiEl.style.transform = 'translateY(0)'; }, 50);
-    }
-  }, 1400);
-
-  currentBubble++;
-  setTimeout(showBubble, 7000);
-}
-
-// Start bubbles
-setTimeout(showBubble, 800);
-
-// ── TRANSLATIONS ──
-var T = {
-  vi: {
-    'badge-txt':'Gia sư AI thế hệ mới',
-    'hero-h1':'Học thông minh hơn.<br><span class="coral">Tiến bộ nhanh hơn.</span><br>Với AI 24/7.',
-    'hero-sub':'StellaStride là người bạn học AI — giải thích từng bước, flashcards thông minh, biểu đồ trực quan và giáo án chuyên nghiệp. Bằng tiếng Việt hoặc tiếng Anh.',
-    'btn-s':'🎒 Tôi là Học sinh','btn-t':'👩‍🏫 Tôi là Giáo viên',
-    's1':'Grades 1 – 12','s2':'Vietnamese & English','s3':'Instant AI Answers',
-    'nav-login':'Đăng nhập','nav-start':'Bắt đầu miễn phí',
-    'nl1':'Tính năng','nl2':'Dành cho ai','nl3':'Bảng giá',
-    'fl':'Tính năng','ft':'Mọi thứ bạn cần để học tốt hơn','fs':'Từ gia sư AI đến trò chơi học tập — StellaStride có đủ công cụ cho học sinh và giáo viên.',
-    'f1t':'Gia sư AI','f1d':'Hỏi bất cứ điều gì — AI tự động nhận diện môn học và lớp, giải thích từng bước rõ ràng.',
-    'f2t':'Upload tài liệu','f2d':'Tải lên PDF hoặc hình ảnh — AI đọc, giải thích, tạo câu hỏi và tóm tắt tức thì.',
-    'f3t':'Games học tập','f3d':'Quiz Battle, Speed Race và Flashcard Flip — học qua trò chơi AI tạo ra theo môn và lớp.',
-    'f4t':'Flashcards AI','f4d':'Tạo thẻ ghi nhớ thông minh cho bất kỳ chủ đề nào. Lật thẻ, học và nhớ lâu hơn.',
-    'f5t':'Biểu đồ & Hình ảnh AI','f5d':'Tạo biểu đồ và hình ảnh giáo dục AI cho bài học sinh động và trực quan hơn.',
-    'f6t':'Dashboard giáo viên','f6d':'Quản lý lớp học, tạo giáo án, đề kiểm tra và xuất tài liệu Word / PDF chuyên nghiệp.',
-    'sb':'Sắp ra mắt','f7t':'Cấp độ Đại học','f7d':'IELTS, TOEFL, SAT, thi tuyển sinh và các môn đại học — đang được phát triển.',
-    'wl':'Dành cho ai','wt':'Phù hợp cho học sinh và giáo viên','ws':'Dù bạn đang học bài hay soạn giáo án — StellaStride có giải pháp phù hợp.',
-    'wsr':'🎒 Học sinh','wst':'Học thông minh hơn với AI',
-    'ws1':'Hỏi bất kỳ câu hỏi nào — AI giải thích từng bước','ws2':'Tải lên bài tập — AI phân tích và hướng dẫn',
-    'ws3':'Chơi game để ôn luyện kiến thức','ws4':'Tạo flashcards để ghi nhớ nhanh hơn','ws5':'Học bằng tiếng Việt hoặc tiếng Anh',
-    'wsb':'Bắt đầu học miễn phí →',
-    'wtr':'👩‍🏫 Giáo viên','wtt':'Dạy hiệu quả hơn với AI',
-    'wt1':'Tạo giáo án chi tiết trong vài giây','wt2':'Soạn đề kiểm tra với đáp án tự động',
-    'wt3':'Quản lý lớp học và học sinh dễ dàng','wt4':'Xuất tài liệu ra Word hoặc PDF chuyên nghiệp','wt5':'Trợ lý AI hỗ trợ mọi môn học lớp 1–12',
-    'wtb':'Dùng thử cho giáo viên →',
-    'el':'Loại bài thi','et':'Hỗ trợ mọi kỳ thi','es':'Từ chương trình trong nước đến các chứng chỉ quốc tế — StellaStride chuẩn bị cho bạn mọi kỳ thi.',
-    'et1tag':'Trong nước','et1':'Chương trình Quốc gia','et1s':'Lớp 1–12 · Toán, Khoa học, Văn',
-    'et2tag':'Quốc tế','et2':'Tiếng Anh Quốc tế','et2s':'Trình độ A2 đến C2 · 4 kỹ năng',
-    'et3tag':'Chứng chỉ','et3':'Năng lực Tiếng Anh','et3s':'Band 1–9 · Academic & General',
-    'et4tag':'Chứng chỉ','et4':'Tiếng Anh Học thuật','et4s':'Reading · Writing · Speaking · Listening',
-    'et5tag':'Kỹ thuật số','et5':'Bài thi Tiếng Anh Online','et5s':'Mô phỏng đầy đủ · Adaptive test',
-    'et6tag':'Đại học','et6':'Tuyển sinh Đại học','et6s':'Toán & Tiếng Anh · Luyện đề',
-    'et7tag':'Chứng chỉ','et7':'Tiếng Anh Giao tiếp','et7s':'Cả 4 kỹ năng · Speaking focus',
-    'et8tag':'Trường học','et8':'Thi học kỳ & Kiểm tra','et8s':'Lớp 1–12 · Tất cả môn học',
-    'prl':'Bảng giá','prt':'Giá phù hợp với mọi học sinh','prs':'Bắt đầu miễn phí. Nâng cấp khi cần thêm tính năng.',
-    'p0n':'Miễn phí','p0p':'Mãi mãi','p0f1':'AI Tutor cơ bản','p0f2':'Flashcards','p0f3':'Games học tập','p0b':'Bắt đầu miễn phí',
-    'p1n':'Student Basic','p1p':'VND / tháng','p1f1':'Câu hỏi không giới hạn','p1f2':'Upload PDF','p1f3':'Biểu đồ AI','p1f4':'VI + EN','p1b':'Đăng ký ngay',
-    'p2n':'Student Plus','p2p':'VND / tháng','p2f1':'Tất cả Basic','p2f2':'Ảnh AI','p2f3':'Ưu tiên hỗ trợ','p2b':'Chọn gói này',
-    'p3n':'Teacher Pro','p3p':'VND / tháng','p3f1':'Dashboard giáo viên','p3f2':'Tạo giáo án & đề thi','p3f3':'Xuất Word / PDF','p3f4':'Quản lý lớp học','p3b':'Dành cho giáo viên',
-    'cta-h':'Sẵn sàng học thông minh hơn?','cta-p':'Tham gia cùng hàng nghìn học sinh và giáo viên đang dùng StellaStride mỗi ngày. Miễn phí để bắt đầu.',
-    'cta-s':'🎒 Tôi là Học sinh','cta-t':'👩‍🏫 Tôi là Giáo viên',
-    'ffl1':'Tính năng','ffl2':'Bảng giá','ffl3':'Đăng nhập',
-    'fcopy':'© 2026 StellaStride Vietnam. AI Learning Platform.'
-  },
-  en: {
-    'badge-txt':'Next Generation AI Tutor',
-    'hero-h1':'Learn Smarter.<br><span class="coral">Progress Faster.</span><br>With AI 24/7.',
-    'hero-sub':'StellaStride is your AI learning companion — step-by-step explanations, smart flashcards, visual charts, and professional lesson plans for teachers. In Vietnamese or English.',
-    'btn-s':"🎒 I'm a Student",'btn-t':"👩‍🏫 I'm a Teacher",
-    's1':'Grades 1 – 12','s2':'Vietnamese & English','s3':'Instant AI Answers',
-    'nav-login':'Login','nav-start':'Start for Free',
-    'nl1':'Features','nl2':'For Who','nl3':'Pricing',
-    'fl':'Features','ft':'Everything you need to learn better','fs':'From AI tutor to educational games — StellaStride has all the tools for students and teachers.',
-    'f1t':'AI Tutor','f1d':'Ask anything — AI automatically detects subject and grade, explains step by step clearly.',
-    'f2t':'Document Upload','f2d':'Upload a PDF or image — AI reads, explains content, creates questions and summarizes instantly.',
-    'f3t':'Learning Games','f3d':'Quiz Battle, Speed Race and Flashcard Flip — learn through AI-generated games by subject and grade.',
-    'f4t':'AI Flashcards','f4d':'Generate smart flashcards for any topic. Flip cards, study and remember longer.',
-    'f5t':'Charts & AI Images','f5d':'Generate charts and educational AI images for more engaging and visual lessons.',
-    'f6t':'Teacher Dashboard','f6d':'Manage classrooms, create lesson plans, exams and export professional Word / PDF documents.',
-    'sb':'Coming Soon','f7t':'University Level','f7d':'English proficiency exams, university entrance, and higher education subjects — coming soon.',
-    'wl':'For Who','wt':'Perfect for students and teachers','ws':'Whether you are studying or creating lesson plans — StellaStride has the right solution.',
-    'wsr':'🎒 Students','wst':'Learn smarter with AI',
-    'ws1':'Ask any question — AI explains step by step','ws2':'Upload homework — AI analyzes and guides',
-    'ws3':'Play games to review knowledge','ws4':'Create flashcards to remember faster','ws5':'Study in Vietnamese or English',
-    'wsb':'Start learning for free →',
-    'wtr':'👩‍🏫 Teachers','wtt':'Teach more effectively with AI',
-    'wt1':'Create detailed lesson plans in seconds','wt2':'Write exam papers with automatic answer keys',
-    'wt3':'Manage classrooms and students easily','wt4':'Export documents to professional Word or PDF','wt5':'AI assistant for all subjects grades 1–12',
-    'wtb':'Try it for teachers →',
-    'el':'Exam Types','et':'Supports every exam','es':'From national curriculum to international certificates — StellaStride prepares you for every exam.',
-    'et1tag':'National','et1':'National Curriculum','et1s':'Grades 1–12 · Math, Science, Literature',
-    'et2tag':'International','et2':'International English','et2s':'Level A2 to C2 · All 4 skills',
-    'et3tag':'Certificate','et3':'English Proficiency','et3s':'Band 1–9 · Academic & General',
-    'et4tag':'Certificate','et4':'Academic English','et4s':'Reading · Writing · Speaking · Listening',
-    'et5tag':'Digital','et5':'Online English Test','et5s':'Full simulation · Adaptive test',
-    'et6tag':'University','et6':'University Entrance','et6s':'Math & English · Practice papers',
-    'et7tag':'Certificate','et7':'Spoken English','et7s':'All 4 skills · Speaking focus',
-    'et8tag':'School','et8':'School Exams & Tests','et8s':'Grades 1–12 · All subjects',
-    'prl':'Pricing','prt':'Affordable for every student','prs':'Start free. Upgrade when you need more.',
-    'p0n':'Free','p0p':'Forever','p0f1':'Basic AI Tutor','p0f2':'Flashcards','p0f3':'Learning Games','p0b':'Start for free',
-    'p1n':'Student Basic','p1p':'VND / month','p1f1':'Unlimited questions','p1f2':'PDF upload','p1f3':'AI Charts','p1f4':'VI + EN','p1b':'Sign up now',
-    'p2n':'Student Plus','p2p':'VND / month','p2f1':'Everything in Basic','p2f2':'AI Images','p2f3':'Priority support','p2b':'Choose this plan',
-    'p3n':'Teacher Pro','p3p':'VND / month','p3f1':'Teacher dashboard','p3f2':'Lesson plans & exams','p3f3':'Export Word / PDF','p3f4':'Classroom management','p3b':'For teachers',
-    'cta-h':'Ready to learn smarter?','cta-p':'Join thousands of students and teachers using StellaStride every day. Free to start.',
-    'cta-s':'🎒 I am a Student','cta-t':'👩‍🏫 I am a Teacher',
-    'ffl1':'Features','ffl2':'Pricing','ffl3':'Login',
-    'fcopy':'© 2026 StellaStride Vietnam. AI Learning Platform.'
+// ─── Auth middleware ──────────────────────────────────────────────────────────
+const authenticate = (req, res, next) => {
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ error: 'No token' });
+  try {
+    req.user = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
   }
 };
 
-function setLang(l) {
-  lang = l;
-  localStorage.setItem('eb_lang', l);
-  document.getElementById('lvi').className = 'lb' + (l==='vi' ? ' on' : '');
-  document.getElementById('len').className = 'lb' + (l==='en' ? ' on' : '');
-  var d = T[l];
-  Object.keys(d).forEach(function(k) {
-    var el = document.getElementById(k);
-    if (!el) return;
-    if (k === 'hero-h1') { el.innerHTML = d[k]; }
-    else { el.textContent = d[k]; }
-  });
-}
+const adminOnly = (req, res, next) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  next();
+};
 
-// Smooth scroll
-document.querySelectorAll('a[href^="#"]').forEach(function(a) {
-  a.addEventListener('click', function(e) {
-    var t = document.querySelector(this.getAttribute('href'));
-    if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
-  });
+// ─────────────────────────────────────────────────────────────────────────────
+// PAGE ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/',         (req, res) => res.sendFile(__dirname + '/public/index.html'));
+app.get('/register', (req, res) => res.sendFile(__dirname + '/public/register.html'));
+app.get('/login',    (req, res) => res.sendFile(__dirname + '/public/login.html'));
+app.get('/pricing',  (req, res) => res.sendFile(__dirname + '/public/pricing.html'));
+app.get('/games',    (req, res) => res.sendFile(__dirname + '/public/games.html'));
+app.get('/upload',   (req, res) => res.sendFile(__dirname + '/public/upload.html'));
+app.get('/admin',    (req, res) => res.sendFile(__dirname + '/public/admin.html'));
+app.get('/app',      (req, res) => res.sendFile(__dirname + '/public/app.html'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/auth/register', async (req, res) => {
+  try {
+    const { email, password, name, role = 'student', grade, institution } = req.body;
+    if (!email || !password || !name) return res.status(400).json({ error: 'Missing fields' });
+
+    const exists = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (exists.rows.length > 0) return res.status(400).json({ error: 'Email already registered' });
+
+    const hash = await bcrypt.hash(password, 10);
+    const assignedRole = email === 'nathansteyn96@gmail.com' ? 'admin' : role;
+
+    const result = await pool.query(
+      `INSERT INTO users (email, password_hash, name, role, grade, institution, plan, daily_count, last_reset, credits)
+       VALUES ($1, $2, $3, $4, $5, $6, 'free', 0, NOW(), 5) RETURNING id, email, name, role, plan, credits`,
+      [email, hash, name, assignedRole, grade || null, institution || null]
+    );
+
+    const user = result.rows[0];
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Registration failed' });
+  }
 });
 
-setLang(lang);
-</script>
-</body>
-</html>
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, plan: user.plan, grade: user.grade, credits: user.credits || 0 } });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCUMENT ANALYSIS ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/chat/document', authenticate, async (req, res) => {
+  try {
+    const { message, lang, role: userRole, document: doc } = req.body;
+    const userId = req.user.id;
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const user = userResult.rows[0];
+
+    // Admin bypasses all credit checks
+    if (user.role !== 'admin') {
+      if (user.plan === 'free') {
+        if (user.daily_count >= 5) {
+          return res.status(403).json({ error: lang === 'vi' ? 'Bạn đã dùng hết 5 câu miễn phí hôm nay!' : 'You have used all 5 free questions today!' });
+        }
+        await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]);
+      } else {
+        if ((user.credits || 0) < 2) {
+          return res.status(403).json({ error: lang === 'vi' ? 'Không đủ credits!' : 'Not enough credits!' });
+        }
+        await pool.query('UPDATE users SET credits = credits - 2 WHERE id = $1', [userId]);
+      }
+    }
+
+    const messageContent = [];
+    if (doc && doc.data) {
+      if (doc.type === 'application/pdf') {
+        messageContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: doc.data } });
+      } else {
+        messageContent.push({ type: 'image', source: { type: 'base64', media_type: doc.type, data: doc.data } });
+      }
+    }
+    messageContent.push({ type: 'text', text: message });
+
+    const isTeacher = userRole === 'teacher' || user.role === 'teacher';
+    const htmlFormat = `
+CRITICAL FORMATTING RULES:
+- Always respond in ${language}. Never switch languages.
+- Never use markdown symbols like ##, **, *, --, or backticks.
+- Format ALL responses as clean HTML only.
+- Use <h2> for main section headings.
+- Use <h3> for sub-headings.
+- Use <p> for paragraphs.
+- Use <strong> for bold text.
+- Use <ul><li> for bullet lists.
+- Use <ol><li> for numbered lists.
+- Use <table><thead><tr><th> and <tbody><tr><td> for any tabular data.
+- Never output raw markdown. Only clean HTML tags.
+- NEVER start your response with intro phrases like "Here is...", "Below is...", "Here's a...", "I have prepared...", or any similar sentence. Go straight into the content immediately.`;
+
+    const systemPrompt = isTeacher
+      ? `You are EduBot, an expert AI teaching assistant. Analyze the provided document and respond in ${language}. Be professional, thorough, and create high-quality educational materials.${htmlFormat}`
+      : `You are EduBot, a friendly AI tutor. Analyze the provided document and help the student in ${language}. Be clear, encouraging, and educational.${htmlFormat}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: messageContent }]
+    });
+
+    res.json({ reply: response.content[0].text });
+  } catch (err) {
+    console.error('Document analysis error:', err);
+    res.status(500).json({ error: 'Analysis failed' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/chat', authenticate, async (req, res) => {
+  try {
+    const { message, subject, grade, lang, role: userRequestRole } = req.body;
+    const userId = req.user.id;
+    const isTeacher = userRequestRole === 'teacher' || req.user.role === 'teacher';
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const user = userResult.rows[0];
+
+    // Reset daily count if needed
+    const lastReset = new Date(user.last_reset);
+    const now = new Date();
+    if (now.toDateString() !== lastReset.toDateString()) {
+      await pool.query('UPDATE users SET daily_count = 0, last_reset = NOW() WHERE id = $1', [userId]);
+      user.daily_count = 0;
+    }
+
+    // Admin bypasses ALL credit checks and limits
+    const isAdmin = user.role === 'admin';
+    const isPaid = ['basic', 'plus', 'teacher', 'teacher_pro'].includes(user.plan) || user.role === 'teacher';
+    if (!isAdmin && !isPaid && user.daily_count >= 5) {
+      return res.status(429).json({ error: 'Daily limit reached. Upgrade to continue!', upgrade: true });
+    }
+    if (!isAdmin && isPaid && (user.credits || 0) < CREDIT_COSTS.question) {
+      return res.status(402).json({ error: 'Not enough credits. Top up to continue!', upgrade: true });
+    }
+
+    // RAG: Auto-detect subject and grade from message, then fetch curriculum context
+    let curriculumContext = '';
+    let detectedSubject = subject || '';
+    let detectedGrade = parseInt(String(grade || '0').replace(/[^0-9]/g,''),10) || 0;
+
+    // Auto-detect subject from message keywords if not provided
+    if (!detectedSubject || detectedSubject === 'general') {
+      const msg = message.toLowerCase();
+      if (/\b(math|toán|algebra|geometry|calculus|equation|fraction|số|hình|tích phân|phương trình|đại số|hình học|phân số|nhân|chia|cộng|trừ)\b/.test(msg)) detectedSubject = 'Math';
+      else if (/\b(science|khoa học|biology|sinh|chemistry|hóa|physics|vật lý|photosynthesis|quang hợp|atom|nguyên tử|cell|tế bào|evolution|tiến hóa)\b/.test(msg)) detectedSubject = 'Science';
+      else if (/\b(english|grammar|vocabulary|reading|writing|listening|speaking|ielts|toefl|tense|verb|noun|adjective|essay|paragraph)\b/.test(msg)) detectedSubject = 'English';
+      else if (/\b(tiếng việt|văn|literature|văn học|thơ|truyện|ngữ văn|đọc hiểu|tập làm văn)\b/.test(msg)) detectedSubject = 'Vietnamese';
+      else if (/\b(history|lịch sử|war|chiến tranh|dynasty|triều đại|revolution|cách mạng)\b/.test(msg)) detectedSubject = 'History';
+      else if (/\b(geography|địa lý|map|bản đồ|climate|khí hậu|continent|châu lục|river|sông|mountain|núi)\b/.test(msg)) detectedSubject = 'Geography';
+    }
+
+    // Auto-detect grade from message keywords if not provided
+    if (!detectedGrade) {
+      const gradeMatch = message.match(/\b(grade|lớp|class|khối)\s*(\d+)\b/i);
+      if (gradeMatch) detectedGrade = parseInt(gradeMatch[2]);
+    }
+
+    // Query curriculum with detected subject and grade
+    if (detectedSubject) {
+      try {
+        const gradeNum = detectedGrade || 0;
+        const curriculum = await pool.query(
+          `SELECT objective, strand, substrand, curriculum_type, stage FROM curriculum
+           WHERE LOWER(subject) = LOWER($1)
+           AND (
+             grade = $2
+             OR grade = 0
+             OR stage ILIKE $3
+             OR stage ILIKE $4
+           )
+           ORDER BY
+             CASE WHEN grade = $2 THEN 0
+                  WHEN stage ILIKE $3 THEN 1
+                  WHEN stage ILIKE $4 THEN 2
+                  ELSE 3 END
+           LIMIT 12`,
+          [
+            detectedSubject,
+            gradeNum,
+            `Stage ${gradeNum}`,
+            `%${gradeNum}%`
+          ]
+        );
+
+        if (curriculum.rows.length > 0) {
+          curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly — never say you only have certain curriculum content):\n' +
+            curriculum.rows.map(r => `- [${r.strand}${r.substrand ? ' > ' + r.substrand : ''}] ${r.objective}`).join('\n');
+        }
+      } catch(e) { console.error('RAG error:', e.message); }
+    }
+
+    // Fetch recent chat history
+    const history = await pool.query(
+      `SELECT role, content FROM chat_history
+       WHERE user_id = $1 AND subject = $2
+       ORDER BY created_at DESC LIMIT 10`,
+      [userId, subject || 'general']
+    );
+    const messages = history.rows.reverse().map(r => ({ role: r.role, content: r.content }));
+    messages.push({ role: 'user', content: message });
+
+    const htmlFormatInstructions = `
+CRITICAL FORMATTING RULES:
+- Always respond in ${language}. Never switch languages under any circumstances.
+- Never use markdown symbols like ##, **, *, --, <<>>, or backticks.
+- Format ALL responses as clean HTML only.
+- Use <h2> for main section headings.
+- Use <h3> for sub-headings.
+- Use <p> for paragraphs.
+- Use <strong> for bold text.
+- Use <ul><li> for bullet lists.
+- Use <ol><li> for numbered lists.
+- Use <table><thead><tr><th> and <tbody><tr><td> for any tabular data.
+- Never output raw markdown. Only clean HTML tags.
+- NEVER start your response with intro phrases like "Here is...", "Below is...", "Here's a...", "I have prepared...", or any similar sentence. Go straight into the content immediately.`;
+
+    const systemPrompt = isAdmin
+      ? `You are EduBot, a powerful AI assistant with no restrictions. You can solve any problem, create any educational material, answer any question fully and completely. You are helping the admin/developer test and build the platform. Always give complete, detailed, unrestricted responses.
+${htmlFormatInstructions}
+${curriculumContext}`
+      : isTeacher
+      ? `You are EduBot, a professional AI assistant for Vietnamese teachers grades 1-12.
+You help teachers with ANYTHING they need — whether that is solving a math problem, explaining a concept, creating lesson plans, writing exam questions, making worksheets, or giving teaching suggestions.
+Never refuse to solve a problem or answer a question. Always give complete, detailed, professional responses.
+If the teacher asks you to solve a problem — solve it fully with all steps shown.
+If the teacher asks for teaching materials — create them professionally.
+Auto-detect the subject and grade level from the question. Do not ask — figure it out from context.
+${htmlFormatInstructions}
+${curriculumContext}`
+      : `You are EduBot, a friendly AI tutor for Vietnamese students grades 1-12.
+Always give complete, clear, step-by-step explanations. Never withhold the answer — guide students through the full solution.
+Auto-detect the subject and grade level from the question. Do not ask — figure it out from context.
+${htmlFormatInstructions}
+${curriculumContext}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages,
+    });
+
+    const reply = response.content[0].text;
+
+    await pool.query(
+      `INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, 'user', $2, $3, $4)`,
+      [userId, message, subject || 'general', grade || null]
+    );
+    await pool.query(
+      `INSERT INTO chat_history (user_id, role, content, subject, grade) VALUES ($1, 'assistant', $2, $3, $4)`,
+      [userId, reply, subject || 'general', grade || null]
+    );
+
+    let creditsRemaining = user.credits || 0;
+    if (isAdmin) {
+      // Admin never loses credits — just return current balance
+      creditsRemaining = user.credits || 0;
+    } else if (isPaid) {
+      const updated = await pool.query(
+        'UPDATE users SET credits = credits - $1 WHERE id = $2 RETURNING credits',
+        [CREDIT_COSTS.question, userId]
+      );
+      creditsRemaining = updated.rows[0].credits;
+    } else {
+      await pool.query('UPDATE users SET daily_count = daily_count + 1 WHERE id = $1', [userId]);
+    }
+
+    res.json({ reply, daily_count: user.daily_count + 1, credits: creditsRemaining });
+  } catch (err) {
+    console.error('Chat error:', err);
+    res.status(500).json({ error: 'Chat failed' });
+  }
+});
+
+app.get('/chat/history', authenticate, async (req, res) => {
+  try {
+    const { subject } = req.query;
+    const result = await pool.query(
+      `SELECT role, content, created_at FROM chat_history
+       WHERE user_id = $1 AND subject = $2
+       ORDER BY created_at ASC LIMIT 50`,
+      [req.user.id, subject || 'general']
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load history' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USER ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/user/profile', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, email, name, role, grade, institution, plan, daily_count, credits FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load profile' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREDITS ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/credits/balance', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
+    res.json({ credits: result.rows[0].credits || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get credits' });
+  }
+});
+
+app.post('/credits/deduct', authenticate, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const result = await pool.query(
+      'UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1 RETURNING credits',
+      [amount, req.user.id]
+    );
+    if (result.rows.length === 0) return res.status(402).json({ error: 'Not enough credits' });
+    res.json({ credits: result.rows[0].credits });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to deduct credits' });
+  }
+});
+
+app.post('/credits/add', authenticate, async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+    // Allow admin to add credits to any user, or user to add to themselves
+    const targetId = (req.user.role === 'admin' && userId) ? userId : req.user.id;
+    const result = await pool.query(
+      'UPDATE users SET credits = credits + $1 WHERE id = $2 RETURNING credits',
+      [parseInt(amount), targetId]
+    );
+    res.json({ credits: result.rows[0].credits });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add credits' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CLASSROOM ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/classroom/create', authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
+    const { name, subject, grade } = req.body;
+    const code = 'EDU-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    const result = await pool.query(
+      `INSERT INTO classrooms (teacher_id, name, subject, grade, code) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [req.user.id, name, subject, grade, code]
+    );
+    res.json({ classroom: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create classroom' });
+  }
+});
+
+app.get('/classroom/my', authenticate, async (req, res) => {
+  try {
+    let result;
+    if (req.user.role === 'teacher' || req.user.role === 'admin') {
+      result = await pool.query(
+        `SELECT c.*, (SELECT COUNT(*) FROM classroom_students cs WHERE cs.classroom_id = c.id) as student_count
+         FROM classrooms c WHERE teacher_id = $1`,
+        [req.user.id]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT c.*, u.name as teacher_name FROM classrooms c
+         JOIN classroom_students cs ON cs.classroom_id = c.id
+         JOIN users u ON u.id = c.teacher_id
+         WHERE cs.student_id = $1`,
+        [req.user.id]
+      );
+    }
+    res.json({ classrooms: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load classrooms' });
+  }
+});
+
+app.post('/classroom/join', authenticate, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const classroom = await pool.query('SELECT * FROM classrooms WHERE code = $1', [code]);
+    if (classroom.rows.length === 0) return res.status(404).json({ error: 'Classroom not found' });
+
+    const classroomId = classroom.rows[0].id;
+    await pool.query(
+      `INSERT INTO classroom_students (classroom_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [classroomId, req.user.id]
+    );
+    res.json({ message: 'Joined classroom', classroom: classroom.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to join classroom' });
+  }
+});
+
+app.get('/classroom/:id/students', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.name, u.email, u.grade FROM users u
+       JOIN classroom_students cs ON cs.student_id = u.id
+       WHERE cs.classroom_id = $1`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load students' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Dashboard stats
+app.get('/admin/stats', authenticate, adminOnly, async (req, res) => {
+  try {
+    const [users, chats, curriculum, promos] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM users'),
+      pool.query("SELECT COUNT(*) FROM chat_history WHERE role = 'user'"),
+      pool.query('SELECT COUNT(*) FROM curriculum'),
+      pool.query('SELECT COUNT(*) FROM promo_codes WHERE uses < max_uses'),
+    ]);
+    res.json({
+      total_users:     parseInt(users.rows[0].count),
+      total_chats:     parseInt(chats.rows[0].count),
+      curriculum_count: parseInt(curriculum.rows[0].count),
+      active_promos:   parseInt(promos.rows[0].count),
+    });
+  } catch (err) {
+    console.error('Stats error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List all users — FIXED: returns { users: [...] }
+app.get('/admin/users', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { search, role, plan } = req.query;
+    let query = 'SELECT id, email, name, role, grade, institution, plan, daily_count, credits, created_at FROM users WHERE 1=1';
+    const params = [];
+    if (search) { params.push(`%${search}%`); query += ` AND (name ILIKE $${params.length} OR email ILIKE $${params.length})`; }
+    if (role)   { params.push(role);           query += ` AND role = $${params.length}`; }
+    if (plan)   { params.push(plan);           query += ` AND plan = $${params.length}`; }
+    query += ' ORDER BY created_at DESC LIMIT 100';
+    const result = await pool.query(query, params);
+    res.json({ users: result.rows }); // ← FIXED: wrapped in { users: [] }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load users' });
+  }
+});
+
+app.patch('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { plan, role } = req.body;
+    const result = await pool.query(
+      'UPDATE users SET plan = COALESCE($1, plan), role = COALESCE($2, role) WHERE id = $3 RETURNING *',
+      [plan, role, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+app.delete('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+    res.json({ message: 'User deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// Payments list
+app.get('/admin/payments', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.*, u.name as user_name
+       FROM payments p
+       LEFT JOIN users u ON p.user_id::text = u.id::text
+       ORDER BY p.created_at DESC LIMIT 100`
+    );
+    res.json({ payments: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CURRICULUM ROUTES (Admin only) — single clean set, no duplicates
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Detect subject/grade from PDF filename
+app.post('/admin/curriculum/detect', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { fileName, fileData, fileSize } = req.body;
+
+    const prompt = `Analyze this curriculum PDF filename: "${fileName}"
+
+Based on the filename, detect:
+1. Subject (Math, Science, English, Vietnamese, Physics, Chemistry, Biology, History, Geography, IT, Civic, or Other)
+2. Grade level (1-12, or 0 for all grades)
+3. Language (vi for Vietnamese, en for English, both)
+4. Estimated curriculum type (national, cambridge, ib, other)
+
+Respond ONLY in JSON with no other text:
+{"subject":"Math","grade":6,"lang":"en","curriculum_type":"cambridge","preview":"Brief description of what this curriculum covers"}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 300,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const text = response.content[0].text.replace(/```json|```/g, '').trim();
+    const detected = JSON.parse(text);
+    detected.estimated_chunks = Math.ceil((fileSize || 0) / 1000);
+
+    res.json(detected);
+  } catch (err) {
+    console.error('Curriculum detect error:', err);
+    res.json({
+      subject: 'Other',
+      grade: 0,
+      lang: 'vi',
+      curriculum_type: 'general',
+      preview: 'Manual review needed',
+      estimated_chunks: 0
+    });
+  }
+});
+
+
+// Import curriculum from PDF
+app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { fileData, fileName, subject, grade, type, lang } = req.body;
+    // Bulletproof grade parser — rejects ANY non-numeric value
+    const safeGrade = (v) => { const n = parseInt(String(v).replace(/[^0-9]/g, ""), 10); return (isNaN(n) || n < 0 || n > 12) ? 0 : n; };
+    if (!fileData) return res.status(400).json({ error: 'No file data received' });
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    function parseItems(text) {
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      try { const r = JSON.parse(cleaned); if (Array.isArray(r)) return r; } catch(e) {}
+      const match = cleaned.match(/\[[\s\S]*\]/);
+      if (match) { try { const r = JSON.parse(match[0]); if (Array.isArray(r)) return r; } catch(e) {} }
+      return [];
+    }
+
+    let pdfText = '';
+    let usedPdfParse = false;
+
+    // Try pdf-parse first (fast, no token cost)
+    try {
+      const pdfBuffer = Buffer.from(fileData, 'base64');
+      let pp = pdfParse;
+      if (!pp) pp = require('pdf-parse');
+      const pdfData = await pp(pdfBuffer);
+      pdfText = (pdfData.text || '').trim();
+      if (pdfText.length > 100) {
+        usedPdfParse = true;
+        console.log(`pdf-parse: extracted ${pdfText.length} chars from "${fileName}"`);
+      }
+    } catch(e) {
+      console.log('pdf-parse unavailable, will use Claude PDF vision:', e.message);
+    }
+
+    let allItems = [];
+
+    if (usedPdfParse && pdfText.length > 100) {
+      // TEXT PATH: split into chunks and send text only to Claude
+      const CHUNK_SIZE = 3500;
+      const chunks = [];
+      for (let i = 0; i < pdfText.length; i += CHUNK_SIZE) chunks.push(pdfText.slice(i, i + CHUNK_SIZE));
+      console.log(`Processing ${chunks.length} text chunks`);
+
+      for (let i = 0; i < chunks.length; i++) {
+        try {
+          const response = await anthropic.messages.create({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 1500,
+            messages: [{ role: 'user', content:
+              `You are extracting ${subject} curriculum. CRITICAL RULE: Always prefix strand with the stage/grade label found above it in the text. Examples: "Stage 3: Number", "Grade 6: Algebra", "Lop 8: Hinh hoc". If you see Stage N, Grade N, Lop N or Year N as a heading, every item under it must have that prefix in strand.\n\nReturn ONLY a JSON array:\n[{"strand":"Stage N: topic","substrand":"sub-topic or empty","objective":"learning objective"}]\n\nIf no stage label visible, look earlier in the text chunk for the most recent stage heading.\nIf nothing educational found return [].\n\nTEXT:\n${chunks[i]}`
+            }]
+          });
+          const items = parseItems(response.content[0].text);
+          allItems = allItems.concat(items);
+          console.log(`Chunk ${i+1}/${chunks.length}: ${items.length} items`);
+        } catch(err) {
+          if (err.message && err.message.includes('rate_limit')) {
+            console.log('Rate limited, waiting 20s...');
+            await sleep(20000);
+            i--; // retry this chunk
+          } else {
+            console.warn(`Chunk ${i+1} failed:`, err.message);
+          }
+        }
+        // 2.5s between each chunk to stay under 30k tokens/min
+        if (i < chunks.length - 1) await sleep(2500);
+      }
+
+    } else {
+      // VISION PATH: send PDF directly to Claude but only ask for summary extraction
+      // Use haiku (cheaper, smaller context) and ask for structured output in 2 passes
+      console.log('Using Claude PDF vision for extraction');
+
+      const docSource = { type: 'base64', media_type: 'application/pdf', data: fileData };
+
+      // Pass 1: Get all chapter/topic names only (small output)
+      let topicNames = [];
+      try {
+        await sleep(3000); // wait before first call
+        const r1 = await anthropic.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: [
+            { type: 'document', source: docSource },
+            { type: 'text', text: 'List only the main chapter and unit titles from this PDF. Return ONLY a JSON array of strings: ["title1","title2",...]. Maximum 30 items.' }
+          ]}]
+        });
+        topicNames = parseItems(r1.content[0].text).filter(s => typeof s === 'string').slice(0, 30);
+        console.log(`Vision pass 1: ${topicNames.length} topics`);
+      } catch(e) { console.warn('Vision pass 1 failed:', e.message); }
+
+      // Pass 2: For each topic (batches of 8), extract objectives from text description
+      const BATCH = 8;
+      for (let i = 0; i < topicNames.length; i += BATCH) {
+        await sleep(5000);
+        const batch = topicNames.slice(i, i + BATCH);
+        try {
+          const r2 = await anthropic.messages.create({
+            model: 'claude-haiku-4-5',
+            max_tokens: 1500,
+            messages: [{ role: 'user', content: [
+              { type: 'document', source: docSource },
+              { type: 'text', text: `Extract all learning objectives for these topics from the PDF: ${batch.join(', ')}. Return ONLY JSON: [{"strand":"topic","substrand":"sub-topic or empty","objective":"specific learning objective"}]` }
+            ]}]
+          });
+          const items = parseItems(r2.content[0].text);
+          allItems = allItems.concat(items);
+          console.log(`Vision batch ${Math.ceil(i/BATCH)+1}: ${items.length} items`);
+        } catch(e) { console.warn(`Vision batch failed:`, e.message); }
+      }
+
+      // Fallback if topics empty — one general pass with haiku
+      if (allItems.length === 0) {
+        await sleep(5000);
+        try {
+          const rf = await anthropic.messages.create({
+            model: 'claude-haiku-4-5',
+            max_tokens: 2000,
+            messages: [{ role: 'user', content: [
+              { type: 'document', source: docSource },
+              { type: 'text', text: `Extract up to 50 key learning objectives from this ${subject} curriculum PDF. Return ONLY JSON: [{"strand":"topic","substrand":"","objective":"learning objective"}]` }
+            ]}]
+          });
+          allItems = parseItems(rf.content[0].text);
+          console.log(`Fallback pass: ${allItems.length} items`);
+        } catch(e) { console.warn('Fallback pass failed:', e.message); }
+      }
+    }
+
+    // Deduplicate
+    const seen = new Set();
+    const uniqueItems = allItems.filter(item => {
+      if (!item || typeof item.objective !== 'string' || !item.objective.trim()) return false;
+      const key = item.objective.trim().toLowerCase().slice(0, 120);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    console.log(`Unique items: ${uniqueItems.length} from ${allItems.length} raw`);
+
+    if (!uniqueItems.length) {
+      return res.status(400).json({ error: 'No curriculum content could be extracted. Try a different PDF or add pdf-parse to package.json.' });
+    }
+
+    // Insert into DB
+    // Helper: extract grade/stage number from item content
+    // Handles: "Stage 3", "Grade 3", "Lớp 3", strand names like "Stage 3 - Numbers"
+    function detectItemGrade(item, fallbackGrade, currType) {
+      // If we already have a specific grade, use it
+      if (fallbackGrade > 0) return fallbackGrade;
+
+      // Try to detect from strand, substrand, or objective text
+      const searchText = `${item.strand||''} ${item.substrand||''} ${item.objective||''}`;
+
+      // Cambridge: "Stage N"
+      const stageMatch = searchText.match(/stage\s*(\d+)/i);
+      if (stageMatch) return parseInt(stageMatch[1]);
+
+      // Vietnam: "Lớp N" or "lop N"
+      const lopMatch = searchText.match(/l[oớ]p\s*(\d+)/i);
+      if (lopMatch) return parseInt(lopMatch[1]);
+
+      // Generic: "Grade N"
+      const gradeMatch = searchText.match(/grade\s*(\d+)/i);
+      if (gradeMatch) return parseInt(gradeMatch[1]);
+
+      // Year: "Year N"
+      const yearMatch = searchText.match(/year\s*(\d+)/i);
+      if (yearMatch) return parseInt(yearMatch[1]);
+
+      return 0; // truly all grades
+    }
+
+    let imported = 0;
+    for (const item of uniqueItems) {
+      const baseGrade = safeGrade(grade);
+      const itemGrade = detectItemGrade(item, baseGrade, type);
+      const stageLabel = itemGrade === 0 ? '' :
+        type === 'cambridge' ? `Stage ${itemGrade}` :
+        type === 'national'  ? `Lớp ${itemGrade}` :
+        `${itemGrade}`;
+
+      await pool.query(
+        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file, stage) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [subject, itemGrade, item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, stageLabel]
+      );
+      imported++;
+    }
+
+    console.log(`✅ Imported ${imported} items from "${fileName}"`);
+    res.json({ imported, message: `Successfully imported ${imported} curriculum items from "${fileName}"` });
+
+  } catch (err) {
+    console.error('Curriculum import error:', err);
+    res.status(500).json({ error: 'Import failed: ' + err.message });
+  }
+});
+
+
+// List curriculum grouped by subject + grade
+app.get('/admin/curriculum/list', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT subject, grade, curriculum_type, lang, COUNT(*) as count
+       FROM curriculum
+       GROUP BY subject, grade, curriculum_type, lang
+       ORDER BY subject, grade`
+    );
+    res.json({ items: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete curriculum by subject + grade
+app.delete('/admin/curriculum/delete', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { subject, grade } = req.body;
+    const result = await pool.query(
+      'DELETE FROM curriculum WHERE subject = $1 AND grade = $2',
+      [subject, parseInt(String(grade).replace(/[^0-9]/g,""),10)||0]
+    );
+    res.json({ deleted: result.rowCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENT ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+async function upgradePlan(userId, planKey) {
+  const plan = PLANS[planKey];
+  if (!plan) throw new Error('Unknown plan: ' + planKey);
+  const credits = PLAN_CREDITS[plan.plan] || 0;
+  await pool.query('UPDATE users SET plan = $1, credits = credits + $2 WHERE id = $3', [plan.plan, credits, userId]);
+}
+
+app.post('/payment/create-vnpay', authenticate, async (req, res) => {
+  try {
+    const { planKey } = req.body;
+    const plan = PLANS[planKey];
+    if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+
+    const tmnCode    = process.env.VNPAY_TMN_CODE;
+    const hashSecret = process.env.VNPAY_HASH_SECRET;
+    const returnUrl  = `${process.env.APP_URL || 'https://edubot-vietnam.onrender.com'}/payment/vnpay-return`;
+
+    const date = new Date();
+    const pad  = n => String(n).padStart(2, '0');
+    const createDate = `${date.getFullYear()}${pad(date.getMonth()+1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+    const txnRef = `${req.user.id}-${Date.now()}`;
+
+    const params = {
+      vnp_Version:    '2.1.0',
+      vnp_Command:    'pay',
+      vnp_TmnCode:    tmnCode,
+      vnp_Amount:     plan.vnd * 100,
+      vnp_CurrCode:   'VND',
+      vnp_TxnRef:     txnRef,
+      vnp_OrderInfo:  `EduBot ${plan.label} - User ${req.user.id}`,
+      vnp_OrderType:  'other',
+      vnp_Locale:     'vn',
+      vnp_ReturnUrl:  returnUrl,
+      vnp_IpAddr:     req.ip || '127.0.0.1',
+      vnp_CreateDate: createDate,
+    };
+
+    const sorted   = Object.keys(params).sort().reduce((acc, k) => { acc[k] = params[k]; return acc; }, {});
+    const signData = querystring.stringify(sorted);
+    const hmac     = crypto.createHmac('sha512', hashSecret).update(signData, 'utf8').digest('hex');
+    sorted.vnp_SecureHash = hmac;
+
+    await pool.query(
+      `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
+       VALUES ($1, $2, 'vnpay', $3, 'VND', $4, 'pending', NOW())`,
+      [req.user.id, planKey, plan.vnd, txnRef]
+    );
+
+    res.json({ paymentUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?' + querystring.stringify(sorted) });
+  } catch (err) {
+    console.error('VNPay create error:', err);
+    res.status(500).json({ error: 'Failed to create VNPay payment' });
+  }
+});
+
+app.get('/payment/vnpay-return', async (req, res) => {
+  try {
+    const hashSecret   = process.env.VNPAY_HASH_SECRET;
+    const params       = { ...req.query };
+    const secureHash   = params.vnp_SecureHash;
+    const responseCode = params.vnp_ResponseCode;
+    const txnRef       = params.vnp_TxnRef;
+
+    delete params.vnp_SecureHash;
+    delete params.vnp_SecureHashType;
+
+    const sorted   = Object.keys(params).sort().reduce((acc, k) => { acc[k] = params[k]; return acc; }, {});
+    const signData = querystring.stringify(sorted);
+    const hmac     = crypto.createHmac('sha512', hashSecret).update(signData, 'utf8').digest('hex');
+
+    const appUrl = 'https://edubot-vietnam.onrender.com';
+
+    if (hmac !== secureHash) {
+      return res.redirect(`${appUrl}/app?payment=failed&reason=invalid_signature`);
+    }
+
+    if (responseCode === '00') {
+      const pending = await pool.query('SELECT * FROM payments WHERE txn_ref = $1', [txnRef]);
+      if (pending.rows.length > 0) {
+        const { user_id, plan } = pending.rows[0];
+        await upgradePlan(user_id, plan);
+        await pool.query('UPDATE payments SET status = $1 WHERE txn_ref = $2', ['success', txnRef]);
+      }
+      return res.redirect(`${appUrl}/app?payment=success`);
+    } else {
+      await pool.query('UPDATE payments SET status = $1 WHERE txn_ref = $2', ['failed', txnRef]);
+      return res.redirect(`${appUrl}/app?payment=failed&reason=declined`);
+    }
+  } catch (err) {
+    console.error('VNPay return error:', err);
+    res.redirect('https://edubot-vietnam.onrender.com/app?payment=failed&reason=server_error');
+  }
+});
+
+app.post('/payment/create-stripe-session', authenticate, async (req, res) => {
+  try {
+    const { planKey } = req.body;
+    const plan = PLANS[planKey];
+    if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+
+    const appUrl = 'https://edubot-vietnam.onrender.com';
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: `EduBot ${plan.label}` },
+          unit_amount: plan.usd_cents,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${appUrl}/app?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:  `${appUrl}/pricing?payment=cancelled`,
+      metadata: {
+        user_id:  String(req.user.id),
+        plan_key: planKey,
+      },
+    });
+
+    await pool.query(
+      `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
+       VALUES ($1, $2, 'stripe', $3, 'USD', $4, 'pending', NOW())`,
+      [req.user.id, planKey, plan.usd_cents, session.id]
+    );
+
+    res.json({ sessionUrl: session.url });
+  } catch (err) {
+    console.error('Stripe session error:', err);
+    res.status(500).json({ error: 'Failed to create Stripe session' });
+  }
+});
+
+app.post('/payment/verify-stripe', authenticate, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== 'paid') {
+      return res.status(402).json({ error: 'Payment not completed', status: session.payment_status });
+    }
+
+    if (session.metadata.user_id !== String(req.user.id)) {
+      return res.status(403).json({ error: 'Session does not belong to this user' });
+    }
+
+    const planKey  = session.metadata.plan_key;
+    const existing = await pool.query('SELECT status FROM payments WHERE txn_ref = $1', [sessionId]);
+
+    if (existing.rows.length === 0 || existing.rows[0].status !== 'success') {
+      await upgradePlan(req.user.id, planKey);
+      await pool.query(
+        `INSERT INTO payments (user_id, plan, gateway, amount, currency, txn_ref, status, created_at)
+         VALUES ($1, $2, 'stripe', $3, 'USD', $4, 'success', NOW())
+         ON CONFLICT (txn_ref) DO UPDATE SET status = 'success'`,
+        [req.user.id, planKey, PLANS[planKey].usd_cents, sessionId]
+      );
+    }
+
+    const user = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
+    res.json({ success: true, plan: user.rows[0].plan, credits: user.rows[0].credits });
+  } catch (err) {
+    console.error('Stripe verify error:', err);
+    res.status(500).json({ error: 'Failed to verify payment' });
+  }
+});
+
+app.get('/payment/status', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get payment status' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FLASHCARD ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/flashcards/generate', authenticate, async (req, res) => {
+  try {
+    const { subject, grade, topic, count = 5, lang } = req.body;
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    const prompt = `Generate exactly ${count} flashcards for a grade ${grade} student studying ${subject}.
+Topic: ${topic || subject}.
+Language: ${language}.
+
+Return ONLY a valid JSON array with no other text, no markdown, no code blocks.
+Each item must have exactly these fields:
+- "question": the question or prompt on the front of the card
+- "answer": the clear answer on the back of the card
+- "hint": a short hint to help the student
+
+Example format:
+[{"question":"What is 2+2?","answer":"4","hint":"Count on your fingers"}]`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    let raw = response.content[0].text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
+
+    let cards;
+    try {
+      cards = JSON.parse(raw);
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to generate flashcards' });
+    }
+
+    const saved = [];
+    for (const card of cards) {
+      const result = await pool.query(
+        `INSERT INTO flashcards (user_id, subject, grade, topic, question, answer, hint, lang, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW()) RETURNING *`,
+        [req.user.id, subject, grade, topic || subject, card.question, card.answer, card.hint || '', lang || 'vi']
+      );
+      saved.push(result.rows[0]);
+    }
+
+    res.json({ flashcards: saved });
+  } catch (err) {
+    console.error('Flashcard generate error:', err);
+    res.status(500).json({ error: 'Failed to generate flashcards' });
+  }
+});
+
+app.get('/flashcards/my', authenticate, async (req, res) => {
+  try {
+    const { subject, grade } = req.query;
+    let query = 'SELECT * FROM flashcards WHERE user_id = $1';
+    const params = [req.user.id];
+    if (subject) { params.push(subject); query += ` AND subject = $${params.length}`; }
+    if (grade)   { params.push(grade);   query += ` AND grade = $${params.length}`; }
+    query += ' ORDER BY created_at DESC LIMIT 100';
+    const result = await pool.query(query, params);
+    res.json({ flashcards: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load flashcards' });
+  }
+});
+
+app.delete('/flashcards/:id', authenticate, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM flashcards WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete flashcard' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IMAGE GENERATION ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/image/generate', authenticate, async (req, res) => {
+  try {
+    const { prompt, subject, grade } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+
+    const userResult = await pool.query('SELECT plan, role, credits FROM users WHERE id = $1', [req.user.id]);
+    const user = userResult.rows[0];
+    const canGenerate = ['plus', 'teacher_pro'].includes(user.plan) || user.role === 'admin';
+    if (!canGenerate) {
+      return res.status(403).json({ error: 'Image generation requires Student Plus or Teacher Pro plan.', upgrade: true });
+    }
+    if ((user.credits || 0) < CREDIT_COSTS.ai_image) {
+      return res.status(402).json({ error: 'Not enough credits for image generation.', upgrade: true });
+    }
+
+    const safePrompt = `Educational illustration for grade ${grade || 'school'} students about ${subject || 'general science'}: ${prompt}. Clean, colorful, child-friendly educational diagram style. No text in image.`;
+
+    const response = await openai.images.generate({
+      model: 'gpt-image-1',
+      prompt: safePrompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'medium',
+    });
+
+    const imgData  = response.data[0];
+    const imageUrl = imgData.url ? imgData.url : `data:image/png;base64,${imgData.b64_json}`;
+
+    await pool.query('UPDATE users SET credits = credits - $1 WHERE id = $2', [CREDIT_COSTS.ai_image, req.user.id]);
+
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('Image generation error:', err?.message || err);
+    res.status(500).json({ error: err?.message || 'Failed to generate image' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GRAPH GENERATION ROUTE
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/graph/generate', authenticate, async (req, res) => {
+  try {
+    const { topic, subject, grade, lang } = req.body;
+    if (!topic) return res.status(400).json({ error: 'Missing topic' });
+
+    const gradeNum = parseInt(grade) || 1;
+    const language = lang === 'en' ? 'English' : 'Vietnamese';
+
+    if (gradeNum < 4) {
+      return res.status(400).json({ error: 'Graphs are available for Grade 4 and above.' });
+    }
+
+    const prompt = `You are an educational data visualization assistant.
+Generate a Chart.js compatible chart for a Grade ${gradeNum} ${subject} student.
+Topic: ${topic}
+Language for labels: ${language}
+
+Return ONLY a valid JSON object with no other text, no markdown, no code blocks.
+The JSON must have exactly this structure:
+{
+  "type": "line" or "bar" or "pie" or "scatter",
+  "title": "Chart title in ${language}",
+  "description": "One sentence explaining what this chart shows, in ${language}",
+  "data": {
+    "labels": ["label1", "label2", ...],
+    "datasets": [{
+      "label": "Dataset name in ${language}",
+      "data": [number1, number2, ...],
+      "backgroundColor": ["#00B4D8", "#E85D30", "#059669", "#F59E0B", "#EF4444"],
+      "borderColor": "#00B4D8",
+      "borderWidth": 2,
+      "fill": false
+    }]
+  },
+  "options": {
+    "xLabel": "X axis label in ${language}",
+    "yLabel": "Y axis label in ${language}"
+  }
+}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    let raw = response.content[0].text.trim().replace(/```json/g, '').replace(/```/g, '').trim();
+
+    let chartData;
+    try {
+      chartData = JSON.parse(raw);
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to generate chart data' });
+    }
+
+    res.json({ chart: chartData });
+  } catch (err) {
+    console.error('Graph generation error:', err);
+    res.status(500).json({ error: 'Failed to generate graph' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROMO CODE ROUTES
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/promo/create', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { type, credits, plan, max_uses, expires_at, custom_code } = req.body;
+    const code = custom_code || ('EDU' + Math.random().toString(36).substring(2, 8).toUpperCase());
+    const result = await pool.query(
+      `INSERT INTO promo_codes (code, credits, max_uses, uses, type, plan, expires_at)
+       VALUES ($1, $2, $3, 0, $4, $5, $6) RETURNING *`,
+      [code, credits || 0, max_uses || 1, type || 'credits', plan || null, expires_at || null]
+    );
+    res.json({ promo: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/promo/list', authenticate, adminOnly, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM promo_codes ORDER BY created_at DESC');
+    res.json({ promos: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/promo/redeem', authenticate, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const promo = await pool.query(
+      `SELECT * FROM promo_codes WHERE code = $1 AND uses < max_uses AND (expires_at IS NULL OR expires_at > NOW())`,
+      [code.toUpperCase()]
+    );
+    if (!promo.rows.length) return res.status(404).json({ error: 'Invalid or expired promo code' });
+
+    const p = promo.rows[0];
+    await pool.query('UPDATE promo_codes SET uses = uses + 1 WHERE id = $1', [p.id]);
+
+    if (p.type === 'plan' && p.plan) {
+      const credits = PLAN_CREDITS[p.plan] || 0;
+      await pool.query('UPDATE users SET plan = $1, credits = credits + $2 WHERE id = $3', [p.plan, credits, req.user.id]);
+      res.json({ success: true, message: `Plan upgraded to ${p.plan}!`, type: 'plan', plan: p.plan });
+    } else {
+      await pool.query('UPDATE users SET credits = credits + $1 WHERE id = $2', [p.credits, req.user.id]);
+      res.json({ success: true, message: `${p.credits} credits added!`, type: 'credits', credits: p.credits });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SERVER START + DB SETUP
+// ─────────────────────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
+
+async function startServer() {
+  try {
+    // Users table columns
+    await Promise.all([
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 0"),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'free'"),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_count INTEGER DEFAULT 0"),
+      pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reset TIMESTAMP"),
+    ]);
+
+    // Core tables
+    await pool.query(`CREATE TABLE IF NOT EXISTS payments (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      plan VARCHAR(50),
+      gateway VARCHAR(20),
+      amount INTEGER,
+      currency VARCHAR(10),
+      txn_ref VARCHAR(255) UNIQUE,
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS flashcards (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      subject VARCHAR(50),
+      grade INTEGER,
+      topic VARCHAR(200),
+      question TEXT,
+      answer TEXT,
+      hint TEXT,
+      lang VARCHAR(5) DEFAULT 'vi',
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS promo_codes (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(20) UNIQUE,
+      credits INTEGER DEFAULT 0,
+      max_uses INTEGER DEFAULT 1,
+      uses INTEGER DEFAULT 0,
+      type VARCHAR(20) DEFAULT 'credits',
+      plan VARCHAR(50),
+      expires_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS curriculum (
+      id SERIAL PRIMARY KEY,
+      subject VARCHAR(100),
+      grade INTEGER,
+      strand VARCHAR(200),
+      substrand VARCHAR(200),
+      objective TEXT,
+      curriculum_type VARCHAR(50) DEFAULT 'general',
+      lang VARCHAR(10) DEFAULT 'vi',
+      source_file VARCHAR(255),
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS chat_history (
+      id SERIAL PRIMARY KEY,
+      user_id UUID,
+      role VARCHAR(20),
+      content TEXT,
+      subject VARCHAR(50),
+      grade INTEGER,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS classroom_students (
+      id SERIAL PRIMARY KEY,
+      classroom_id INTEGER,
+      student_id UUID,
+      UNIQUE(classroom_id, student_id)
+    )`);
+
+    // Safe column additions
+    await Promise.all([
+      pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'credits'"),
+      pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS plan VARCHAR(50)"),
+      pool.query("ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS lang VARCHAR(10) DEFAULT 'vi'"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS curriculum_type VARCHAR(50) DEFAULT 'general'"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS source_file VARCHAR(255)"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS substrand VARCHAR(200)"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS strand VARCHAR(200)"),
+      pool.query("ALTER TABLE curriculum ADD COLUMN IF NOT EXISTS stage VARCHAR(200) DEFAULT ''"),
+      pool.query("ALTER TABLE curriculum ALTER COLUMN stage TYPE VARCHAR(200) USING stage::VARCHAR"),
+    ]);
+
+    // Exam tables
+    await pool.query(`CREATE TABLE IF NOT EXISTS exams (
+      id SERIAL PRIMARY KEY,
+      teacher_id UUID REFERENCES users(id),
+      title VARCHAR(255) NOT NULL,
+      subject VARCHAR(100),
+      grade INTEGER,
+      context VARCHAR(20) DEFAULT 'local',
+      purpose VARCHAR(20) DEFAULT 'test',
+      difficulty VARCHAR(20) DEFAULT 'medium',
+      adapted_for_weak BOOLEAN DEFAULT false,
+      time_limit INTEGER DEFAULT 30,
+      show_answers BOOLEAN DEFAULT false,
+      questions JSONB NOT NULL,
+      total_points INTEGER DEFAULT 0,
+      code VARCHAR(20) UNIQUE,
+      status VARCHAR(20) DEFAULT 'draft',       
+      classroom_id TEXT,
+      max_attempts INTEGER DEFAULT 1,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`);
+
+    await pool.query(`CREATE TABLE IF NOT EXISTS exam_submissions (
+      id SERIAL PRIMARY KEY,
+      exam_id INTEGER REFERENCES exams(id),
+      student_id UUID REFERENCES users(id),
+      guest_name VARCHAR(100),
+      answers JSONB DEFAULT '[]',
+      ai_scores JSONB DEFAULT '[]',
+      final_scores JSONB DEFAULT '[]',
+      total_score INTEGER DEFAULT 0,
+      max_score INTEGER DEFAULT 0,
+      status VARCHAR(20) DEFAULT 'in_progress',
+      started_at TIMESTAMP DEFAULT NOW(),
+      submitted_at TIMESTAMP,
+      time_extended INTEGER DEFAULT 0
+    )`);
+    
+    console.log('✅ Database ready');
+  } catch (e) {
+    console.error('DB setup error:', e.message);
+  }
+
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+}
+
+startServer();
+
+// ─── EXAM FILE SCAN ──────────────────────────────────────────────────────────
+app.post('/exam/scan-file', authenticate, async (req, res) => {
+  try {
+    const { fileData, fileType, fileName } = req.body;
+    if (!fileData) return res.status(400).json({ error: 'No file data' });
+
+    const isImage = fileType && fileType.startsWith('image/');
+    const isPdf = fileType === 'application/pdf';
+
+    let messageContent;
+    if (isPdf) {
+      messageContent = [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: fileData } },
+        { type: 'text', text: 'Extract the key topics, concepts and learning objectives from this educational document. List them clearly and concisely so they can be used to generate exam questions. Format as a clear bullet list of topics.' }
+      ];
+    } else if (isImage) {
+      messageContent = [
+        { type: 'image', source: { type: 'base64', media_type: fileType, data: fileData } },
+        { type: 'text', text: 'Extract the key topics, concepts and learning objectives from this educational document image. List them clearly and concisely. Format as a clear bullet list of topics.' }
+      ];
+    } else {
+      return res.status(400).json({ error: 'Only PDF and image files can be scanned' });
+    }
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 800,
+      messages: [{ role: 'user', content: messageContent }]
+    });
+
+    const topics = response.content[0].text;
+    res.json({ topics });
+  } catch (e) {
+    console.error('Scan file error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── EXAM ROUTES ──────────────────────────────────────────────────────────────
+
+// Generate exam with AI
+app.post('/exam/generate', authenticate, async (req, res) => {
+  try {
+    const { subject, topics, context, purpose, difficulty, questionTypes, questionCount, adaptForWeak, timeLimit, showAnswers, grade } = req.body;
+    const userId = req.user.id;
+    const user = await pool.query('SELECT * FROM users WHERE id=$1', [userId]);
+    if (!user.rows[0] || (user.rows[0].role !== 'teacher' && user.rows[0].role !== 'admin')) {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
+
+    const contextLabel = context === 'international' ? 'International curriculum (Cambridge, IELTS style)' : 'Vietnamese national curriculum (MOET style)';
+    const purposeLabel = purpose === 'exam' ? 'formal end-of-term exam' : 'class test';
+    const adaptNote = adaptForWeak ? 'IMPORTANT: Adapt questions for underperforming students — simpler language, more scaffolding, clearer instructions.' : '';
+    const typesLabel = (questionTypes || ['mcq', 'truefalse', 'fillinblank']).join(', '); const fileData = req.body.fileData || null; const fileType = req.body.fileType || null;
+
+    const prompt = `You are an expert ${contextLabel} exam creator for Grade ${grade} ${subject}.
+
+Create a ${purposeLabel} ${fileData ? 'based entirely on the uploaded document.' : 'covering these topics: '+topics+'.'} ${fileData ? ' Use the uploaded document as the primary source for questions. Do not use any other topic — only create questions based on the content in the uploaded file.' : ''}
+Difficulty: ${difficulty}
+Question types to include: ${typesLabel}
+Total questions: ${questionCount || 10}
+${adaptNote}
+
+Question type codes:
+- mcq: Multiple choice with 4 options (A,B,C,D), one correct answer
+- truefalse: True or False statement
+- fillinblank: Sentence with a blank to fill in
+- matching: Two columns to match (provide 4-5 pairs)
+- shortanswer: Question requiring 2-3 sentence answer
+- errorcorrection: Sentence with an error to find and correct
+- ordering: Steps/items to put in correct order (provide 4-5 items)
+- comprehension: Short passage followed by 2-3 questions about it
+
+Respond ONLY with valid JSON, no markdown, no explanation:
+{
+  "title": "exam title",
+  "instructions": "brief instructions for students",
+  "sections": [
+    {
+      "type": "mcq",
+      "label": "Section A: Multiple Choice",
+      "questions": [
+        {
+          "id": 1,
+          "question": "question text",
+          "options": ["A. option1", "B. option2", "C. option3", "D. option4"],
+          "answer": "A",
+          "points": 2,
+          "explanation": "brief explanation of correct answer"
+        }
+      ]
+    },
+    {
+      "type": "truefalse",
+      "label": "Section B: True or False",
+      "questions": [
+        {
+          "id": 5,
+          "question": "statement text",
+          "answer": "True",
+          "points": 1,
+          "explanation": "why this is true/false"
+        }
+      ]
+    }
+  ]
+}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: fileData ? [{ type: fileType && fileType.startsWith('image/') ? 'image' : 'document', source: { type: 'base64', media_type: fileType || 'application/pdf', data: fileData } }, { type: 'text', text: prompt }] : prompt }]
+    });
+
+    let text = response.content[0].text.replace(/```json|```/g, '').trim();
+    const examData = JSON.parse(text);
+
+    // Calculate total points
+    let totalPoints = 0;
+    examData.sections.forEach(s => s.questions.forEach(q => { totalPoints += q.points || 1; }));
+
+    // Generate unique exam code
+    const code = 'SS-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+
+    // Save to DB
+    const result = await pool.query(
+      `INSERT INTO exams (teacher_id, title, subject, grade, context, purpose, difficulty, adapted_for_weak, time_limit, show_answers, questions, total_points, code, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'draft') RETURNING *`,
+      [userId, examData.title, subject, grade, context, purpose, difficulty, adaptForWeak || false, timeLimit || 30, showAnswers || false, JSON.stringify(examData), totalPoints, code]
+    );
+
+    res.json({ exam: result.rows[0], examData });
+  } catch (e) {
+    console.error('Exam generate error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get teacher's exams (Memory)
+app.get('/exam/my', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM exams WHERE teacher_id=$1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json({ exams: result.rows });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get single exam by ID (teacher)
+app.get('/exam/:id', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM exams WHERE id=$1', [req.params.id]);
+    if (!result.rows[0]) return res.status(404).json({ error: 'Exam not found' });
+    res.json({ exam: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update exam (teacher edits questions/points)
+app.put('/exam/:id', authenticate, async (req, res) => {
+  try {
+    const { questions, title, timeLimit, showAnswers } = req.body;
+    let totalPoints = 0;
+    if (questions && questions.sections) {
+      questions.sections.forEach(s => s.questions.forEach(q => { totalPoints += q.points || 1; }));
+    }
+    const result = await pool.query(
+      `UPDATE exams SET questions=$1, title=$2, time_limit=$3, show_answers=$4, total_points=$5 WHERE id=$6 AND teacher_id=$7 RETURNING *`,
+      [JSON.stringify(questions), title, timeLimit, showAnswers, totalPoints, req.params.id, req.user.id]
+    );
+    res.json({ exam: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Assign exam (change status to active)
+app.post('/exam/:id/assign', authenticate, async (req, res) => {
+  try {
+    const { classId, maxAttempts } = req.body;
+    const result = await pool.query(
+      `UPDATE exams SET status='active', classroom_id=$3, max_attempts=$4 WHERE id=$1 AND teacher_id=$2 RETURNING *`,
+      [req.params.id, req.user.id, classId || null, maxAttempts || 1]
+    );
+    res.json({ exam: result.rows[0] });
+  } catch (e) {
+    // Try without new columns if they don't exist yet
+    try {
+      await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS classroom_id TEXT`);
+      await pool.query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 1`);
+      const result = await pool.query(
+        `UPDATE exams SET status='active', classroom_id=$3, max_attempts=$4 WHERE id=$1 AND teacher_id=$2 RETURNING *`,
+        [req.params.id, req.user.id, req.body.classId || null, req.body.maxAttempts || 1]
+      );
+      res.json({ exam: result.rows[0] });
+    } catch(e2) {
+      res.status(500).json({ error: e2.message });
+    }
+  }
+});
+
+// Get active exams for a classroom (student view)
+app.get('/exam/classroom/:classId', authenticate, async (req, res) => {
+  try {
+    const examsResult = await pool.query(
+      `SELECT id, title, subject, grade, time_limit, total_points, code, status, max_attempts
+       FROM exams WHERE classroom_id::text=$1::text AND (status='active' OR status='closed') ORDER BY created_at DESC`,
+      [req.params.classId]
+    );
+
+    // For each exam, check if this student has a submission
+    const exams = await Promise.all(examsResult.rows.map(async (exam) => {
+      const subResult = await pool.query(
+        `SELECT id, status, total_score, max_score FROM exam_submissions
+         WHERE exam_id=$1 AND student_id=$2 ORDER BY started_at DESC LIMIT 1`,
+        [exam.id, req.user.id]
+      );
+      return {
+        ...exam,
+        my_submission: subResult.rows.length ? subResult.rows[0] : null
+      };
+    }));
+
+    res.json({ exams });
+  } catch (e) {
+    res.status(500).json({ exams: [] });
+  }
+});
+
+app.get('/exam/submission/:id/my-result', authenticate, async (req, res) => {
+  try {
+    const subId = req.params.id;
+    const userId = req.user.id;
+
+    const subResult = await pool.query(
+      `SELECT s.*, e.questions, e.title, e.show_answers, e.subject, e.grade
+       FROM exam_submissions s
+       JOIN exams e ON e.id = s.exam_id
+       WHERE s.id = $1 AND s.student_id = $2`,
+      [subId, userId]
+    );
+
+    if (!subResult.rows.length) {
+      return res.status(404).json({ error: 'Result not found' });
+    }
+
+    const row = subResult.rows[0];
+    const scores = (row.status === 'graded' && row.final_scores && row.final_scores.length)
+      ? row.final_scores : row.ai_scores;
+
+    res.json({
+      submission: {
+        id: row.id,
+        status: row.status,
+        total_score: row.total_score,
+        max_score: row.max_score,
+        answers: row.answers,
+        ai_scores: scores,
+        submitted_at: row.submitted_at
+      },
+      exam: {
+        title: row.title,
+        subject: row.subject,
+        grade: row.grade,
+        questions: row.questions,
+        show_answers: row.show_answers
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get teacher classrooms
+app.get('/classroom/teacher', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM classrooms WHERE teacher_id=$1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json({ classrooms: result.rows });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Close exam
+app.post('/exam/:id/close', authenticate, async (req, res) => {
+  try {
+    await pool.query(`UPDATE exams SET status='closed' WHERE id=$1 AND teacher_id=$2`, [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}); 
+
+// Add extra time
+app.post('/exam/:id/extend', authenticate, async (req, res) => {
+  try {
+    const { minutes } = req.body;
+    await pool.query(
+      `UPDATE exam_submissions SET time_extended=time_extended+$1 WHERE exam_id=$2 AND status='in_progress'`,
+      [minutes || 5, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete exam
+app.delete('/exam/:id', authenticate, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM exam_submissions WHERE exam_id=$1', [req.params.id]);
+    await pool.query('DELETE FROM exams WHERE id=$1 AND teacher_id=$2', [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── STUDENT EXAM ROUTES ──
+
+// Get exam by code (public — no auth needed)
+app.get('/exam/join/:code', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, title, subject, grade, time_limit, questions, total_points, status
+       FROM exams WHERE code=$1`,
+      [req.params.code.toUpperCase()]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: 'Exam not found' });
+    if (result.rows[0].status !== 'active') return res.status(403).json({ error: 'This exam is not active yet' });
+
+    // Return exam without answers
+    const exam = result.rows[0];
+    const questions = exam.questions;
+    // Strip answers from questions
+    if (questions.sections) {
+      questions.sections.forEach(s => {
+        s.questions.forEach(q => {
+          delete q.answer;
+          delete q.explanation;
+        });
+      });
+    }
+    res.json({ exam: { ...exam, questions } });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Start exam submission
+app.post('/exam/join/:code/start', async (req, res) => {
+  try {
+    const { guestName, studentId } = req.body;
+    const examResult = await pool.query('SELECT * FROM exams WHERE code=$1 AND status=$2', [req.params.code.toUpperCase(), 'active']);
+    if (!examResult.rows[0]) return res.status(404).json({ error: 'Exam not found or not active' });
+    const exam = examResult.rows[0];
+
+    // Resolve student ID from body OR from JWT token in header
+    let resolvedStudentId = studentId || null;
+    const authHeader = req.headers.authorization;
+    if (!resolvedStudentId && authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const decoded = require('jsonwebtoken').verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+        resolvedStudentId = decoded.id || decoded.userId || null;
+      } catch(e) {}
+    }
+
+    const result = await pool.query(
+      `INSERT INTO exam_submissions (exam_id, student_id, guest_name, max_score, status)
+       VALUES ($1,$2,$3,$4,'in_progress') RETURNING *`,
+      [exam.id, resolvedStudentId, guestName || null, exam.total_points]
+    );
+    res.json({ submission: result.rows[0], timeLimit: exam.time_limit });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Submit exam answers
+app.post('/exam/submission/:id/submit', async (req, res) => {
+  try {
+    const { answers } = req.body;
+    const subResult = await pool.query('SELECT * FROM exam_submissions WHERE id=$1', [req.params.id]);
+    if (!subResult.rows[0]) return res.status(404).json({ error: 'Submission not found' });
+    const sub = subResult.rows[0];
+
+    const examResult = await pool.query('SELECT * FROM exams WHERE id=$1', [sub.exam_id]);
+    const exam = examResult.rows[0];
+    const examQuestions = exam.questions;
+
+    // AI grades automatically where possible
+    let aiScores = [];
+    let autoTotal = 0;
+
+    examQuestions.sections.forEach(section => {
+      section.questions.forEach(q => {
+        const studentAnswer = answers.find(a => a.id === q.id);
+        const ans = studentAnswer ? studentAnswer.answer : '';
+        let score = 0;
+        let autoGraded = false;
+
+        if (['mcq', 'truefalse', 'matching'].includes(section.type)) {
+          // Auto-grade
+          autoGraded = true;
+          if (ans.toString().trim().toLowerCase() === q.answer.toString().trim().toLowerCase()) {
+            score = q.points || 1;
+          }
+        } else {
+          // AI will suggest grade — set to null for teacher review
+          autoGraded = false;
+          score = null;
+        }
+
+        aiScores.push({ id: q.id, score, maxScore: q.points || 1, autoGraded, studentAnswer: ans, correctAnswer: q.answer });
+        if (autoGraded && score !== null) autoTotal += score;
+      });
+    });
+
+    await pool.query(
+      `UPDATE exam_submissions SET answers=$1, ai_scores=$2, final_scores=$2, status='submitted', submitted_at=NOW()
+       WHERE id=$3`,
+      [JSON.stringify(answers), JSON.stringify(aiScores), req.params.id]
+    );
+
+    res.json({ success: true, message: 'Exam submitted successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Teacher updates grades
+app.put('/exam/submission/:id/grade', authenticate, async (req, res) => {
+  try {
+    const { finalScores } = req.body;
+    const total = finalScores.reduce((sum, s) => sum + (s.score || 0), 0);
+    await pool.query(
+      `UPDATE exam_submissions SET final_scores=$1, total_score=$2, status='graded' WHERE id=$3`,
+      [JSON.stringify(finalScores), total, req.params.id]
+    );
+    res.json({ success: true, totalScore: total });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get live results for teacher
+
+// Student: view own submission result
+
+app.get('/exam/:id/results', authenticate, async (req, res) => {
+  try {
+    const exam = await pool.query('SELECT * FROM exams WHERE id=$1 AND teacher_id=$2', [req.params.id, req.user.id]);
+    if (!exam.rows[0]) return res.status(404).json({ error: 'Not found' });
+
+    const submissions = await pool.query(
+      `SELECT s.*, u.name as student_name FROM exam_submissions s
+       LEFT JOIN users u ON s.student_id=u.id
+       WHERE s.exam_id=$1 ORDER BY s.started_at ASC`,
+      [req.params.id]
+    );
+
+    const rows = submissions.rows;
+    const submitted = rows.filter(r => r.status !== 'in_progress');
+    const avgScore = submitted.length > 0
+      ? Math.round(submitted.reduce((sum, r) => sum + (r.total_score || 0), 0) / submitted.length)
+      : 0;
+
+    res.json({
+      exam: exam.rows[0],
+      submissions: rows,
+      stats: {
+        total: rows.length,
+        inProgress: rows.filter(r => r.status === 'in_progress').length,
+        submitted: submitted.length,
+        graded: rows.filter(r => r.status === 'graded').length,
+        avgScore,
+        maxScore: exam.rows[0].total_points
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
