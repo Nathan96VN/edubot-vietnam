@@ -1014,6 +1014,11 @@ function buildSidebar(){
       {i:'🎮',l:d.t4,p:4},
       {i:'🏫',l:d.t1,p:1},
     ];
+    // Add IELTS link for teacher/admin
+    nav.innerHTML=items.map(function(it){return '<div class="sideitem" id="snav'+it.p+'" onclick="showPanel('+it.p+')"><span class="si">'+it.i+'</span><span class="sl">'+it.l+'</span></div>';}).join('')+'<a href="/ielts" class="sideitem" style="text-decoration:none;display:flex"><span class="si">🎓</span><span class="sl">IELTS</span></a>';
+    document.getElementById('side-uname').textContent=uname;
+    document.getElementById('side-logout').textContent=L('logout');
+    return;
   } else {
     var d=lang==='en'?{t0:'AI Tutor',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games',t5:'Exam Generator',t6:'Memory'}:{t0:'Học với AI',t1:'Lớp học',t2:'Dashboard',t3:'Flashcards',t4:'Games',t5:'Tạo đề thi',t6:'Bộ nhớ'};
     items=[
@@ -1022,6 +1027,11 @@ function buildSidebar(){
       {i:'🎮',l:d.t4,p:4},
       {i:'🏫',l:d.t1,p:1},
     ];
+    // Add IELTS link for students
+    nav.innerHTML=items.map(function(it){return '<div class="sideitem" id="snav'+it.p+'" onclick="showPanel('+it.p+')"><span class="si">'+it.i+'</span><span class="sl">'+it.l+'</span></div>';}).join('')+'<a href="/ielts" class="sideitem" style="text-decoration:none;display:flex"><span class="si">🎓</span><span class="sl">IELTS</span></a>';
+    document.getElementById('side-uname').textContent=uname;
+    document.getElementById('side-logout').textContent=L('logout');
+    return;
   }
   nav.innerHTML=items.map(function(it){
     return '<div class="sideitem" id="snav'+it.p+'" onclick="showPanel('+it.p+')"><span class="si">'+it.i+'</span><span class="sl">'+it.l+'</span></div>';
