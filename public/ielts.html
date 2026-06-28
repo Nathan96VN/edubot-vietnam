@@ -656,7 +656,7 @@ function renderListeningSection(data){
       if(q.options){
         html += '<div class="q-options">';
         Object.keys(q.options).forEach(function(k){
-          html += '<label class="q-opt"><input type="radio" name="lq'+partNum+'_'+q.id+'" value="'+k+'" onchange="listeningAnswers['+partNum+']['+q.id+']='+"'"+k+"'"/> '+k+'. '+esc(q.options[k])+'</label>';
+          html += '<label class="q-opt"><input type="radio" name="lq'+partNum+'_'+q.id+'" value="'+k+'" data-part="'+partNum+'" data-qid="'+q.id+'" data-val="'+k+'" onclick="var el=this;listeningAnswers[el.dataset.part]=listeningAnswers[el.dataset.part]||{};listeningAnswers[el.dataset.part][el.dataset.qid]=el.dataset.val"/> '+k+'. '+esc(q.options[k])+'</label>';
         });
         html += '</div>';
       } else {
