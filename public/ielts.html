@@ -649,14 +649,17 @@ function renderListeningSection(data){
   var scriptText = data.script.map(function(line){ return line.speaker+': '+line.text; }).join(' ');
 
   // Setup TTS
-  document.getElementById('audio-status').textContent = 'Ready to play — Section '+partNum;
-  document.getElementById('play-btn').disabled = false;
-  document.getElementById('play-btn').textContent = '▶ Play Recording';
+  document.getElementById('audio-status').textContent = 'Preparing audio...';
+  document.getElementById('play-btn').disabled = true;
+  document.getElementById('play-btn').textContent = '⏳ Loading audio...';
   audioPlaying = false;
 
   window._currentScript = data;
   window._currentScriptText = scriptText;
   window._currentPartNum = partNum;
+
+  // Generate real audio via OpenAI TTS
+  generateTTSAudio(data);
 
   // Render questions
   var html = '';
@@ -682,10 +685,83 @@ function renderListeningSection(data){
   document.getElementById('listening-progress').textContent = 'Section '+partNum+' of 4';
 }
 
+
+function generateTTSAudio(data){
+  fetch(API+'/ielts/tts',{method:'POST',headers:ah(),body:JSON.stringify({script:data.script,speakers:data.speakers})})
+  .then(function(r){return r.json();})
+  .then(function(result){
+    if(result.error){ 
+      // Fallback to browser TTS
+      document.getElementById('audio-status').textContent = 'Ready (browser voice)';
+      document.getElementById('play-btn').disabled = false;
+      document.getElementById('play-btn').textContent = '▶ Play Recording';
+      return;
+    }
+    // Build audio queue from base64 chunks
+    window._audioQueue = result.chunks.map(function(chunk){
+      var binary = atob(chunk.audio);
+      var bytes = new Uint8Array(binary.length);
+      for(var i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+      var blob = new Blob([bytes],{type:'audio/mp3'});
+      return {speaker:chunk.speaker, url:URL.createObjectURL(blob)};
+    });
+    window._audioQueueIdx = 0;
+    document.getElementById('audio-status').textContent = 'Ready to play — Click to start';
+    document.getElementById('play-btn').disabled = false;
+    document.getElementById('play-btn').textContent = '▶ Play Recording';
+    document.getElementById('play-btn').style.background = 'var(--primary)';
+  })
+  .catch(function(){
+    // Fallback to browser TTS
+    document.getElementById('audio-status').textContent = 'Ready (browser voice)';
+    document.getElementById('play-btn').disabled = false;
+    document.getElementById('play-btn').textContent = '▶ Play Recording';
+  });
+}
+
 function toggleAudio(){
   if(!window._currentScript) return;
   if(audioPlaying){ pauseAudio(); return; }
-  playAudio();
+  // Use real audio queue if available, otherwise browser TTS
+  if(window._audioQueue && window._audioQueue.length){
+    playRealAudio();
+  } else {
+    playAudio();
+  }
+}
+
+
+function playRealAudio(){
+  if(!window._audioQueue || !window._audioQueue.length) return;
+  audioPlaying = true;
+  document.getElementById('play-btn').textContent = '⏸ Pause';
+  document.getElementById('audio-status').textContent = 'Playing...';
+  window._audioQueueIdx = window._audioQueueIdx || 0;
+  
+  function playNext(){
+    if(window._audioQueueIdx >= window._audioQueue.length){
+      audioPlaying = false;
+      document.getElementById('play-btn').textContent = '▶ Play Recording';
+      document.getElementById('audio-status').textContent = 'Finished';
+      document.getElementById('audio-bar').style.width = '100%';
+      return;
+    }
+    var item = window._audioQueue[window._audioQueueIdx];
+    var audio = new Audio(item.url);
+    window._currentAudio = audio;
+    
+    // Update progress
+    var pct = Math.round((window._audioQueueIdx / window._audioQueue.length)*100);
+    document.getElementById('audio-bar').style.width = pct+'%';
+    
+    audio.onended = function(){
+      window._audioQueueIdx++;
+      playNext();
+    };
+    audio.onerror = function(){ window._audioQueueIdx++; playNext(); };
+    audio.play();
+  }
+  playNext();
 }
 
 function playAudio(){
@@ -771,6 +847,22 @@ function playAudio(){
 }
 
 function pauseAudio(){
+  // Pause real audio
+  if(window._currentAudio && !window._currentAudio.paused){
+    window._currentAudio.pause();
+    audioPlaying=false;
+    document.getElementById('play-btn').textContent='▶ Resume';
+    document.getElementById('audio-status').textContent='Paused';
+    return;
+  }
+  if(window._currentAudio && window._currentAudio.paused){
+    window._currentAudio.play();
+    audioPlaying=true;
+    document.getElementById('play-btn').textContent='⏸ Pause';
+    document.getElementById('audio-status').textContent='Playing...';
+    return;
+  }
+  // Fallback browser TTS pause
   if(synth.speaking){ synth.pause(); audioPlaying=false; document.getElementById('play-btn').textContent='▶ Resume'; document.getElementById('audio-status').textContent='Paused'; }
   else if(synth.paused){ synth.resume(); audioPlaying=true; document.getElementById('play-btn').textContent='⏸ Pause'; document.getElementById('audio-status').textContent='Playing...'; }
 }
