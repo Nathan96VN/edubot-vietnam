@@ -240,14 +240,16 @@ input[type=file]#cfi{display:none}
 .mlogo-text span{color:var(--teal)}
 #msub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
 .rtog{display:flex;gap:0;margin-bottom:14px;border:0.5px solid var(--border);overflow:hidden}
-.rb{flex:1;padding:9px 6px;border:none;background:none;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.15s;font-family:var(--font);border-right:0.5px solid var(--border)}
+.rb{flex:1;padding:9px 6px;border:none;background:var(--bg2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.15s;font-family:var(--font);border-right:0.5px solid var(--border)}
 .rb:last-child{border:none}
 .rb.on{background:var(--navy);color:#fff}
-.rb.ton.on{background:var(--teal);color:#fff}
+.rb.ton{background:var(--bg2);color:var(--muted)}
+.rb.ton.on{background:var(--navy);color:#fff}
 .atabs{display:flex;gap:0;margin-bottom:16px;background:var(--bg2);border:0.5px solid var(--border);overflow:hidden}
-.at{flex:1;padding:8px;text-align:center;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all 0.15s;border-right:0.5px solid var(--border)}
+.at{flex:1;padding:8px;text-align:center;border:none;background:var(--bg2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all 0.15s;border-right:0.5px solid var(--border)}
 .at:last-child{border:none}
-.at.on{background:var(--navy);color:#fff}
+.at.on{background:var(--teal);color:#fff}
+.at:not(.on):hover{background:#fff;color:var(--navy)}
 .af{margin-bottom:12px}
 .af label{display:block;font-size:10px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
 .af input,.af select{width:100%;padding:10px 12px;background:var(--bg2);border:0.5px solid var(--border);color:var(--text);font-size:14px;outline:none;font-family:var(--font)}
