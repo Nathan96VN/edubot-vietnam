@@ -149,7 +149,6 @@ app.get('/login',    (req, res) => res.sendFile(__dirname + '/public/login.html'
 app.get('/pricing',  (req, res) => res.sendFile(__dirname + '/public/pricing.html'));
 app.get('/games',    (req, res) => res.sendFile(__dirname + '/public/games.html'));
 app.get('/upload',   (req, res) => res.sendFile(__dirname + '/public/upload.html'));
-app.get('/ielts', (req, res) => res.sendFile(__dirname + '/public/ielts.html'));
 app.get('/admin',    (req, res) => res.sendFile(__dirname + '/public/admin.html'));
 app.get('/app',      (req, res) => res.sendFile(__dirname + '/public/app.html'));
 
@@ -1524,66 +1523,251 @@ async function startServer() {
   }
 
   
-// ─── IELTS TTS ──────────────────────────────────────────────────────────────
+// ─── IELTS ──────────────────────────────────────────────────────────────────
 
-// Convert listening script to audio using OpenAI TTS
+app.get('/ielts', (req, res) => res.sendFile(__dirname + '/public/ielts.html'));
+
+app.post('/ielts/reading/generate', authenticate, async (req, res) => {
+  try {
+    const { topic, difficulty } = req.body;
+    const prompt = `Generate a complete IELTS ${difficulty||'Academic'} Reading passage about "${topic||'Science and Technology'}".
+
+Return ONLY valid JSON, no markdown:
+{
+  "title": "passage title",
+  "passage": "Full passage 650-750 words, academic style, 5 paragraphs labeled [A][B][C][D][E]",
+  "sections": [
+    {
+      "type": "multiple_choice",
+      "instructions": "Choose the correct letter A, B, C or D.",
+      "questions": [
+        {"id":1,"text":"question text","options":{"A":"opt","B":"opt","C":"opt","D":"opt"},"answer":"B"}
+      ]
+    },
+    {
+      "type": "true_false_ng",
+      "instructions": "Write TRUE, FALSE or NOT GIVEN.",
+      "questions": [
+        {"id":5,"text":"statement","answer":"TRUE"}
+      ]
+    },
+    {
+      "type": "fill_blank",
+      "instructions": "Complete using NO MORE THAN TWO WORDS from the passage.",
+      "questions": [
+        {"id":9,"text":"The process involves ________ at high temperatures.","answer":"heating"}
+      ]
+    }
+  ]
+}
+Generate exactly 13 questions total. All answers must come from the passage.`;
+
+    const r = await anthropic.messages.create({ model:'claude-haiku-4-5', max_tokens:4000, messages:[{role:'user',content:prompt}] });
+    const data = JSON.parse(r.content[0].text.replace(/```json|```/g,'').trim());
+    res.json(data);
+  } catch(e) { console.error('IELTS reading error:',e.message); res.status(500).json({error:e.message}); }
+});
+
+app.post('/ielts/listening/generate', authenticate, async (req, res) => {
+  try {
+    const { section } = req.body;
+    const sNum = parseInt(section)||1;
+    const descs = {
+      1:'a conversation between two people in an everyday social context like booking accommodation or enquiring about a course',
+      2:'a monologue in an everyday social context like a speech about local facilities',
+      3:'a conversation between up to four people in an educational context',
+      4:'a university lecture on an academic subject'
+    };
+    const prompt = `Generate an IELTS Listening Section ${sNum}: ${descs[sNum]||descs[1]}.
+
+Return ONLY valid JSON, no markdown:
+{
+  "section": ${sNum},
+  "title": "Section ${sNum} title",
+  "speakers": [
+    {"name":"Sarah","gender":"female","accent":"British"},
+    {"name":"James","gender":"male","accent":"Australian"}
+  ],
+  "script": [
+    {"speaker":"Sarah","text":"dialogue line"},
+    {"speaker":"James","text":"response"}
+  ],
+  "sections": [
+    {
+      "type": "form_completion",
+      "instructions": "Complete the form. Write NO MORE THAN TWO WORDS AND/OR A NUMBER.",
+      "questions": [
+        {"id":1,"text":"Name: ________","answer":"Sarah Johnson"},
+        {"id":2,"text":"Phone: ________","answer":"07834 521906"}
+      ]
+    },
+    {
+      "type": "multiple_choice",
+      "instructions": "Choose the correct letter A, B or C.",
+      "questions": [
+        {"id":6,"text":"question","options":{"A":"opt","B":"opt","C":"opt"},"answer":"A"}
+      ]
+    }
+  ]
+}
+Script must be 300-400 words natural English. Generate exactly 10 questions total.`;
+
+    const r = await anthropic.messages.create({ model:'claude-haiku-4-5', max_tokens:3000, messages:[{role:'user',content:prompt}] });
+    const data = JSON.parse(r.content[0].text.replace(/```json|```/g,'').trim());
+    res.json(data);
+  } catch(e) { console.error('IELTS listening error:',e.message); res.status(500).json({error:e.message}); }
+});
+
+app.post('/ielts/writing/generate', authenticate, async (req, res) => {
+  try {
+    const { task } = req.body;
+    const taskNum = parseInt(task)||1;
+    
+    if(taskNum === 1) {
+      const prompt = `Generate an IELTS Academic Writing Task 1 prompt with chart data.
+Return ONLY valid JSON, no markdown:
+{
+  "task": 1,
+  "type": "bar_chart",
+  "title": "chart title",
+  "description": "The chart below shows... Summarise the information by selecting and reporting the main features, and make comparisons where relevant. Write at least 150 words.",
+  "data": {
+    "labels": ["2000","2005","2010","2015","2020"],
+    "datasets": [
+      {"label":"Category A","values":[23,34,45,52,61]},
+      {"label":"Category B","values":[45,42,38,35,30]}
+    ],
+    "yAxisLabel": "Percentage (%)"
+  },
+  "wordLimit": 150,
+  "timeLimit": 20
+}`;
+      const r = await anthropic.messages.create({ model:'claude-haiku-4-5', max_tokens:1000, messages:[{role:'user',content:prompt}] });
+      return res.json(JSON.parse(r.content[0].text.replace(/```json|```/g,'').trim()));
+    }
+    
+    const prompt = `Generate an IELTS Academic Writing Task 2 essay question.
+Return ONLY valid JSON, no markdown:
+{
+  "task": 2,
+  "topic": "topic area",
+  "question": "Full essay question 2-3 sentences. Write at least 250 words.",
+  "type": "opinion",
+  "wordLimit": 250,
+  "timeLimit": 40
+}`;
+    const r = await anthropic.messages.create({ model:'claude-haiku-4-5', max_tokens:600, messages:[{role:'user',content:prompt}] });
+    res.json(JSON.parse(r.content[0].text.replace(/```json|```/g,'').trim()));
+  } catch(e) { console.error('IELTS writing error:',e.message); res.status(500).json({error:e.message}); }
+});
+
+app.post('/ielts/speaking/generate', authenticate, async (req, res) => {
+  try {
+    const { part } = req.body;
+    const partNum = parseInt(part)||1;
+    
+    let prompt = '';
+    if(partNum === 1) {
+      prompt = `Generate IELTS Speaking Part 1 questions.
+Return ONLY valid JSON, no markdown:
+{"part":1,"topic":"general topics","questions":["Do you work or are you a student?","What do you enjoy most about your work or studies?","Tell me about your hometown.","What do you like to do in your free time?","Do you prefer spending time indoors or outdoors?"]}`;
+    } else if(partNum === 2) {
+      prompt = `Generate IELTS Speaking Part 2 cue card.
+Return ONLY valid JSON, no markdown:
+{"part":2,"cueCard":{"topic":"Describe a memorable journey you have taken","points":["Where you went","Who you went with","What you did there","Why it was memorable"],"prepTime":60,"speakTime":120},"followUp":["Did you enjoy the experience?","Would you like to go back?"]}`;
+    } else {
+      prompt = `Generate IELTS Speaking Part 3 discussion questions.
+Return ONLY valid JSON, no markdown:
+{"part":3,"topic":"Travel and Tourism","questions":["How has tourism changed in your country over the past few decades?","What are the advantages and disadvantages of international tourism?","Do you think people will travel more or less in the future?","How does tourism affect local cultures and traditions?"]}`;
+    }
+    
+    const r = await anthropic.messages.create({ model:'claude-haiku-4-5', max_tokens:800, messages:[{role:'user',content:prompt}] });
+    res.json(JSON.parse(r.content[0].text.replace(/```json|```/g,'').trim()));
+  } catch(e) { console.error('IELTS speaking error:',e.message); res.status(500).json({error:e.message}); }
+});
+
+app.post('/ielts/writing/grade', authenticate, async (req, res) => {
+  try {
+    const { task, question, answer, wordCount } = req.body;
+    const prompt = `You are an expert IELTS examiner. Grade this Writing Task ${task} response.
+Question: ${question}
+Student answer (${wordCount} words): ${answer}
+
+Return ONLY valid JSON, no markdown:
+{"band":6.5,"taskAchievement":{"band":7,"feedback":"specific feedback"},"coherenceCohesion":{"band":6,"feedback":"specific feedback"},"lexicalResource":{"band":7,"feedback":"specific feedback"},"grammaticalRange":{"band":6,"feedback":"specific feedback"},"overallFeedback":"2-3 sentence summary","strengths":["strength 1","strength 2"],"improvements":["improvement 1","improvement 2","improvement 3"]}`;
+
+    const r = await anthropic.messages.create({ model:'claude-sonnet-4-6', max_tokens:1000, messages:[{role:'user',content:prompt}] });
+    res.json(JSON.parse(r.content[0].text.replace(/```json|```/g,'').trim()));
+  } catch(e) { console.error('IELTS writing grade error:',e.message); res.status(500).json({error:e.message}); }
+});
+
+app.post('/ielts/speaking/grade', authenticate, async (req, res) => {
+  try {
+    const { part, question, transcript } = req.body;
+    const prompt = `You are an expert IELTS examiner. Grade this Speaking Part ${part} response.
+Question: ${question}
+Transcript: ${transcript}
+
+Return ONLY valid JSON, no markdown:
+{"band":6.5,"fluencyCoherence":{"band":7,"feedback":"feedback"},"lexicalResource":{"band":6,"feedback":"feedback"},"grammaticalRange":{"band":7,"feedback":"feedback"},"pronunciation":{"band":6,"feedback":"feedback"},"overallFeedback":"2-3 sentence summary","strengths":["strength 1"],"improvements":["improvement 1","improvement 2"]}`;
+
+    const r = await anthropic.messages.create({ model:'claude-sonnet-4-6', max_tokens:800, messages:[{role:'user',content:prompt}] });
+    res.json(JSON.parse(r.content[0].text.replace(/```json|```/g,'').trim()));
+  } catch(e) { console.error('IELTS speaking grade error:',e.message); res.status(500).json({error:e.message}); }
+});
+
+app.post('/ielts/autograde', authenticate, async (req, res) => {
+  try {
+    const { answers, correctAnswers } = req.body;
+    let correct = 0;
+    const results = correctAnswers.map(function(ca, i) {
+      const studentAns = (answers[i]||'').toString().trim().toLowerCase();
+      const correctAns = ca.answer.toString().trim().toLowerCase();
+      const isCorrect = studentAns === correctAns || studentAns.includes(correctAns) || correctAns.includes(studentAns);
+      if(isCorrect) correct++;
+      return {id:ca.id, correct:isCorrect, studentAnswer:answers[i], correctAnswer:ca.answer};
+    });
+    const raw = correct;
+    const band = raw>=39?9:raw>=37?8.5:raw>=35?8:raw>=32?7.5:raw>=30?7:raw>=26?6.5:raw>=23?6:raw>=18?5.5:raw>=16?5:raw>=13?4.5:raw>=10?4:3.5;
+    res.json({correct, total:correctAnswers.length, band, results});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
 app.post('/ielts/tts', authenticate, async (req, res) => {
   try {
     const { script, speakers } = req.body;
-    if (!script || !script.length) return res.status(400).json({ error: 'No script provided' });
-
-    // Map speakers to voices
-    // OpenAI voices: alloy, echo, fable, onyx, nova, shimmer, coral, sage, ash, ballad, verse
-    const voiceMap = {};
-    const femaleVoices = ['nova', 'shimmer', 'coral', 'sage'];
-    const maleVoices = ['onyx', 'echo', 'fable', 'ash'];
-    let fIdx = 0, mIdx = 0;
-
-    if (speakers) {
-      speakers.forEach(function(sp) {
-        if (sp.gender === 'female') {
-          voiceMap[sp.name] = femaleVoices[fIdx % femaleVoices.length];
-          fIdx++;
-        } else {
-          voiceMap[sp.name] = maleVoices[mIdx % maleVoices.length];
-          mIdx++;
-        }
-      });
-    }
-
-    // Generate audio for each line and collect as base64
-    const audioChunks = [];
+    if(!script||!script.length) return res.status(400).json({error:'No script'});
     
-    for (const line of script) {
-      const voice = voiceMap[line.speaker] || 'alloy';
-      const accent = speakers ? (speakers.find(s => s.name === line.speaker)||{}).accent || 'British' : 'British';
-      
-      const instructions = `Speak with a ${accent} English accent at a clear, measured IELTS exam pace. 
-        Sound natural and conversational, not robotic. 
-        This is an English language proficiency exam listening exercise.`;
-
-      const response = await openai.audio.speech.create({
-        model: 'gpt-4o-mini-tts',
-        voice: voice,
-        input: line.text,
-        instructions: instructions,
-        response_format: 'mp3'
-      });
-
-      const buffer = Buffer.from(await response.arrayBuffer());
-      audioChunks.push({
-        speaker: line.speaker,
-        voice: voice,
-        audio: buffer.toString('base64')
+    const femaleVoices = ['nova','shimmer','coral','sage'];
+    const maleVoices = ['onyx','echo','fable','ash'];
+    const voiceMap = {};
+    let fIdx=0, mIdx=0;
+    
+    if(speakers) {
+      speakers.forEach(function(sp) {
+        voiceMap[sp.name] = sp.gender==='female' ? femaleVoices[fIdx++%femaleVoices.length] : maleVoices[mIdx++%maleVoices.length];
       });
     }
-
-    res.json({ chunks: audioChunks });
-  } catch(e) {
-    console.error('TTS error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
+    
+    const chunks = [];
+    for(const line of script) {
+      const voice = voiceMap[line.speaker]||'alloy';
+      const sp = speakers ? speakers.find(s=>s.name===line.speaker) : null;
+      const accent = sp ? sp.accent||'British' : 'British';
+      const r = await openai.audio.speech.create({
+        model:'gpt-4o-mini-tts',
+        voice,
+        input:line.text,
+        instructions:`Speak with a clear ${accent} English accent at a measured IELTS exam pace. Sound natural and conversational.`,
+        response_format:'mp3'
+      });
+      const buffer = Buffer.from(await r.arrayBuffer());
+      chunks.push({speaker:line.speaker, voice, audio:buffer.toString('base64')});
+    }
+    res.json({chunks});
+  } catch(e) { console.error('TTS error:',e.message); res.status(500).json({error:e.message}); }
 });
+
 
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 }
