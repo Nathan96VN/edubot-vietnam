@@ -149,7 +149,7 @@ app.get('/login',    (req, res) => res.sendFile(__dirname + '/public/login.html'
 app.get('/pricing',  (req, res) => res.sendFile(__dirname + '/public/pricing.html'));
 app.get('/games',    (req, res) => res.sendFile(__dirname + '/public/games.html'));
 app.get('/upload',   (req, res) => res.sendFile(__dirname + '/public/upload.html'));
-app.get('/ielts',     (req, res) => res.sendFile(__dirname + '/public/ielts.html'));app.get('/admin',    (req, res) => res.sendFile(__dirname + '/public/admin.html'));
+app.get('/admin',    (req, res) => res.sendFile(__dirname + '/public/admin.html'));
 app.get('/app',      (req, res) => res.sendFile(__dirname + '/public/app.html'));
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1523,364 +1523,63 @@ async function startServer() {
   }
 
   
-// ─── IELTS ─────────────────────────────────────────────────────────────────
+// ─── IELTS TTS ──────────────────────────────────────────────────────────────
 
-// Generate IELTS Reading passage + questions
-app.post('/ielts/reading/generate', authenticate, async (req, res) => {
+// Convert listening script to audio using OpenAI TTS
+app.post('/ielts/tts', authenticate, async (req, res) => {
   try {
-    const { topic, difficulty } = req.body;
-    const diff = difficulty || 'Academic';
-    const topicStr = topic || 'Science and Technology';
+    const { script, speakers } = req.body;
+    if (!script || !script.length) return res.status(400).json({ error: 'No script provided' });
 
-    const prompt = `Generate a complete IELTS ${diff} Reading passage with questions.
+    // Map speakers to voices
+    // OpenAI voices: alloy, echo, fable, onyx, nova, shimmer, coral, sage, ash, ballad, verse
+    const voiceMap = {};
+    const femaleVoices = ['nova', 'shimmer', 'coral', 'sage'];
+    const maleVoices = ['onyx', 'echo', 'fable', 'ash'];
+    let fIdx = 0, mIdx = 0;
 
-Topic: ${topicStr}
-
-Return ONLY valid JSON in this exact format:
-{
-  "title": "passage title",
-  "passage": "Full passage text, 650-750 words, academic style, 4-5 paragraphs. Label each paragraph with a letter: [A] [B] [C] [D] [E]",
-  "sections": [
-    {
-      "type": "multiple_choice",
-      "instructions": "Choose the correct letter A, B, C or D",
-      "questions": [
-        {
-          "id": 1,
-          "text": "question text",
-          "options": {"A": "option A", "B": "option B", "C": "option C", "D": "option D"},
-          "answer": "B"
+    if (speakers) {
+      speakers.forEach(function(sp) {
+        if (sp.gender === 'female') {
+          voiceMap[sp.name] = femaleVoices[fIdx % femaleVoices.length];
+          fIdx++;
+        } else {
+          voiceMap[sp.name] = maleVoices[mIdx % maleVoices.length];
+          mIdx++;
         }
-      ]
-    },
-    {
-      "type": "true_false_ng",
-      "instructions": "Do the following statements agree with the information in the passage? Write TRUE, FALSE or NOT GIVEN",
-      "questions": [
-        {
-          "id": 5,
-          "text": "statement to evaluate",
-          "answer": "TRUE"
-        }
-      ]
-    },
-    {
-      "type": "fill_blank",
-      "instructions": "Complete the sentences below. Choose NO MORE THAN TWO WORDS from the passage.",
-      "questions": [
-        {
-          "id": 9,
-          "text": "The process involves ________ at high temperatures.",
-          "answer": "heating"
-        }
-      ]
-    }
-  ]
-}
-
-Generate exactly 13 questions total across all sections. Questions must be answerable from the passage only.`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    let raw = response.content[0].text.trim().replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim();
-    const data = JSON.parse(raw);
-    res.json(data);
-  } catch(e) {
-    console.error('IELTS reading gen error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Generate IELTS Listening script + questions
-app.post('/ielts/listening/generate', authenticate, async (req, res) => {
-  try {
-    const { section, difficulty } = req.body;
-    const sectionNum = section || 1;
-
-    const sectionDescriptions = {
-      1: 'a conversation between two people in an everyday social context (e.g. booking accommodation, enquiring about a course)',
-      2: 'a monologue in an everyday social context (e.g. a speech about local facilities)',
-      3: 'a conversation between up to four people in an educational or training context',
-      4: 'a monologue on an academic subject (e.g. a university lecture)'
-    };
-
-    const prompt = `Generate an IELTS Listening Section ${sectionNum} script and questions.
-Section ${sectionNum} is: ${sectionDescriptions[sectionNum] || sectionDescriptions[1]}
-
-Return ONLY valid JSON:
-{
-  "section": ${sectionNum},
-  "title": "brief title",
-  "speakers": [
-    {"name": "Sarah", "gender": "female", "accent": "British"},
-    {"name": "James", "gender": "male", "accent": "Australian"}
-  ],
-  "script": [
-    {"speaker": "Sarah", "text": "dialogue line here"},
-    {"speaker": "James", "text": "response here"}
-  ],
-  "sections": [
-    {
-      "type": "form_completion",
-      "instructions": "Complete the form below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER.",
-      "questions": [
-        {"id": 1, "text": "Name: ________", "answer": "Sarah Johnson"},
-        {"id": 2, "text": "Phone number: ________", "answer": "07834 521 906"}
-      ]
-    },
-    {
-      "type": "multiple_choice",
-      "instructions": "Choose the correct letter A, B or C.",
-      "questions": [
-        {
-          "id": 5,
-          "text": "question text",
-          "options": {"A": "option", "B": "option", "C": "option"},
-          "answer": "A"
-        }
-      ]
-    }
-  ]
-}
-
-Script should be 300-400 words, natural conversational English. Generate 10 questions total.`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-
-    let raw = response.content[0].text.trim().replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim();
-    const data = JSON.parse(raw);
-    res.json(data);
-  } catch(e) {
-    console.error('IELTS listening gen error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Generate IELTS Writing prompts
-app.post('/ielts/writing/generate', authenticate, async (req, res) => {
-  try {
-    const { task } = req.body;
-
-    if (task === 1) {
-      const prompt = `Generate an IELTS Academic Writing Task 1 prompt.
-Return ONLY valid JSON:
-{
-  "task": 1,
-  "type": "bar_chart",
-  "title": "chart/graph title",
-  "description": "The chart below shows... Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
-  "data": {
-    "labels": ["2000", "2005", "2010", "2015", "2020"],
-    "datasets": [
-      {"label": "Category A", "values": [23, 34, 45, 52, 61]},
-      {"label": "Category B", "values": [45, 42, 38, 35, 30]}
-    ],
-    "yAxisLabel": "Percentage (%)"
-  },
-  "wordLimit": 150,
-  "timeLimit": 20,
-  "sampleAnswer": "brief sample answer 150+ words"
-}`;
-
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: prompt }]
       });
-      let raw = response.content[0].text.trim().replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim();
-      return res.json(JSON.parse(raw));
     }
 
-    if (task === 2) {
-      const prompt = `Generate an IELTS Academic Writing Task 2 essay question.
-Return ONLY valid JSON:
-{
-  "task": 2,
-  "topic": "topic area",
-  "question": "Full essay question (2-3 sentences). Write at least 250 words.",
-  "type": "opinion",
-  "wordLimit": 250,
-  "timeLimit": 40,
-  "sampleAnswer": "brief sample band 8 answer outline"
-}`;
+    // Generate audio for each line and collect as base64
+    const audioChunks = [];
+    
+    for (const line of script) {
+      const voice = voiceMap[line.speaker] || 'alloy';
+      const accent = speakers ? (speakers.find(s => s.name === line.speaker)||{}).accent || 'British' : 'British';
+      
+      const instructions = `Speak with a ${accent} English accent at a clear, measured IELTS exam pace. 
+        Sound natural and conversational, not robotic. 
+        This is an English language proficiency exam listening exercise.`;
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
+      const response = await openai.audio.speech.create({
+        model: 'gpt-4o-mini-tts',
+        voice: voice,
+        input: line.text,
+        instructions: instructions,
+        response_format: 'mp3'
       });
-      let raw = response.content[0].text.trim().replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim();
-      return res.json(JSON.parse(raw));
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      audioChunks.push({
+        speaker: line.speaker,
+        voice: voice,
+        audio: buffer.toString('base64')
+      });
     }
 
-    res.status(400).json({ error: 'task must be 1 or 2' });
+    res.json({ chunks: audioChunks });
   } catch(e) {
-    console.error('IELTS writing gen error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Generate IELTS Speaking questions
-app.post('/ielts/speaking/generate', authenticate, async (req, res) => {
-  try {
-    const { part } = req.body;
-    const partNum = part || 1;
-
-    const prompt = `Generate IELTS Speaking Part ${partNum} questions.
-Return ONLY valid JSON:
-{
-  "part": ${partNum},
-  ${partNum === 1 ? `"topic": "general topic",
-  "questions": [
-    "Do you work or are you a student?",
-    "What do you enjoy most about your work/studies?",
-    "Tell me about your hometown.",
-    "What do you like to do in your free time?",
-    "Do you prefer spending time indoors or outdoors?"
-  ]` : ''}
-  ${partNum === 2 ? `"cueCard": {
-    "topic": "Describe a memorable journey you have taken",
-    "points": [
-      "Where you went",
-      "Who you went with",
-      "What you did there",
-      "Why it was memorable"
-    ],
-    "prepTime": 60,
-    "speakTime": 120
-  },
-  "followUp": ["Did you enjoy the experience?", "Would you like to go back?"]` : ''}
-  ${partNum === 3 ? `"topic": "Travel and Tourism",
-  "questions": [
-    "How has tourism changed in your country over the past few decades?",
-    "What are the advantages and disadvantages of international tourism?",
-    "Do you think people will travel more or less in the future? Why?",
-    "How does tourism affect local cultures and traditions?"
-  ]` : ''}
-}`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-    let raw = response.content[0].text.trim().replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim();
-    res.json(JSON.parse(raw));
-  } catch(e) {
-    console.error('IELTS speaking gen error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Grade IELTS Writing with AI
-app.post('/ielts/writing/grade', authenticate, async (req, res) => {
-  try {
-    const { task, question, answer, wordCount } = req.body;
-
-    const prompt = `You are an expert IELTS examiner. Grade this Writing Task ${task} response.
-
-Question: ${question}
-
-Student's answer (${wordCount} words):
-${answer}
-
-Return ONLY valid JSON:
-{
-  "band": 6.5,
-  "taskAchievement": {"band": 7, "feedback": "specific feedback"},
-  "coherenceCohesion": {"band": 6, "feedback": "specific feedback"},
-  "lexicalResource": {"band": 7, "feedback": "specific feedback"},
-  "grammaticalRange": {"band": 6, "feedback": "specific feedback"},
-  "overallFeedback": "2-3 sentence summary with specific improvements",
-  "strengths": ["strength 1", "strength 2"],
-  "improvements": ["improvement 1", "improvement 2", "improvement 3"]
-}`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
-    });
-    let raw = response.content[0].text.trim().replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim();
-    res.json(JSON.parse(raw));
-  } catch(e) {
-    console.error('IELTS writing grade error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Grade IELTS Speaking with AI (from transcript)
-app.post('/ielts/speaking/grade', authenticate, async (req, res) => {
-  try {
-    const { part, question, transcript } = req.body;
-
-    const prompt = `You are an expert IELTS examiner. Grade this Speaking Part ${part} response.
-
-Question/Topic: ${question}
-
-Student's spoken response (transcribed):
-${transcript}
-
-Return ONLY valid JSON:
-{
-  "band": 6.5,
-  "fluencyCoherence": {"band": 7, "feedback": "specific feedback"},
-  "lexicalResource": {"band": 6, "feedback": "specific feedback"},
-  "grammaticalRange": {"band": 7, "feedback": "specific feedback"},
-  "pronunciation": {"band": 6, "feedback": "specific feedback"},
-  "overallFeedback": "2-3 sentence summary",
-  "strengths": ["strength 1", "strength 2"],
-  "improvements": ["improvement 1", "improvement 2"]
-}`;
-
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 800,
-      messages: [{ role: 'user', content: prompt }]
-    });
-    let raw = response.content[0].text.trim().replace(/\`\`\`json/g,'').replace(/\`\`\`/g,'').trim();
-    res.json(JSON.parse(raw));
-  } catch(e) {
-    console.error('IELTS speaking grade error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Auto-grade Reading/Listening answers
-app.post('/ielts/autograde', authenticate, async (req, res) => {
-  try {
-    const { answers, correctAnswers } = req.body;
-    let correct = 0;
-    const results = [];
-
-    correctAnswers.forEach((ca, i) => {
-      const studentAns = (answers[i] || '').toString().trim().toLowerCase();
-      const correct_ans = ca.answer.toString().trim().toLowerCase();
-      const isCorrect = studentAns === correct_ans ||
-        studentAns.includes(correct_ans) ||
-        correct_ans.includes(studentAns);
-
-      results.push({ id: ca.id, correct: isCorrect, studentAnswer: answers[i], correctAnswer: ca.answer });
-      if (isCorrect) correct++;
-    });
-
-    const total = correctAnswers.length;
-    const raw = correct;
-    // IELTS band score conversion (approximate)
-    const band = raw >= 39 ? 9 : raw >= 37 ? 8.5 : raw >= 35 ? 8 : raw >= 32 ? 7.5 :
-                 raw >= 30 ? 7 : raw >= 26 ? 6.5 : raw >= 23 ? 6 : raw >= 18 ? 5.5 :
-                 raw >= 16 ? 5 : raw >= 13 ? 4.5 : raw >= 10 ? 4 : 3.5;
-
-    res.json({ correct, total, band, results });
-  } catch(e) {
+    console.error('TTS error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
