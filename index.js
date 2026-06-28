@@ -11,6 +11,81 @@ const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 let pdfParse; try { pdfParse = require("pdf-parse"); } catch(e) { console.log("pdf-parse not installed"); }
 
+const { Pinecone } = require('@pinecone-database/pinecone');
+
+// Pinecone setup
+let pineconeIndex = null;
+async function getPineconeIndex() {
+  if (!pineconeIndex && process.env.PINECONE_API_KEY) {
+    try {
+      const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+      pineconeIndex = pc.index('stellastride-curriculum');
+    } catch(e) { console.error('Pinecone init error:', e.message); }
+  }
+  return pineconeIndex;
+}
+
+async function getEmbedding(text, inputType) {
+  try {
+    const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+    const result = await pc.inference.embed(
+      'llama-text-embed-v2',
+      [text.substring(0, 2000)],
+      { inputType: inputType || 'query' }
+    );
+    return result.data[0].values;
+  } catch(e) {
+    console.error('Embedding error:', e.message);
+    return null;
+  }
+}
+
+async function searchPinecone(query, subject, grade, topK) {
+  try {
+    const idx = await getPineconeIndex();
+    if (!idx) return [];
+    const embedding = await getEmbedding(query, 'query');
+    if (!embedding) return [];
+    const filter = {};
+    if (subject && subject !== 'general') filter.subject = { '$eq': subject };
+    if (grade && grade > 0) filter.grade = { '$eq': grade };
+    const results = await idx.query({
+      vector: embedding,
+      topK: topK || 5,
+      filter: Object.keys(filter).length > 0 ? filter : undefined,
+      includeMetadata: true
+    });
+    return results.matches
+      .filter(m => m.score > 0.25)
+      .map(m => m.metadata.text || '');
+  } catch(e) {
+    console.error('Pinecone search error:', e.message);
+    return [];
+  }
+}
+
+async function upsertToPinecone(id, text, metadata) {
+  try {
+    const idx = await getPineconeIndex();
+    if (!idx) return false;
+    const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+    const embedding = await pc.inference.embed(
+      'llama-text-embed-v2',
+      [text.substring(0, 2000)],
+      { inputType: 'passage' }
+    );
+    await idx.upsert([{
+      id: String(id),
+      values: embedding.data[0].values,
+      metadata: { ...metadata, text: text.substring(0, 500) }
+    }]);
+    return true;
+  } catch(e) {
+    console.error('Pinecone upsert error:', e.message);
+    return false;
+  }
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '150mb' }));
@@ -252,32 +327,33 @@ app.post('/chat', authenticate, async (req, res) => {
     if (detectedSubject) {
       try {
         const gradeNum = detectedGrade || 0;
-        const curriculum = await pool.query(
-          `SELECT objective, strand, substrand, curriculum_type, stage FROM curriculum
-           WHERE LOWER(subject) = LOWER($1)
-           AND (
-             grade = $2
-             OR grade = 0
-             OR stage ILIKE $3
-             OR stage ILIKE $4
-           )
-           ORDER BY
-             CASE WHEN grade = $2 THEN 0
-                  WHEN stage ILIKE $3 THEN 1
-                  WHEN stage ILIKE $4 THEN 2
-                  ELSE 3 END
-           LIMIT 12`,
-          [
-            detectedSubject,
-            gradeNum,
-            `Stage ${gradeNum}`,
-            `%${gradeNum}%`
-          ]
-        );
 
-        if (curriculum.rows.length > 0) {
-          curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly — never say you only have certain curriculum content):\n' +
-            curriculum.rows.map(r => `- [${r.strand}${r.substrand ? ' > ' + r.substrand : ''}] ${r.objective}`).join('\n');
+        // RAG: Try Pinecone semantic search first, fallback to DB
+        let pineconeResults = [];
+        try {
+          pineconeResults = await searchPinecone(message, detectedSubject, gradeNum, 6);
+        } catch(e) { console.error('Pinecone search failed:', e.message); }
+
+        if (pineconeResults.length === 0) {
+          // Fallback: DB keyword search
+          const curriculum = await pool.query(
+            `SELECT objective, strand, substrand FROM curriculum
+             WHERE LOWER(subject) = LOWER($1)
+             AND (grade = $2 OR grade = 0)
+             ORDER BY CASE WHEN grade = $2 THEN 0 ELSE 1 END
+             LIMIT 12`,
+            [detectedSubject, gradeNum]
+          );
+          if (curriculum.rows.length > 0) {
+            pineconeResults = curriculum.rows.map(r =>
+              [r.strand, r.substrand, r.objective].filter(Boolean).join(' - ')
+            );
+          }
+        }
+
+        if (pineconeResults.length > 0) {
+          curriculumContext = '\n\nRelevant curriculum context (use this to inform your response but never mention or reference it directly):\n' +
+            pineconeResults.slice(0, 8).map(r => '- ' + r).join('\n');
         }
       } catch(e) { console.error('RAG error:', e.message); }
     }
@@ -810,8 +886,10 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
       return 0; // truly all grades
     }
 
+    const pineconeQueue = [];
     let imported = 0;
-    for (const item of uniqueItems) {
+    const limitedItems = uniqueItems.slice(0, 500);
+    for (const item of limitedItems) {
       const baseGrade = safeGrade(grade);
       const itemGrade = detectItemGrade(item, baseGrade, type);
       const stageLabel = itemGrade === 0 ? '' :
@@ -819,15 +897,37 @@ app.post('/admin/curriculum/import', authenticate, adminOnly, async (req, res) =
         type === 'national'  ? `Lớp ${itemGrade}` :
         `${itemGrade}`;
 
-      await pool.query(
-        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file, stage) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      const dbRes = await pool.query(
+        `INSERT INTO curriculum (subject, grade, strand, substrand, objective, curriculum_type, lang, source_file, stage) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
         [subject, itemGrade, item.strand||'', item.substrand||'', item.objective, type||'general', lang||'vi', fileName, stageLabel]
       );
+      // Queue for Pinecone (non-blocking)
+      const newId = dbRes.rows[0]?.id;
+      if (newId) pineconeQueue.push({
+        id: `curr_${newId}`,
+        text: [item.strand, item.substrand, item.objective].filter(Boolean).join(' | '),
+        meta: { subject, grade: itemGrade, strand: item.strand||'', type: type||'general', lang: lang||'vi' }
+      });
       imported++;
     }
 
     console.log(`✅ Imported ${imported} items from "${fileName}"`);
     res.json({ imported, message: `Successfully imported ${imported} curriculum items from "${fileName}"` });
+
+    // Process Pinecone in background after response sent - batch of 10, max 200
+    if (pineconeQueue.length > 0) {
+      const toProcess = pineconeQueue.slice(0, 200);
+      (async () => {
+        for (let i = 0; i < toProcess.length; i += 10) {
+          const batch = toProcess.slice(i, i + 10);
+          await Promise.all(batch.map(item =>
+            upsertToPinecone(item.id, item.text, item.meta).catch(e => console.error('Pinecone batch error:', e.message))
+          ));
+          await new Promise(r => setTimeout(r, 500)); // throttle
+        }
+        console.log(`✅ Pinecone: indexed ${toProcess.length} items`);
+      })();
+    }
 
   } catch (err) {
     console.error('Curriculum import error:', err);
