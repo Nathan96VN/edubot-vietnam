@@ -150,6 +150,35 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
 .footer-links{display:flex;gap:20px}
 .footer-link{font-size:12px;color:var(--muted);text-decoration:none;cursor:pointer}
 .footer-copy{font-size:12px;color:var(--muted)}
+
+/* ── LOGIN MODAL ── */
+#overlay{position:fixed;inset:0;background:rgba(30,27,75,0.65);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+#overlay.on{display:flex}
+#modal{background:#fff;border:0.5px solid rgba(79,70,229,0.12);padding:32px 28px;width:100%;max-width:400px;position:relative;max-height:90vh;overflow-y:auto}
+#modal::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#00B4A6}
+#mcls{position:absolute;top:12px;right:12px;background:#fff;border:1px solid rgba(79,70,229,0.15);color:#6B7280;font-size:16px;cursor:pointer;line-height:1;padding:4px 8px;font-family:'Poppins',sans-serif;z-index:10}
+#mcls:hover{border-color:rgba(0,180,166,0.4);color:#00B4A6}
+.rtog{display:flex;gap:0;margin-bottom:14px;border:0.5px solid rgba(79,70,229,0.12);overflow:hidden}
+.rb{flex:1;padding:9px 6px;border:none;background:#EEF2FF;color:#6B7280;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Poppins',sans-serif;border-right:0.5px solid rgba(79,70,229,0.12)}
+.rb:last-child{border:none}
+.rb.on{background:#1E1B4B;color:#fff}
+.rb.ton{background:#EEF2FF;color:#6B7280}
+.rb.ton.on{background:#1E1B4B;color:#fff}
+.atabs{display:flex;gap:0;margin-bottom:16px;background:#EEF2FF;border:0.5px solid rgba(79,70,229,0.12);overflow:hidden}
+.at{flex:1;padding:8px;text-align:center;border:none;background:#EEF2FF;color:#6B7280;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;transition:all 0.15s;border-right:0.5px solid rgba(79,70,229,0.12)}
+.at:last-child{border:none}
+.at.on{background:#00B4A6;color:#fff}
+.at:not(.on):hover{background:#fff;color:#1E1B4B}
+.af{margin-bottom:12px}
+.af label{display:block;font-size:10px;color:#6B7280;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.af input,.af select{width:100%;padding:10px 12px;background:#EEF2FF;border:0.5px solid rgba(79,70,229,0.12);color:#1E1B4B;font-size:14px;outline:none;font-family:'Poppins',sans-serif}
+.af input:focus,.af select:focus{border-color:rgba(0,180,166,0.4)}
+#asubmit{width:100%;padding:13px;background:#00B4A6;border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;font-family:'Poppins',sans-serif;transition:opacity .15s}
+#asubmit:disabled{opacity:.5;cursor:not-allowed}
+#aerr{color:#991B1B;font-size:13px;text-align:center;margin-top:8px;min-height:16px}
+.hide{display:none!important}
+.sp2{width:16px;height:16px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;animation:rn .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes rn{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -168,8 +197,8 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
       <button class="lb" id="lvi" onclick="setLang('vi')">🇻🇳 VI</button>
       <button class="lb on" id="len" onclick="setLang('en')">🇬🇧 EN</button>
     </div>
-    <button class="btn-login" onclick="location.href='/app'" id="nav-login">Login</button>
-    <button class="btn-start" onclick="location.href='/app'" id="nav-start">Start Free</button>
+    <button class="btn-login" onclick="openModal('student')" id="nav-login">Login</button>
+    <button class="btn-start" onclick="openModal('student')" id="nav-start">Start Free</button>
   </div>
 </nav>
 
@@ -184,11 +213,11 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
       <h1 id="hero-h1">Learn Smarter.<br><em>Progress Faster.</em></h1>
       <p class="hero-sub" id="hero-sub">StellaStride is your AI learning companion — step-by-step explanations, smart flashcards, exam practice, and professional tools for teachers. In Vietnamese or English.</p>
       <div class="hero-btns">
-        <a class="btn-hero-p" href="/app" id="btn-s">🎒 I'm a Student</a>
-        <a class="btn-hero-g" href="/app" id="btn-t">👩‍🏫 I'm a Teacher</a>
+        <button class="btn-hero-p" onclick="openModal('student')" id="btn-s">🎒 I'm a Student</button>
+        <button class="btn-hero-g" onclick="openModal('teacher')" id="btn-t">👩‍🏫 I'm a Teacher</button>
       </div>
       <div class="stats-row">
-        <div class="stat-item"><div class="stat-n">22M+</div><div class="stat-l" id="s1">Grades 1–12</div></div>
+        <div class="stat-item"><div class="stat-n">22M+</div><div class="stat-l" id="s1">Vietnamese & English</div></div>
         <div class="stat-item"><div class="stat-n">8+</div><div class="stat-l" id="s2">Exam Types</div></div>
         <div class="stat-item"><div class="stat-n">79K</div><div class="stat-l" id="s3">VND / month</div></div>
       </div>
@@ -264,7 +293,7 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
           <li id="ws4">Create flashcards to remember faster</li>
           <li id="ws5">Study in Vietnamese or English</li>
         </ul>
-        <a class="who-btn" href="/app" id="wsb">Start learning free →</a>
+        <button class="who-btn" onclick="openModal('student')" id="wsb">Start learning free →</button>
       </div>
       <div class="who-card">
         <div class="who-tag" id="wtr">👩‍🏫 Teachers</div>
@@ -276,7 +305,7 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
           <li id="wt4">Export documents to Word or PDF</li>
           <li id="wt5">AI assistant for all subjects grades 1–12</li>
         </ul>
-        <a class="who-btn" href="/app" id="wtb">Try it for teachers →</a>
+        <button class="who-btn" onclick="openModal('teacher')" id="wtb">Try it for teachers →</button>
       </div>
     </div>
   </div>
@@ -289,14 +318,14 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
     <div class="sec-title" id="et">Supports every exam</div>
     <p class="sec-sub" id="es">From national curriculum to international certificates — StellaStride prepares you.</p>
     <div class="exam-grid">
-      <div class="exam-card"><div class="exam-tag" id="et1tag">National</div><div class="exam-name" id="et1">National Curriculum</div><div class="exam-sub" id="et1s">Grades 1–12 · Math, Science, Literature</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et1tag">National</div><div class="exam-name" id="et1">National Curriculum</div><div class="exam-sub" id="et1s">Vietnamese & English · Math, Science, Literature</div></div>
       <div class="exam-card"><div class="exam-tag" id="et2tag">International</div><div class="exam-name" id="et2">Cambridge A2-B2</div><div class="exam-sub" id="et2s">KET · PET · FCE · IGCSE</div></div>
       <div class="exam-card"><div class="exam-tag" id="et3tag">Certificate</div><div class="exam-name" id="et3">SAT</div><div class="exam-sub" id="et3s">Reading · Writing · Math</div></div>
       <div class="exam-card"><div class="exam-tag" id="et4tag">Certificate</div><div class="exam-name" id="et4">Academic English</div><div class="exam-sub" id="et4s">Reading · Writing · Speaking · Listening</div></div>
       <div class="exam-card"><div class="exam-tag" id="et5tag">Digital</div><div class="exam-name" id="et5">TOEFL iBT</div><div class="exam-sub" id="et5s">Full simulation · Adaptive test</div></div>
       <div class="exam-card"><div class="exam-tag" id="et6tag">University</div><div class="exam-name" id="et6">University Entrance</div><div class="exam-sub" id="et6s">Math & English · Practice papers</div></div>
       <div class="exam-card"><div class="exam-tag" id="et7tag">National</div><div class="exam-name" id="et7">THPT Quốc gia</div><div class="exam-sub" id="et7s">All subjects · Graduation exam</div></div>
-      <div class="exam-card"><div class="exam-tag" id="et8tag">School</div><div class="exam-name" id="et8">School Exams</div><div class="exam-sub" id="et8s">Grades 1–12 · All subjects</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et8tag">School</div><div class="exam-name" id="et8">School Exams</div><div class="exam-sub" id="et8s">Vietnamese & English · All subjects</div></div>
     </div>
   </div>
 
@@ -313,14 +342,14 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
         <div class="price-amount">0</div>
         <div class="price-period" id="p0p">Forever</div>
         <ul class="price-feats"><li id="p0f1">Basic AI Tutor</li><li id="p0f2">Flashcards</li><li id="p0f3">Learning Games</li></ul>
-        <button class="price-btn outline" onclick="location.href='/app'" id="p0b">Start for free</button>
+        <button class="price-btn outline" onclick="openModal('student')" id="p0b">Start for free</button>
       </div>
       <div class="price-card">
         <div class="price-name" id="p1n">Student Basic</div>
         <div class="price-amount">79k</div>
         <div class="price-period" id="p1p">VND / month</div>
         <ul class="price-feats"><li id="p1f1">Unlimited questions</li><li id="p1f2">PDF upload</li><li id="p1f3">AI Charts</li><li id="p1f4">VI + EN</li></ul>
-        <button class="price-btn" onclick="location.href='/app'" id="p1b">Sign up now</button>
+        <button class="price-btn" onclick="openModal('student')" id="p1b">Sign up now</button>
       </div>
       <div class="price-card featured">
         <div class="featured-badge">Most Popular</div>
@@ -328,17 +357,45 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
         <div class="price-amount">149k</div>
         <div class="price-period" id="p2p">VND / month</div>
         <ul class="price-feats"><li id="p2f1">Everything in Basic</li><li id="p2f2">AI Images</li><li id="p2f3">Priority support</li></ul>
-        <button class="price-btn" onclick="location.href='/app'" id="p2b">Choose this plan</button>
+        <button class="price-btn" onclick="openModal('student')" id="p2b">Choose this plan</button>
       </div>
       <div class="price-card">
         <div class="price-name" id="p3n">Teacher Pro</div>
         <div class="price-amount">249k</div>
         <div class="price-period" id="p3p">VND / month</div>
         <ul class="price-feats"><li id="p3f1">Teacher dashboard</li><li id="p3f2">Lesson plans & exams</li><li id="p3f3">Export Word / PDF</li><li id="p3f4">Classroom management</li></ul>
-        <button class="price-btn" onclick="location.href='/app'" id="p3b">For teachers</button>
+        <button class="price-btn" onclick="openModal('student')" id="p3b">For teachers</button>
       </div>
     </div>
   </div>
+
+<!-- LOGIN MODAL -->
+<div id="overlay" onclick="if(event.target===this)closeModal()">
+  <div id="modal">
+    <button id="mcls" onclick="closeModal()">✕</button>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:22px;font-weight:900;color:#1E1B4B;margin-bottom:4px">Stella<span style="color:#00B4A6">Stride</span></div>
+      <div id="msub" style="font-size:13px;color:#6B7280;font-weight:500">Welcome to StellaStride!</div>
+    </div>
+    <div class="rtog">
+      <button class="rb on" id="rst">🎒 Student</button>
+      <button class="rb ton" id="rte">👩‍🏫 Teacher</button>
+    </div>
+    <div class="atabs">
+      <button class="at on" id="at0">Login</button>
+      <button class="at" id="at1">Register</button>
+    </div>
+    <div id="regf" class="hide">
+      <div class="af"><label id="rln">Full Name</label><input type="text" id="rname" placeholder="Nguyen Van A"/></div>
+      <div class="af" id="grf"><label id="rlg">Grade</label><select id="rgrd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
+      <div class="af hide" id="inf"><label id="rli">School / Institution</label><input type="text" id="rinst" placeholder="Nguyen Trai High School"/></div>
+    </div>
+    <div class="af"><label>Email</label><input type="email" id="aemail" placeholder="email@example.com"/></div>
+    <div class="af"><label id="lpw">Password</label><input type="password" id="apw" placeholder="••••••••"/></div>
+    <button id="asubmit">Login</button>
+    <div id="aerr"></div>
+  </div>
+</div>
 </main>
 
 <!-- CTA BAND -->
@@ -349,8 +406,8 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
       <p id="cta-p">Join thousands of students and teachers using StellaStride every day. Free to start.</p>
     </div>
     <div class="cta-btns">
-      <button class="cta-btn-s" onclick="location.href='/app'" id="cta-s">🎒 I am a Student</button>
-      <button class="cta-btn-t" onclick="location.href='/app'" id="cta-t">👩‍🏫 I am a Teacher</button>
+      <button class="cta-btn-s" onclick="openModal('student')" id="cta-s">🎒 I am a Student</button>
+      <button class="cta-btn-t" onclick="openModal('teacher')" id="cta-t">👩‍🏫 I am a Teacher</button>
     </div>
   </div>
 </div>
@@ -479,14 +536,14 @@ var T={
     'wt3':'Quản lý lớp học và học sinh dễ dàng','wt4':'Xuất tài liệu ra Word hoặc PDF chuyên nghiệp','wt5':'Trợ lý AI hỗ trợ mọi môn học lớp 1–12',
     'wtb':'Dùng thử cho giáo viên →',
     'el':'Loại bài thi','et':'Hỗ trợ mọi kỳ thi','es':'Từ chương trình trong nước đến các chứng chỉ quốc tế — StellaStride chuẩn bị cho bạn mọi kỳ thi.',
-    'et1tag':'Trong nước','et1':'Chương trình Quốc gia','et1s':'Lớp 1–12 · Toán, Khoa học, Văn',
+    'et1tag':'Trong nước','et1':'Chương trình Quốc gia','et1s':'Tiếng Việt & Tiếng Anh · Toán, Khoa học, Văn',
     'et2tag':'Quốc tế','et2':'Cambridge A2-B2','et2s':'KET · PET · FCE · IGCSE',
     'et3tag':'Chứng chỉ','et3':'SAT','et3s':'Reading · Writing · Math',
     'et4tag':'Chứng chỉ','et4':'Tiếng Anh Học thuật','et4s':'Reading · Writing · Speaking · Listening',
     'et5tag':'Kỹ thuật số','et5':'TOEFL iBT','et5s':'Mô phỏng đầy đủ · Adaptive test',
     'et6tag':'Đại học','et6':'Tuyển sinh Đại học','et6s':'Toán & Tiếng Anh · Luyện đề',
     'et7tag':'Quốc gia','et7':'THPT Quốc gia','et7s':'Tất cả môn học · Thi tốt nghiệp',
-    'et8tag':'Trường học','et8':'Thi học kỳ & Kiểm tra','et8s':'Lớp 1–12 · Tất cả môn học',
+    'et8tag':'Trường học','et8':'Thi học kỳ & Kiểm tra','et8s':'Tiếng Việt & Tiếng Anh · Tất cả môn học',
     'prl':'Bảng giá','prt':'Giá phù hợp với mọi học sinh','prs':'Bắt đầu miễn phí. Nâng cấp khi cần thêm tính năng.',
     'p0n':'Miễn phí','p0p':'Mãi mãi','p0f1':'Stella AI cơ bản','p0f2':'Flashcards','p0f3':'Games học tập','p0b':'Bắt đầu miễn phí',
     'p1n':'Student Basic','p1p':'VND / tháng','p1f1':'Câu hỏi không giới hạn','p1f2':'Upload PDF','p1f3':'Biểu đồ AI','p1f4':'VI + EN','p1b':'Đăng ký ngay',
@@ -502,7 +559,7 @@ var T={
     'hero-h1':'Learn Smarter.<br><em>Progress Faster.</em>',
     'hero-sub':'StellaStride is your AI learning companion — step-by-step explanations, smart flashcards, exam practice, and professional tools for teachers. In Vietnamese or English.',
     'btn-s':"🎒 I'm a Student",'btn-t':"👩‍🏫 I'm a Teacher",
-    's1':'Grades 1–12','s2':'Vietnamese & English','s3':'Instant AI Answers',
+    's1':'Vietnamese & English','s2':'Vietnamese & English','s3':'Instant AI Answers',
     'nav-login':'Login','nav-start':'Start Free',
     'nl1':'Features','nl2':'For Who','nl3':'Pricing',
     'chat-status-txt':'Ask Stella AI · Online',
@@ -523,14 +580,14 @@ var T={
     'wt3':'Manage classrooms and students easily','wt4':'Export documents to Word or PDF','wt5':'AI assistant for all subjects grades 1–12',
     'wtb':'Try it for teachers →',
     'el':'Exam Types','et':'Supports every exam','es':'From national curriculum to international certificates — StellaStride prepares you.',
-    'et1tag':'National','et1':'National Curriculum','et1s':'Grades 1–12 · Math, Science, Literature',
+    'et1tag':'National','et1':'National Curriculum','et1s':'Vietnamese & English · Math, Science, Literature',
     'et2tag':'International','et2':'Cambridge A2-B2','et2s':'KET · PET · FCE · IGCSE',
     'et3tag':'Certificate','et3':'SAT','et3s':'Reading · Writing · Math',
     'et4tag':'Certificate','et4':'Academic English','et4s':'Reading · Writing · Speaking · Listening',
     'et5tag':'Digital','et5':'TOEFL iBT','et5s':'Full simulation · Adaptive test',
     'et6tag':'University','et6':'University Entrance','et6s':'Math & English · Practice papers',
     'et7tag':'National','et7':'THPT Quốc gia','et7s':'All subjects · Graduation exam',
-    'et8tag':'School','et8':'School Exams','et8s':'Grades 1–12 · All subjects',
+    'et8tag':'School','et8':'School Exams','et8s':'Vietnamese & English · All subjects',
     'prl':'Pricing','prt':'Affordable for every student','prs':'Start free. Upgrade when you need more.',
     'p0n':'Free','p0p':'Forever','p0f1':'Basic Ask Stella','p0f2':'Flashcards','p0f3':'Learning Games','p0b':'Start for free',
     'p1n':'Student Basic','p1p':'VND / month','p1f1':'Unlimited questions','p1f2':'PDF upload','p1f3':'AI Charts','p1f4':'VI + EN','p1b':'Sign up now',
@@ -542,7 +599,7 @@ var T={
     'fcopy':'© 2026 StellaStride Vietnam. AI Learning Platform.'
   }
 };
-function setLang(l){
+function setLang(l){lang2=l;
   lang=l;localStorage.setItem('eb_lang',l);
   document.getElementById('lvi').className='lb'+(l==='vi'?' on':'');
   document.getElementById('len').className='lb'+(l==='en'?' on':'');
@@ -555,6 +612,147 @@ function setLang(l){
   });
 }
 setLang(lang);
+
+var API='https://edubot-vietnam.onrender.com';
+var amode='login';
+var arole='student';
+var lang2=localStorage.getItem('eb_lang')||'en';
+
+var MLang={
+  vi:{msub:'Chào mừng đến StellaStride!',rst:'🎒 Học sinh',rte:'👩‍🏫 Giáo viên',
+      at0:'Đăng nhập',at1:'Đăng ký',rln:'Họ và tên',rlg:'Lớp',rli:'Trường / Tổ chức',lpw:'Mật khẩu',
+      submit_login:'Đăng nhập',submit_reg:'Đăng ký',
+      err_ep:'Vui lòng nhập email và mật khẩu.',err_name:'Vui lòng nhập họ tên.',
+      err_email:'Email không hợp lệ!',err_pw:'Mật khẩu tối thiểu 6 ký tự!'},
+  en:{msub:'Welcome to StellaStride!',rst:'🎒 Student',rte:'👩‍🏫 Teacher',
+      at0:'Login',at1:'Register',rln:'Full Name',rlg:'Grade',rli:'School / Institution',lpw:'Password',
+      submit_login:'Login',submit_reg:'Register',
+      err_ep:'Please enter your email and password.',err_name:'Please enter your name.',
+      err_email:'Invalid email!',err_pw:'Password must be at least 6 characters!'}
+};
+
+function ML(k){return(MLang[lang2]||MLang.en)[k]||k;}
+
+function applyModalLang(){
+  var d=MLang[lang2]||MLang.en;
+  ['msub','rst','rte','at0','at1','rln','rlg','rli','lpw'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.textContent=d[id];
+  });
+  var sub=document.getElementById('asubmit');
+  if(sub)sub.textContent=amode==='reg'?d.submit_reg:d.submit_login;
+}
+
+function openModal(role){
+  if(role==='teacher'){
+    arole='teacher';
+    document.getElementById('rst').className='rb';
+    document.getElementById('rte').className='rb ton on';
+  } else {
+    arole='student';
+    document.getElementById('rst').className='rb on';
+    document.getElementById('rte').className='rb ton';
+  }
+  applyModalLang();
+  document.getElementById('overlay').className='on';
+}
+
+function closeModal(){
+  document.getElementById('overlay').className='';
+  document.getElementById('aerr').textContent='';
+}
+
+function updAuthUI(){
+  var isReg=amode==='reg';
+  document.getElementById('regf').className=isReg?'':'hide';
+  var d=MLang[lang2]||MLang.en;
+  document.getElementById('asubmit').textContent=isReg?d.submit_reg:d.submit_login;
+  document.getElementById('aerr').textContent='';
+  if(isReg){
+    document.getElementById('grf').className=arole==='teacher'?'af hide':'af';
+    document.getElementById('inf').className=arole==='student'?'af hide':'af';
+  }
+}
+
+async function doAuth(){
+  var email=document.getElementById('aemail').value.trim();
+  var pw=document.getElementById('apw').value;
+  var err=document.getElementById('aerr');
+  var btn=document.getElementById('asubmit');
+  var d=MLang[lang2]||MLang.en;
+  var emailReg=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!email||!pw){err.textContent=d.err_ep;return;}
+  if(!emailReg.test(email)){err.textContent=d.err_email;return;}
+  if(pw.length<6){err.textContent=d.err_pw;return;}
+  btn.disabled=true;btn.innerHTML='<span class="sp2"></span>';err.textContent='';
+  try{
+    var body,ep;
+    if(amode==='reg'){
+      var nm=document.getElementById('rname').value.trim();
+      if(!nm){err.textContent=d.err_name;btn.disabled=false;btn.textContent=d.submit_reg;return;}
+      ep='/auth/register';
+      body={email:email,password:pw,name:nm,role:arole};
+      if(arole==='student')body.grade=parseInt(document.getElementById('rgrd').value);
+      else body.institution=document.getElementById('rinst').value.trim();
+    } else {
+      ep='/auth/login';
+      body={email:email,password:pw};
+    }
+    var res=await fetch(API+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var data=await res.json();
+    if(data.token){
+      localStorage.setItem('eb_tok',data.token);
+      localStorage.setItem('eb_name',data.name||email);
+      localStorage.setItem('eb_role',data.role||'student');
+      localStorage.setItem('eb_uid',data.id||'');
+      localStorage.setItem('eb_lang',lang2);
+      location.href='/app';
+    } else {
+      err.textContent=data.error||data.message||(lang2==='vi'?'Đăng nhập thất bại. Thử lại.':'Login failed. Please try again.');
+      btn.disabled=false;
+      btn.textContent=amode==='reg'?d.submit_reg:d.submit_login;
+    }
+  } catch(e){
+    err.textContent=lang2==='vi'?'Không thể kết nối máy chủ.':'Cannot connect to server.';
+    btn.disabled=false;
+    btn.textContent=amode==='reg'?d.submit_reg:d.submit_login;
+  }
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  // If already logged in, go straight to app
+  if(localStorage.getItem('eb_tok')){location.href='/app';return;}
+
+  document.getElementById('rst').onclick=function(){
+    arole='student';
+    document.getElementById('rst').className='rb on';
+    document.getElementById('rte').className='rb ton';
+    updAuthUI();
+  };
+  document.getElementById('rte').onclick=function(){
+    arole='teacher';
+    document.getElementById('rst').className='rb';
+    document.getElementById('rte').className='rb ton on';
+    updAuthUI();
+  };
+  document.getElementById('at0').onclick=function(){
+    amode='login';
+    document.getElementById('at0').className='at on';
+    document.getElementById('at1').className='at';
+    updAuthUI();
+  };
+  document.getElementById('at1').onclick=function(){
+    amode='reg';
+    document.getElementById('at0').className='at';
+    document.getElementById('at1').className='at on';
+    updAuthUI();
+  };
+  document.getElementById('asubmit').onclick=doAuth;
+  document.getElementById('aemail').onkeydown=function(e){if(e.key==='Enter')doAuth();};
+  document.getElementById('apw').onkeydown=function(e){if(e.key==='Enter')doAuth();};
+  document.getElementById('rname').onkeydown=function(e){if(e.key==='Enter')doAuth();};
+});
+
 </script>
 </body>
 </html>
