@@ -64,7 +64,7 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:va
 .loading p{font-size:14px;color:var(--muted)}
 
 /* READING */
-.reading-wrap{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 112px);overflow:hidden}
+.reading-wrap{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 160px);overflow:hidden}
 .reading-passage{border-right:1px solid var(--border);overflow-y:auto;padding:24px}
 .reading-questions{overflow-y:auto;padding:24px}
 .pane-label{font-size:10px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
@@ -88,7 +88,7 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:va
 .tfng-btn.selected{border-color:var(--primary);color:var(--primary);background:rgba(0,180,166,0.06)}
 
 /* Q NAVIGATOR */
-.q-nav{display:flex;gap:4px;flex-wrap:wrap;padding:12px 24px;background:var(--white);border-bottom:1px solid var(--border);position:fixed;top:112px;left:0;right:0;z-index:98}
+.q-nav{display:flex;gap:4px;flex-wrap:wrap;padding:10px 16px;background:var(--white);border-bottom:1px solid var(--border);position:relative;top:0;left:0;right:0;z-index:98}
 .qn{width:28px;height:28px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:var(--white)}
 .qn.ans{background:rgba(16,185,129,0.1);color:var(--success);border-color:rgba(16,185,129,0.3)}
 .qn.flag{background:rgba(245,158,11,0.1);color:var(--warn);border-color:rgba(245,158,11,0.3)}
@@ -246,8 +246,8 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:va
 
 <!-- READING SCREEN -->
 <div id="screen-reading" style="display:none">
-  <div class="q-nav" id="reading-qnav" style="top:156px"></div>
-  <div class="reading-wrap" style="margin-top:48px">
+  <div class="q-nav" id="reading-qnav"></div>
+  <div class="reading-wrap">
     <div class="reading-passage" id="reading-passage">
       <div class="loading"><div class="spinner"></div><p>Generating reading passage...</p></div>
     </div>
@@ -271,7 +271,13 @@ html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:va
     <div style="margin-bottom:16px">
       <div style="display:flex;gap:8px;margin-bottom:16px" id="listening-part-tabs"></div>
     </div>
-    <div class="warning-box">⚠️ In the real IELTS, the audio plays ONCE. Practice listening carefully before answering.</div>
+    <div class="warning-box">
+      ⚠️ In the real IELTS, the audio plays ONCE. Practice listening carefully before answering.
+      <div style="margin-top:8px;font-size:12px">
+        Voice quality depends on your device. On Mac/iPhone you get better voices. 
+        <strong>Tip:</strong> Use headphones for best experience.
+      </div>
+    </div>
     <div class="audio-player" id="audio-player">
       <div class="audio-status" id="audio-status">Ready to play</div>
       <div class="audio-progress"><div class="audio-bar" id="audio-bar" style="width:0%"></div></div>
@@ -408,6 +414,9 @@ function startTest(){
   if(!tok){ alert('Please log in to take the IELTS test.'); return; }
   document.getElementById('section-tabs').style.display = 'flex';
   document.getElementById('submit-btn').style.display = 'block';
+  unlockSection('listening');
+  unlockSection('writing');
+  unlockSection('speaking');
   showSection('reading');
   loadReading();
 }
@@ -434,10 +443,12 @@ function goSection(sec){
   stopTimer();
   showSection(sec);
   if(sec==='reading' && !readingData) loadReading();
+  else if(sec==='reading') startSectionTimer('reading');
   else if(sec==='listening') loadListening();
   else if(sec==='writing' && !writingData[1]) loadWriting(1);
+  else if(sec==='writing') startSectionTimer('writing');
   else if(sec==='speaking' && !speakData[1]) loadSpeaking(1);
-  startSectionTimer(sec);
+  else if(sec==='speaking') startSectionTimer('speaking');
 }
 
 function unlockSection(sec){
@@ -484,7 +495,6 @@ function submitSection(){
 // ── READING ───────────────────────────────────────────────────────────────
 async function loadReading(){
   document.getElementById('screen-reading').style.display = 'block';
-  startSectionTimer('reading');
   try{
     var topics = ['Climate Change and the Environment','Artificial Intelligence in Society','Urban Planning and Architecture','The Psychology of Decision Making','Marine Biology Discoveries'];
     var topic = topics[Math.floor(Math.random()*topics.length)];
@@ -492,6 +502,7 @@ async function loadReading(){
     var data = await res.json();
     readingData = data;
     renderReading();
+    startSectionTimer('reading');
   }catch(e){
     document.getElementById('reading-passage').innerHTML = '<div style="padding:20px;color:rgba(239,68,68,0.8)">Failed to load passage. Please try again.</div>';
   }
@@ -601,6 +612,7 @@ async function loadListening(){
   currentListeningPart = 0;
   renderListeningParts();
   await loadListenPart(1);
+  startSectionTimer('listening');
 }
 
 async function loadListenPart(partNum){
@@ -612,8 +624,9 @@ async function loadListenPart(partNum){
     listenParts[partNum-1] = data;
     if(!listeningAnswers[partNum]) listeningAnswers[partNum] = {};
     renderListeningSection(data);
+    document.getElementById('audio-status').textContent = 'Ready — Section '+partNum+' loaded';
   }catch(e){
-    document.getElementById('listening-questions').innerHTML = '<div style="padding:20px;color:rgba(239,68,68,0.8)">Failed to load section.</div>';
+    document.getElementById('listening-questions').innerHTML = '<div style="padding:20px;color:rgba(239,68,68,0.8)">Failed to load section. <button onclick="loadListenPart('+partNum+')" style="color:var(--primary);background:none;border:none;cursor:pointer;font-family:var(--font);font-weight:600">Retry</button></div>';
   }
 }
 
@@ -681,23 +694,49 @@ function playAudio(){
   var script = window._currentScript;
   var voices = synth.getVoices();
 
-  // Find voices for each speaker
+  // Find best quality voices - prefer neural/enhanced
+  function findBestVoice(gender, accent){
+    var accentLower = (accent||'british').toLowerCase();
+    var isMale = gender === 'male';
+    // Priority: neural/enhanced English voices
+    var preferred = voices.filter(function(v){
+      var n = v.name.toLowerCase(), l = v.lang.toLowerCase();
+      if(!l.includes('en')) return false;
+      // Neural/enhanced voices (best quality)
+      if(n.includes('neural') || n.includes('enhanced') || n.includes('premium')) {
+        return isMale ? (n.includes('guy')||n.includes('james')||n.includes('ryan')||n.includes('daniel')||n.includes('david')||n.includes('mark')) 
+                      : (n.includes('aria')||n.includes('jenny')||n.includes('sonia')||n.includes('kate')||n.includes('clara'));
+      }
+      return false;
+    });
+    if(preferred.length) return preferred[0];
+    // Fallback: any English voice matching gender
+    var fallback = voices.filter(function(v){
+      var n = v.name.toLowerCase(), l = v.lang.toLowerCase();
+      if(!l.includes('en')) return false;
+      return isMale ? (n.includes('daniel')||n.includes('david')||n.includes('james')||n.includes('lee')||n.includes('mark')||n.includes('alex'))
+                    : (n.includes('kate')||n.includes('karen')||n.includes('samantha')||n.includes('victoria')||n.includes('moira'));
+    });
+    return fallback[0] || voices.find(function(v){return v.lang.includes('en');}) || voices[0];
+  }
+
   var speakerVoices = {};
+  var usedVoices = [];
   if(script.speakers){
     script.speakers.forEach(function(sp){
       var gender = sp.gender || 'female';
-      var accent = (sp.accent || 'British').toLowerCase();
-      var found = voices.find(function(v){
-        var lang = v.lang.toLowerCase();
-        var name = v.name.toLowerCase();
-        if(accent.includes('british') && !lang.includes('en-gb') && !name.includes('daniel') && !name.includes('kate')) return false;
-        if(accent.includes('australian') && !name.includes('karen') && !name.includes('lee')) return false;
-        return (gender==='male' && (name.includes('daniel')||name.includes('david')||name.includes('lee')||name.includes('james'))) ||
-               (gender==='female' && (name.includes('kate')||name.includes('karen')||name.includes('samantha')||name.includes('victoria')));
-      }) || voices.find(function(v){
-        return gender==='male' ? v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('david') : v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('samantha');
-      }) || voices[0];
-      speakerVoices[sp.name] = found;
+      var accent = sp.accent || 'British';
+      var voice = findBestVoice(gender, accent);
+      // Try to use different voices for different speakers
+      if(usedVoices.length && voice === usedVoices[0]){
+        var alt = voices.find(function(v){
+          var n = v.name.toLowerCase();
+          return v.lang.includes('en') && v !== usedVoices[0] && (gender==='male' ? n.includes('david')||n.includes('alex') : n.includes('victoria')||n.includes('moira'));
+        }) || voice;
+        voice = alt;
+      }
+      speakerVoices[sp.name] = voice;
+      usedVoices.push(voice);
     });
   }
 
@@ -956,6 +995,20 @@ function renderSpeaking(part){
   }
 
   document.getElementById('speaking-content').innerHTML = html;
+
+  // Restore saved answers
+  if(part===1 && speakAnswers[1]){
+    var areas = document.querySelectorAll('#speaking-content .transcript-area');
+    speakAnswers[1].forEach(function(ans,i){ if(areas[i] && ans) areas[i].value=ans; });
+  }
+  if(part===2 && speakAnswers[2]){
+    var ta = document.querySelector('#speaking-content .transcript-area');
+    if(ta) ta.value = speakAnswers[2];
+  }
+  if(part===3 && speakAnswers[3]){
+    var areas = document.querySelectorAll('#speaking-content .transcript-area');
+    speakAnswers[3].forEach(function(ans,i){ if(areas[i] && ans) areas[i].value=ans; });
+  }
 }
 
 function speakQuestion(text){
@@ -993,9 +1046,19 @@ async function toggleRecord(idx){
     mediaRecorder.ondataavailable = function(e){ audioChunks.push(e.data); };
     mediaRecorder.onstop = async function(){
       var blob = new Blob(audioChunks,{type:'audio/webm'});
-      // For now just show transcription placeholder
-      var ta = document.querySelectorAll('.transcript-area')[idx];
-      if(ta) ta.value = '[Recording captured — transcription would appear here in production]';
+      var reader = new FileReader();
+      reader.onloadend = function(){
+        // Save to sessionStorage for persistence
+        var key = 'speak_rec_'+speakPart+'_'+idx;
+        try{ sessionStorage.setItem(key, '[Audio recorded at '+new Date().toLocaleTimeString()+']'); }catch(e){}
+        if(!speakAnswers[speakPart]) speakAnswers[speakPart] = [];
+        speakAnswers[speakPart][idx] = 'Recording captured at '+new Date().toLocaleTimeString();
+        // Update UI
+        var ta = document.querySelectorAll('.transcript-area')[idx];
+        if(ta){ ta.value = speakAnswers[speakPart][idx]; ta.style.borderColor='var(--primary)'; }
+      };
+      reader.readAsDataURL(blob);
+      isRecording = false;
     };
     mediaRecorder.start();
     isRecording = true;
