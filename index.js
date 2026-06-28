@@ -1548,7 +1548,7 @@ Respond ONLY with valid JSON, no markdown, no explanation:
     examData.sections.forEach(s => s.questions.forEach(q => { totalPoints += q.points || 1; }));
 
     // Generate unique exam code
-    const code = 'EXAM-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+    const code = 'SS-' + crypto.randomBytes(3).toString('hex').toUpperCase();
 
     // Save to DB
     const result = await pool.query(
