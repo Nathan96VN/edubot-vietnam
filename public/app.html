@@ -449,12 +449,10 @@ input[type=file]#cfi{display:none}
       </div>
 
       <div id="msgs">
-        <div class="wcard" id="wcard">
-          <div class="ic" style="font-size:48px;margin-bottom:14px"></div>
-          <h3 id="wt">Chào mừng đến StellaStride!</h3>
-          <p id="wd">Gia sư AI cá nhân Đăng nhập để bắt đầu học!</p>
-          <button id="wbtn">Đăng nhập / Đăng ký miễn phí</button>
-        </div>
+        <span id="wt" style="display:none"></span>
+        <span id="wd" style="display:none"></span>
+        <button id="wbtn" style="display:none"></button>
+
       </div>
       <div id="fbar"><span id="ficon">📄</span><span id="fname" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button onclick="rmFile()" style="border:none;background:transparent;color:var(--muted2);cursor:pointer;font-size:13px">✕</button></div>
       <div id="ciarea">
@@ -859,7 +857,7 @@ input[type=file]#cfi{display:none}
   <button id="mcls" onclick="closeModal()">✕</button>
   <div style="text-align:center;margin-bottom:20px">
     <div style="font-size:22px;font-weight:900;color:var(--navy);margin-bottom:4px">Stella<span style="color:var(--teal)">Stride</span></div>
-    <div id="msub" style="font-size:13px;color:var(--muted)">Nền tảng học tập AI</div>
+    <div id="msub" style="font-size:13px;color:var(--muted)">Welcome to StellaStride!</div>
   </div>
   <div class="rtog"><button class="rb on" id="rst">🎒 Học sinh</button><button class="rb ton" id="rte">👩‍🏫 Giáo viên</button></div>
   <div class="atabs"><button class="at on" id="at0">Đăng nhập</button><button class="at" id="at1">Đăng ký</button></div>
@@ -947,7 +945,7 @@ var VI={
   crt:'➕ Tạo lớp học mới',fln:'Tên lớp',fls:'Môn học',flg:'Lớp',nph:'VD: Toán 8A',cbtn:'Tạo lớp học',
   yct:'📋 Lớp học của bạn',tempty:'Bạn chưa tạo lớp học nào.',
   ait:'Trợ lý giáo viên AI',aid:'Tạo giáo án, câu hỏi kiểm tra và gợi ý giảng dạy.',tph:'Yêu cầu giáo án, đề kiểm tra...',
-  msub:'Nền tảng học tập AI',
+  msub:'Chào mừng đến StellaStride!',
   rst:'🎒 Học sinh',rte:'👩‍🏫 Giáo viên',
   rln:'Họ và tên',rnph:'Nguyễn Văn A',rlg:'Lớp',rli:'Trường / Tổ chức',riph:'Trường THPT',lpw:'Mật khẩu',
   'fcgen-label':'📚 Tạo Flashcards',
@@ -1030,7 +1028,7 @@ var EN={
   crt:'➕ Create New Classroom',fln:'Class Name',fls:'Subject',flg:'Grade',nph:'e.g. Math 8A',cbtn:'Create Classroom',
   yct:'📋 Your Classrooms',tempty:"You haven't created any classrooms yet.",
   ait:'AI Teaching Assistant',aid:'Create lesson plans, exam questions and teaching suggestions.',tph:'Request a lesson plan, exam...',
-  msub:'AI Learning Platform',
+  msub:'Welcome to StellaStride!',
   rst:'🎒 Student',rte:'👩‍🏫 Teacher',
   rln:'Full Name',rnph:'John Smith',rlg:'Grade',rli:'School / Institution',riph:'Nguyen Trai High School',lpw:'Password',
   'fcgen-label':'📚 Generate Flashcards',
