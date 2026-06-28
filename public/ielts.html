@@ -1043,7 +1043,7 @@ function renderSpeaking(part){
       html += '<div class="q-text">'+esc(q)+'</div>';
       html += '<textarea class="transcript-area" placeholder="Type or record your answer..." oninput="speakAnswers[1]['+i+']=this.value">'+(speakAnswers[1][i]||'')+'</textarea>';
       html += '<div style="display:flex;gap:8px;margin-top:8px">';
-      html += '<button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="speakQuestion(\''+q.replace(/'/g,'')+'\','+i+')">🔊 Hear question</button>';
+            html += '<button class="btn btn-outline" style="font-size:12px;padding:6px 12px" data-q="'+encodeURIComponent(q)+'" onclick="speakQuestion(decodeURIComponent(this.dataset.q))">🔊 Hear question</button>';
       html += '<button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="toggleRecord('+i+')">🎤 Record</button>';
       html += '</div></div>';
     });
@@ -1075,10 +1075,16 @@ function renderSpeaking(part){
     html += '<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:20px">';
     html += '<h3 style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Part 3 — Two-way Discussion</h3>';
     html += '<p style="font-size:13px;color:var(--muted);margin-bottom:16px">Topic: <strong>'+esc(data.topic||'')+'</strong></p>';
+    html += '<p style="font-size:12px;color:var(--muted);margin-bottom:16px;background:rgba(0,180,166,0.06);padding:10px;border-radius:var(--rs)">🎤 Listen to each question then record your answer. You can also type if preferred.</p>';
     (data.questions||[]).forEach(function(q,i){
-      html += '<div class="q-item" style="margin-bottom:12px">';
-      html += '<div class="q-text">'+esc(q)+'</div>';
-      html += '<textarea class="transcript-area" placeholder="Your answer..." oninput="speakAnswers[3]['+i+']=this.value">'+(speakAnswers[3][i]||'')+'</textarea>';
+      html += '<div class="q-item" style="margin-bottom:16px">';
+      html += '<div class="q-num">Q'+(i+1)+'</div>';
+      html += '<div class="q-text" style="margin-bottom:10px">'+esc(q)+'</div>';
+      html += '<div style="display:flex;gap:8px;margin-bottom:8px">';
+      html += '<button class="btn btn-outline" style="font-size:12px;padding:6px 12px" data-q="'+encodeURIComponent(q)+'" onclick="speakQuestion(decodeURIComponent(this.dataset.q))">🔊 Hear question</button>';
+      html += '<button class="btn btn-outline" style="font-size:12px;padding:6px 12px" id="rec3-'+i+'" onclick="toggleRecord3('+i+')">🎤 Record answer</button>';
+      html += '</div>';
+      html += '<textarea class="transcript-area" id="p3ans-'+i+'" placeholder="Or type your answer here..." oninput="if(!speakAnswers[3])speakAnswers[3]=[];speakAnswers[3]['+i+']=this.value">'+(speakAnswers[3]&&speakAnswers[3][i]?speakAnswers[3][i]:'')+'</textarea>';
       html += '</div>';
     });
     html += '<div style="margin-top:16px">';
@@ -1104,10 +1110,30 @@ function renderSpeaking(part){
 }
 
 function speakQuestion(text){
-  synth.cancel();
-  var u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.9;
-  synth.speak(u);
+  // Use OpenAI TTS for natural examiner voice
+  fetch(API+'/ielts/tts',{method:'POST',headers:ah(),body:JSON.stringify({
+    script:[{speaker:'Examiner',text:text}],
+    speakers:[{name:'Examiner',gender:'female',accent:'British'}]
+  })})
+  .then(function(r){return r.json();})
+  .then(function(result){
+    if(result.chunks && result.chunks[0]){
+      var binary = atob(result.chunks[0].audio);
+      var bytes = new Uint8Array(binary.length);
+      for(var i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+      var blob = new Blob([bytes],{type:'audio/mp3'});
+      var url = URL.createObjectURL(blob);
+      var audio = new Audio(url);
+      audio.play();
+    }
+  })
+  .catch(function(){
+    // Fallback to browser TTS
+    synth.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.85;
+    synth.speak(u);
+  });
 }
 
 function startCuePrepare(){
@@ -1130,36 +1156,69 @@ function startCuePrepare(){
 }
 
 async function toggleRecord(idx){
-  if(isRecording){ stopRecording(idx); return; }
+  var btn = document.querySelectorAll('.btn-outline')[idx];
+  if(isRecording){ 
+    stopRecording(idx);
+    // Reset all record buttons
+    document.querySelectorAll('[onclick*="toggleRecord("]').forEach(function(b){ b.textContent='🎤 Record'; b.style.color=''; });
+    return; 
+  }
   try{
     var stream = await navigator.mediaDevices.getUserMedia({audio:true});
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
     mediaRecorder.ondataavailable = function(e){ audioChunks.push(e.data); };
-    mediaRecorder.onstop = async function(){
-      var blob = new Blob(audioChunks,{type:'audio/webm'});
-      var reader = new FileReader();
-      reader.onloadend = function(){
-        // Save to sessionStorage for persistence
-        var key = 'speak_rec_'+speakPart+'_'+idx;
-        try{ sessionStorage.setItem(key, '[Audio recorded at '+new Date().toLocaleTimeString()+']'); }catch(e){}
-        if(!speakAnswers[speakPart]) speakAnswers[speakPart] = [];
-        speakAnswers[speakPart][idx] = 'Recording captured at '+new Date().toLocaleTimeString();
-        // Update UI
-        var ta = document.querySelectorAll('.transcript-area')[idx];
-        if(ta){ ta.value = speakAnswers[speakPart][idx]; ta.style.borderColor='var(--primary)'; }
-      };
-      reader.readAsDataURL(blob);
-      isRecording = false;
+    mediaRecorder.onstop = function(){
+      if(!speakAnswers[speakPart]) speakAnswers[speakPart] = [];
+      speakAnswers[speakPart][idx] = 'Recording captured at '+new Date().toLocaleTimeString();
+      var areas = document.querySelectorAll('.transcript-area');
+      if(areas[idx]){ areas[idx].value=speakAnswers[speakPart][idx]; areas[idx].style.borderColor='var(--primary)'; }
     };
     mediaRecorder.start();
     isRecording = true;
+    // Show recording state
+    var recBtns = document.querySelectorAll('[onclick*="toggleRecord("]');
+    if(recBtns[idx]){ recBtns[idx].textContent='⏹ Stop'; recBtns[idx].style.color='rgba(239,68,68,0.9)'; }
   }catch(e){
     alert('Microphone access denied. Please type your answer instead.');
   }
 }
 
 function stopRecording(idx){
+  if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(function(t){ t.stop(); });
+  }
+  isRecording = false;
+}
+
+async function toggleRecord3(idx){
+  var btn = document.getElementById('rec3-'+idx);
+  if(isRecording){ 
+    stopRecording3(idx);
+    if(btn){ btn.textContent='🎤 Record answer'; btn.style.borderColor=''; }
+    return; 
+  }
+  try{
+    var stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = function(e){ audioChunks.push(e.data); };
+    mediaRecorder.onstop = function(){
+      if(!speakAnswers[3]) speakAnswers[3]=[];
+      speakAnswers[3][idx] = 'Recording captured at '+new Date().toLocaleTimeString();
+      var ta = document.getElementById('p3ans-'+idx);
+      if(ta){ ta.value=speakAnswers[3][idx]; ta.style.borderColor='var(--primary)'; }
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    if(btn){ btn.textContent='⏹ Stop recording'; btn.style.borderColor='rgba(239,68,68,0.5)'; btn.style.color='rgba(239,68,68,0.9)'; }
+  }catch(e){
+    alert('Microphone access denied. Please type your answer instead.');
+  }
+}
+
+function stopRecording3(idx){
   if(mediaRecorder && mediaRecorder.state !== 'inactive'){
     mediaRecorder.stop();
     mediaRecorder.stream.getTracks().forEach(function(t){ t.stop(); });
