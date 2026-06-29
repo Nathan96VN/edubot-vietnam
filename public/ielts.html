@@ -1033,11 +1033,20 @@ async function toggleRecord2(){
   try{
     var stream=await navigator.mediaDevices.getUserMedia({audio:true});
     mediaRecorder=new MediaRecorder(stream); audioChunks=[];
-    mediaRecorder.ondataavailable=function(e){audioChunks.push(e.data);};
+    mediaRecorder.ondataavailable=function(e){if(e.data.size>0)audioChunks.push(e.data);};
     mediaRecorder.onstop=function(){
-      speakAnswers[2]='Recording captured at '+new Date().toLocaleTimeString();
+      stream.getTracks().forEach(function(t){t.stop();});
       var ta=document.getElementById('p2ans');
-      if(ta){ta.value=speakAnswers[2];ta.style.borderColor='var(--primary)';}
+      if(ta){ta.placeholder='Transcribing…';}
+      var blob=new Blob(audioChunks,{type:'audio/webm'});
+      transcribeBlob(blob).then(function(text){
+        if(text){
+          speakAnswers[2]=text;
+          if(ta){ta.value=text;ta.style.borderColor='var(--primary)';}
+        } else {
+          if(ta){ta.placeholder='Could not hear clearly — please type your answer.';}
+        }
+      });
     };
     mediaRecorder.start(); isRecording=true;
     if(btn){btn.textContent='⏹ Stop Recording';btn.style.color='rgba(239,68,68,0.9)';}
@@ -1055,16 +1064,42 @@ async function toggleRecord3(idx){
 
 function startRecordingGeneric(stream,idx,prefix,part,btn,btnPrefix){
   mediaRecorder=new MediaRecorder(stream); audioChunks=[];
-  mediaRecorder.ondataavailable=function(e){audioChunks.push(e.data);};
+  mediaRecorder.ondataavailable=function(e){if(e.data.size>0)audioChunks.push(e.data);};
   mediaRecorder.onstop=function(){
-    if(!speakAnswers[part]) speakAnswers[part]=[];
-    speakAnswers[part][idx]='Recording captured at '+new Date().toLocaleTimeString();
-    var ta=document.getElementById(prefix+idx);
-    if(ta){ta.value=speakAnswers[part][idx];ta.style.borderColor='var(--primary)';}
+    stream.getTracks().forEach(function(t){t.stop();});
     isRecording=false;
+    if(btn){btn.textContent='🎤 Record';btn.style.color='';}
+    var ta=document.getElementById(prefix+idx);
+    if(ta){ta.placeholder='Transcribing…';}
+    var blob=new Blob(audioChunks,{type:'audio/webm'});
+    transcribeBlob(blob).then(function(text){
+      if(!speakAnswers[part]) speakAnswers[part]=[];
+      if(text){
+        speakAnswers[part][idx]=text;
+        if(ta){ta.value=text;ta.style.borderColor='var(--primary)';}
+      } else {
+        if(ta){ta.placeholder='Could not hear clearly — please type your answer.';}
+      }
+    });
   };
   mediaRecorder.start(); isRecording=true;
   if(btn){btn.textContent='⏹ Stop';btn.style.color='rgba(239,68,68,0.9)';}
+}
+
+// Convert a recorded audio blob to real text via the backend Whisper route.
+function transcribeBlob(blob){
+  return new Promise(function(resolve){
+    var reader=new FileReader();
+    reader.onloadend=function(){
+      var b64=reader.result.split(',')[1];
+      fetch(API+'/transcribe',{method:'POST',headers:ah(),body:JSON.stringify({audio:b64,mimeType:'audio/webm'})})
+        .then(function(r){return r.json();})
+        .then(function(d){ resolve(d&&d.text?d.text:''); })
+        .catch(function(){ resolve(''); });
+    };
+    reader.onerror=function(){ resolve(''); };
+    reader.readAsDataURL(blob);
+  });
 }
 
 function stopRecordingGeneric(idx,prefix,part,btn){
