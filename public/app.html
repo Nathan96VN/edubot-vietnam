@@ -765,6 +765,11 @@ input[type=file]#cfi{display:none}
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="errorcorrection" class="qtype" style="accent-color:var(--primary)"/> Error Correction</label>
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="ordering" class="qtype" style="accent-color:var(--primary)"/> Ordering / Sequencing</label>
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="comprehension" class="qtype" style="accent-color:var(--primary)"/> Reading Comprehension</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="numeric" class="qtype" style="accent-color:var(--primary)"/> Numeric / Equation Answer</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="labeldiagram" class="qtype" style="accent-color:var(--primary)"/> Label the Diagram</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="dragorder" class="qtype" style="accent-color:var(--primary)"/> Drag to Order</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="highlight" class="qtype" style="accent-color:var(--primary)"/> Highlight in Text</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="dropdown" class="qtype" style="accent-color:var(--primary)"/> Dropdown Cloze</label>
             </div>
               </div>
               <div class="exw-pane" id="exw-pane4">
@@ -3087,6 +3092,11 @@ async function generateExam(){
   var qtError = document.getElementById('qt-error') || document.querySelector('.qtype[value="errorcorrection"]');
   var qtOrder = document.getElementById('qt-order') || document.querySelector('.qtype[value="ordering"]');
   var qtComp = document.getElementById('qt-comp') || document.querySelector('.qtype[value="comprehension"]');
+  var qtNumeric = document.querySelector('.qtype[value="numeric"]');
+  var qtLabelDiag = document.querySelector('.qtype[value="labeldiagram"]');
+  var qtDrag = document.querySelector('.qtype[value="dragorder"]');
+  var qtHL = document.querySelector('.qtype[value="highlight"]');
+  var qtDrop = document.querySelector('.qtype[value="dropdown"]');
   if(qtMcq && qtMcq.checked) types.push('mcq');
   if(qtTf && qtTf.checked) types.push('truefalse');
   if(qtFill && qtFill.checked) types.push('fillinblank');
@@ -3095,6 +3105,11 @@ async function generateExam(){
   if(qtError && qtError.checked) types.push('errorcorrection');
   if(qtOrder && qtOrder.checked) types.push('ordering');
   if(qtComp && qtComp.checked) types.push('comprehension');
+  if(qtNumeric && qtNumeric.checked) types.push('numeric');
+  if(qtLabelDiag && qtLabelDiag.checked) types.push('labeldiagram');
+  if(qtDrag && qtDrag.checked) types.push('dragorder');
+  if(qtHL && qtHL.checked) types.push('highlight');
+  if(qtDrop && qtDrop.checked) types.push('dropdown');
   if(!types.length){toast('Select at least one question type','err');return;}
   var topicsEl = document.getElementById('exam-topics') || document.getElementById('ex-topics');
   var topics = topicsEl ? topicsEl.value.trim() : '';
@@ -3163,6 +3178,21 @@ function renderExamPreview(exam, examData){
       } else if(section.type==='matching'&&q.pairs){
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">';
         q.pairs.forEach(function(p){ html += '<div style="font-size:12px;color:var(--muted);padding:3px">'+esc(p.left)+'</div><div style="font-size:12px;color:rgba(110,231,183,0.9);padding:3px">→ '+esc(p.right)+'</div>'; });
+        html += '</div>';
+      } else if(section.type==='labeldiagram'){
+        if(q.visual && typeof renderMathVisual==='function'){ html += '<div style="background:#fff;padding:10px;border:0.5px solid #e3e6f3;margin:6px 0;max-width:380px">'+renderMathVisual(q.visual)+'</div>'; }
+        if(q.labels){ html += '<div style="display:flex;flex-direction:column;gap:3px;margin-top:4px">'; q.labels.forEach(function(lb,i){ html += '<div style="font-size:12px;color:rgba(110,231,183,0.9)">'+(i+1)+'. '+esc(lb)+'</div>'; }); html += '</div>'; }
+      } else if(section.type==='dragorder'&&q.items){
+        html += '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">Correct order:</div><ol style="margin:0 0 0 18px">';
+        q.items.forEach(function(item){ html += '<li style="font-size:12px;color:rgba(110,231,183,0.9);padding:1px 0">'+esc(item)+'</li>'; });
+        html += '</ol>';
+      } else if(section.type==='highlight'&&q.tokens){
+        html += '<div style="font-size:13px;line-height:1.9">';
+        q.tokens.forEach(function(tok,i){ var on=(q.correct||[]).indexOf(i)!==-1; html += '<span style="padding:1px 4px;border-radius:3px;'+(on?'background:rgba(16,185,129,0.25);color:rgba(110,231,183,1)':'color:var(--muted)')+'">'+esc(tok)+'</span> '; });
+        html += '</div>';
+      } else if(section.type==='dropdown'&&q.segments){
+        html += '<div style="font-size:13px;line-height:1.9;color:var(--text)">';
+        q.segments.forEach(function(seg){ if(seg.text){ html += esc(seg.text); } else if(seg.blank){ html += '<span style="border:1px solid rgba(16,185,129,0.5);border-radius:4px;padding:1px 6px;color:rgba(110,231,183,0.9);margin:0 2px">'+esc(seg.blank.answer)+'</span>'; } });
         html += '</div>';
       } else if(q.answer){
         html += '<div style="font-size:12px;color:rgba(110,231,183,0.9);margin-top:4px">✓ Answer: '+esc(q.answer)+'</div>';
@@ -3299,6 +3329,28 @@ async function exportExamWord(type){
             if(sq.answer) html += '<div class="ans">'+(i+1)+'. '+esc(sq.answer)+'</div>';
           });
         }
+      } else if(q.labels){
+        // label-the-diagram: numbered answer lines; teacher version shows the correct labels
+        html += '<ol style="margin:6px 0 6px 20px">';
+        q.labels.forEach(function(lb,i){ html += '<li style="color:#333;padding:3px 0">'+(isTeacher ? esc(lb) : '_______________')+'</li>'; });
+        html += '</ol>';
+      } else if(q.items && section.type==='dragorder'){
+        // drag-order: on paper, show items with a blank to write the order number
+        html += '<div style="margin:6px 0">';
+        q.items.forEach(function(item){ html += '<div style="color:#333;padding:2px 0">____ '+esc(item)+'</div>'; });
+        html += '</div>';
+        if(isTeacher){ html += '<div class="ans">\u2713 Correct order: '+q.items.map(function(x){return esc(x);}).join(' \u2192 ')+'</div>'; }
+      } else if(q.tokens){
+        // highlight: print the sentence; teacher version bolds/underlines the correct token(s)
+        html += '<div style="color:#333;margin:6px 0">';
+        q.tokens.forEach(function(tok,i){ var on=isTeacher&&(q.correct||[]).indexOf(i)!==-1; html += on ? '<u style="font-weight:bold">'+esc(tok)+'</u> ' : esc(tok)+' '; });
+        html += '</div>';
+      } else if(q.segments){
+        // dropdown cloze: print sentence with blanks; teacher version fills the answer
+        html += '<div style="color:#333;margin:6px 0;line-height:2">';
+        q.segments.forEach(function(seg){ if(seg.text){ html += esc(seg.text); } else if(seg.blank){ html += isTeacher ? '<u style="font-weight:bold">'+esc(seg.blank.answer)+'</u>' : '________'; } });
+        html += '</div>';
+        if(isTeacher && q.segments.some(function(s){return s.blank;})){ html += '<div style="font-size:9pt;color:#666;margin-top:2px">Options: '+q.segments.filter(function(s){return s.blank;}).map(function(s){return '('+(s.blank.options||[]).map(function(o){return esc(o);}).join(' / ')+')';}).join('  ')+'</div>'; }
       } else if(isTeacher && q.answer){
         html += '<div class="ans">\u2713 Answer: '+esc(q.answer)+'</div>';
       }
