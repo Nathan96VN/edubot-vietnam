@@ -109,10 +109,10 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .wcard button{padding:11px 28px;background:var(--teal);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
 
 /* stella header bar */
-#stella-header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:#fff;border-bottom:0.5px solid var(--border);flex-shrink:0;position:relative;z-index:2}
-#stella-avatar{width:36px;height:36px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;flex-shrink:0}
-#stella-name{font-size:14px;font-weight:700;color:var(--navy)}
-#stella-sub{font-size:11px;color:var(--muted)}
+#stella-header{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--navy);border-bottom:none;flex-shrink:0;position:relative;z-index:2;overflow:hidden}
+#stella-avatar{width:38px;height:38px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;flex-shrink:0;position:relative;z-index:2;overflow:hidden}
+#stella-name{font-size:15px;font-weight:600;color:#fff;position:relative;z-index:2}
+#stella-sub{font-size:12px;color:#5DCAA5;position:relative;z-index:2}
 #cctrl{display:flex;align-items:center;gap:8px;margin-left:auto}
 #cctrl select{padding:5px 10px;border:0.5px solid var(--border);background:#fff;color:var(--text);font-size:12px;outline:none;font-family:var(--font)}
 
@@ -449,6 +449,29 @@ input[type=file]#cfi{display:none}
 .exw-gen{background:var(--teal);color:#fff}
 .exw-gen:hover{background:#009488}
 @media(max-width:760px){.exw{grid-template-columns:1fr}.exw-rail{flex-direction:row;flex-wrap:wrap;gap:10px;padding:14px}}
+
+/* ── PANEL RESTYLE (C3 classroom, Memory M2, status pills) ── */
+.ccard{border-left:3px solid var(--teal)!important}
+.ccard:nth-child(even){border-left-color:var(--secondary)!important}
+.flow-back{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:0.5px solid #d5d9ec;background:#fff;color:#888;font-size:13px;cursor:pointer;font-family:var(--font);margin-bottom:14px}
+.flow-back:hover{background:#fafbff}
+.flow-row{border:0.5px solid #e3e6f3;padding:13px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:#fff}
+.flow-row:hover{border-color:var(--secondary)}
+.flow-row .ti{color:#9da3c9}
+.pill-graded{font-size:11px;font-weight:600;color:#0F6E56;background:#E1F5EE;padding:3px 9px}
+.pill-ungraded{font-size:11px;font-weight:600;color:#BA7517;background:#FAEEDA;padding:3px 9px}
+.pill-live{font-size:11px;font-weight:600;color:#0F6E56;background:#E1F5EE;padding:3px 9px}
+.pill-closed{font-size:11px;font-weight:600;color:#A32D2D;background:#FCEBEB;padding:3px 9px}
+.pill-draft{font-size:11px;font-weight:600;color:#5F5E5A;background:#F1EFE8;padding:3px 9px}
+.mem-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:0.5px solid #f0f0f0}
+.mem-acts{display:flex;gap:14px;color:#9da3c9}
+.mem-acts .ti{cursor:pointer;font-size:18px}
+.mem-acts .ti:hover{color:var(--teal)}
+.savatar{width:32px;height:32px;border-radius:50%;background:#E1F5EE;color:#0F6E56;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;flex-shrink:0}
+.game-row{display:flex;align-items:center;gap:14px;padding:14px;border:0.5px solid #e3e6f3;margin-bottom:8px;cursor:pointer;background:#fff}
+.game-row:hover{border-color:var(--teal)}
+.game-ico{width:42px;height:42px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.game-ico .ti{font-size:22px}
 </style>
 </head>
 <body>
@@ -487,8 +510,9 @@ input[type=file]#cfi{display:none}
     <div class="panel on" id="p0">
       <div id="zodiac-bg"><canvas id="zc-stella"></canvas><div id="zodiac-blur"></div></div>
       <div id="stella-header">
+        <canvas id="stella-hdr-stars" style="position:absolute;inset:0;width:100%;height:100%;opacity:.4;pointer-events:none;z-index:1"></canvas>
         <div id="stella-avatar">S</div>
-        <div><div id="stella-name">Ask Stella</div><div id="stella-sub">AI Tutor</div></div>
+        <div><div id="stella-name">Ask Stella</div><div id="stella-sub"><i class="ti ti-circle-filled" style="font-size:8px;vertical-align:1px;color:#5DCAA5"></i> AI Tutor · Online</div></div>
         <div id="cctrl" style="display:none!important;height:0;overflow:hidden">
           <label id="lsub" style="font-size:11px;color:var(--muted);font-weight:600;align-self:center">Môn:</label>
           <select id="selsub"><option value="Math" id="om">Toán</option><option value="Science" id="os">Khoa học</option><option value="English" id="oe">Tiếng Anh</option></select>
@@ -506,7 +530,7 @@ input[type=file]#cfi{display:none}
       <div id="fbar"><span id="ficon">📄</span><span id="fname" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button onclick="rmFile()" style="border:none;background:transparent;color:var(--muted2);cursor:pointer;font-size:13px">✕</button></div>
       <div id="ciarea">
         <input type="file" id="cfi" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" onchange="onFile(this.files[0])"/>
-        <button id="battach" onclick="document.getElementById('cfi').click()" title="Upload file">📎</button>
+        <button id="battach" onclick="document.getElementById('cfi').click()" title="Upload file"><i class="ti ti-paperclip"></i></button>
         <textarea id="cinput" rows="1" placeholder="Hỏi tôi bất cứ điều gì..."></textarea>
         <button id="bgraph" title="Generate chart">📊</button>
         <button id="bimg" title="Generate AI image">🎨</button>
@@ -523,12 +547,13 @@ input[type=file]#cfi{display:none}
     <!-- TAB 1: CLASSROOM -->
     <div class="panel" id="p1">
       <div id="clpanel">
-        <div class="jcard">
-          <div class="jhdr"><div class="jico">🔑</div><div><h3 id="jt">Tham gia lớp học</h3><p id="jd">Nhập mã EDU-XXXX do giáo viên cung cấp</p></div></div>
-          <div class="jirow"><input type="text" id="codeinput" maxlength="8" placeholder="VD: EDU-4B2K" autocomplete="off"/><button id="bjoin">Tham gia lớp</button></div>
-          <div id="jfb"></div>
+        <div class="jcard" style="background:var(--navy);border:none;position:relative;overflow:hidden;padding:22px">
+          <canvas id="join-stars" style="position:absolute;inset:0;width:100%;height:100%;opacity:.5;pointer-events:none"></canvas>
+          <div class="jhdr" style="position:relative"><div class="jico"><i class="ti ti-key" style="color:#fff"></i></div><div><h3 id="jt" style="color:#fff">Tham gia lớp học</h3><p id="jd" style="color:var(--secondary)">Nhập mã EDU-XXXX do giáo viên cung cấp</p></div></div>
+          <div class="jirow" style="position:relative"><input type="text" id="codeinput" maxlength="8" placeholder="VD: EDU-4B2K" autocomplete="off" style="background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);color:#fff"/><button id="bjoin">Tham gia lớp</button></div>
+          <div id="jfb" style="position:relative"></div>
         </div>
-        <div class="stitle" id="mct">🏫 Lớp học của tôi</div>
+        <div class="stitle" id="mct"><i class="ti ti-school" style="color:var(--secondary);vertical-align:-2px"></i> Lớp học của tôi</div>
         <div class="cgrid" id="sgrid"><div class="ebox">Bạn chưa tham gia lớp học nào.</div></div>
       </div>
     </div>
@@ -583,7 +608,7 @@ input[type=file]#cfi{display:none}
         <div class="sp" id="sp1">
           <div class="qrow" id="qrow"></div>
           <div id="aimsg"><div class="wcard" style="margin:0 auto;max-width:100%;border:none;background:transparent"><div class="ic">👩‍🏫</div><h3 id="ait">Trợ lý giáo viên AI</h3><p id="aid">Tạo giáo án, câu hỏi kiểm tra và gợi ý giảng dạy.</p></div></div>
-          <div id="tiarea"><textarea id="tinput" rows="1" placeholder="Yêu cầu giáo án, đề kiểm tra..."></textarea><button id="btsend">Gửi ✈️</button></div>
+          <div id="tiarea"><textarea id="tinput" rows="1" placeholder="Yêu cầu giáo án, đề kiểm tra..."></textarea><button id="btsend">Gửi <i class="ti ti-send" style="vertical-align:-2px"></i></button></div>
         </div>
         <!-- SP2: Promo (admin) -->
         <div class="sp" id="sp2">
@@ -870,11 +895,11 @@ input[type=file]#cfi{display:none}
     <div class="panel" id="p4">
       <div id="gpanel">
         <div id="game-menu">
-          <div style="margin-bottom:18px"><div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)">🎮 Games học tập</div><div style="font-size:13px;color:var(--muted)">Chọn trò chơi và bắt đầu học!</div></div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
-            <div class="game-card" onclick="startKahoot()"><div style="font-size:44px;margin-bottom:12px">🧠</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)" id="game1-name">Quiz Battle</div><div style="font-size:12px;color:var(--muted)" id="game1-desc">Trả lời câu hỏi trắc nghiệm AI tạo ra</div><div class="game-badge">✅ Sẵn sàng</div></div>
-            <div class="game-card" onclick="startSpeed()"><div style="font-size:44px;margin-bottom:12px">⚡</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)" id="game2-name">Speed Race</div><div style="font-size:12px;color:var(--muted)" id="game2-desc">Điền đáp án nhanh nhất có thể!</div><div class="game-badge">✅ Sẵn sàng</div></div>
-            <div class="game-card" onclick="startFlip()"><div style="font-size:44px;margin-bottom:12px">🃏</div><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)" id="game3-name">Flashcard Flip</div><div style="font-size:12px;color:var(--muted)" id="game3-desc">Lật thẻ xem đáp án. Học hiệu quả!</div><div class="game-badge">✅ Sẵn sàng</div></div>
+          <div style="margin-bottom:18px"><div style="font-size:20px;font-weight:900;margin-bottom:4px;color:var(--navy)">Games</div><div style="font-size:13px;color:var(--muted)">Chọn trò chơi và bắt đầu học!</div></div>
+          <div style="margin-bottom:20px">
+            <div class="game-row" onclick="startKahoot()"><div class="game-ico" style="background:#E1F5EE"><i class="ti ti-brain" style="color:#00B4A6"></i></div><div style="flex:1"><div style="font-weight:600;font-size:14px;color:var(--navy)" id="game1-name">Quiz Battle</div><div style="font-size:12px;color:var(--muted)" id="game1-desc">Trả lời câu hỏi trắc nghiệm AI tạo ra</div></div><i class="ti ti-player-play" style="font-size:22px;color:#00B4A6"></i></div>
+            <div class="game-row" onclick="startSpeed()"><div class="game-ico" style="background:#EEF2FF"><i class="ti ti-bolt" style="color:#7B8CDE"></i></div><div style="flex:1"><div style="font-weight:600;font-size:14px;color:var(--navy)" id="game2-name">Speed Race</div><div style="font-size:12px;color:var(--muted)" id="game2-desc">Điền đáp án nhanh nhất có thể!</div></div><i class="ti ti-player-play" style="font-size:22px;color:#7B8CDE"></i></div>
+            <div class="game-row" onclick="startFlip()"><div class="game-ico" style="background:#E1F5EE"><i class="ti ti-cards" style="color:#00B4A6"></i></div><div style="flex:1"><div style="font-weight:600;font-size:14px;color:var(--navy)" id="game3-name">Flashcard Flip</div><div style="font-size:12px;color:var(--muted)" id="game3-desc">Lật thẻ xem đáp án. Học hiệu quả!</div></div><i class="ti ti-player-play" style="font-size:22px;color:#00B4A6"></i></div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;backdrop-filter:var(--blur2)">
             <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)">⚙️ Cài đặt</div>
@@ -1175,6 +1200,22 @@ function toggleSidebar(){
   sb.className=sidebarOpen?'':'collapsed';
 }
 
+function initJoinStars(){
+  var c=document.getElementById('join-stars'); if(!c||c._init) return; c._init=true;
+  var ctx=c.getContext('2d');
+  function rs(){var p=c.parentElement; c.width=p.offsetWidth; c.height=p.offsetHeight;} rs();
+  window.addEventListener('resize',rs);
+  var stars=[]; for(var i=0;i<40;i++)stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.3+0.3,ph:Math.random()*6.28,sp:0.3+Math.random()*0.5,teal:Math.random()<0.5});
+  var last=null;
+  function frame(ts){ if(!last)last=ts; var dt=(ts-last)/1000; last=ts;
+    ctx.clearRect(0,0,c.width,c.height);
+    stars.forEach(function(s){ s.ph+=dt*s.sp; var a=0.2+0.5*Math.abs(Math.sin(s.ph));
+      ctx.beginPath(); ctx.arc(s.x*c.width,s.y*c.height,s.r,0,6.28);
+      ctx.fillStyle=(s.teal?'rgba(0,180,166,':'rgba(123,140,222,')+a+')'; ctx.fill(); });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
 function buildSidebar(){
   var nav=document.getElementById('side-nav');
   function row(icon,label,panel){
@@ -1221,7 +1262,7 @@ function showPanel(n){
   if(n===3)loadFlashcards();
   if(n===4){setTimeout(function(){backToMenu();},50);}
   if(n===2)loadTClasses();
-  if(n===1){if(urole==='student'||urole==='admin')loadSClasses();}
+  if(n===1){if(urole==='student'||urole==='admin')loadSClasses(); if(typeof initJoinStars==='function') initJoinStars();}
   if(n===6)loadMemory();
   if(n===5){ loadClassesIntoSelector(); examStep=1; if(typeof examRender==="function") examRender(); }
 }
@@ -1683,7 +1724,7 @@ async function loadSClasses(){
     var res=await fetch(API+'/classroom/my',{headers:ah()});var data=await res.json();
     var g=document.getElementById('sgrid');g.style.display='';var list=data.classrooms||[];
     if(!list.length){g.innerHTML='<div class="ebox">'+L('sempty')+'</div>';return;}
-    g.innerHTML=list.map(function(c){return '<div class="ccard" id="sc-'+c.id+'" '+((urole==='teacher'||urole==='admin')?'style="cursor:pointer" onclick="openClassExams(\''+c.id+'\')"':'')+'><div class="csub">'+esc(c.subject)+' · '+c.grade+'</div><div class="cname">'+esc(c.name)+'</div><div class="ctch">👩‍🏫 '+esc(c.teacher_name||L('tch'))+'</div><div class="ccode">🔑 '+esc(c.code)+'</div></div>';}).join('');
+    g.innerHTML=list.map(function(c){return '<div class="ccard" id="sc-'+c.id+'" '+((urole==='teacher'||urole==='admin')?'style="cursor:pointer" onclick="openClassExams(\''+c.id+'\')"':'')+'><div class="csub">'+esc(c.subject)+' · '+c.grade+'</div><div class="cname">'+esc(c.name)+'</div><div class="ctch"><i class="ti ti-user" style="font-size:13px;vertical-align:-2px"></i> '+esc(c.teacher_name||L('tch'))+'</div><div class="ccode"><i class="ti ti-key" style="font-size:13px;vertical-align:-2px"></i> '+esc(c.code)+'</div></div>';}).join('');
     list.forEach(function(c){
       var card = document.getElementById('sc-'+c.id);
       if((urole!=='teacher'&&urole!=='admin')&&card) loadClassroomExams(c.id, card);
@@ -1700,20 +1741,18 @@ async function loadSClasses(){
     var res=await fetch(API+'/exam/my',{headers:ah()});
     var data=await res.json();
     var exams=(data.exams||[]).filter(function(e){ return String(e.classroom_id)===String(classId); });
-    var html='<div style="margin-bottom:14px"><button onclick="loadSClasses()" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
-    html+='<div class="stitle">📝 Exams for this class</div>';
+    var html='<button class="flow-back" onclick="loadSClasses()"><i class="ti ti-arrow-left"></i> Back to classes</button>';
+    html+='<div class="stitle">Exams for this class</div>';
     if(!exams.length){
       html+='<div class="ebox">No exams assigned to this class yet.</div>';
     } else {
       html+=exams.map(function(e){
-        var statusColor=e.status==='active'?'rgba(16,185,129,0.8)':e.status==='closed'?'rgba(239,68,68,0.7)':'rgba(255,255,255,0.4)';
-        var statusLabel=e.status==='active'?'🟢 Live':e.status==='closed'?'🔒 Closed':'📋 Draft';
-        return '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:10px;cursor:pointer" onclick="openExamStudents('+e.id+')">'
-          +'<div style="display:flex;align-items:flex-start;gap:10px">'
-          +'<div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--text)">'+esc(e.title)+'</div>'
-          +'<div style="font-size:12px;color:var(--muted);margin-top:4px">'+esc(e.subject)+' · Grade '+e.grade+' · '+e.total_points+' pts · Code: '+e.code+'</div></div>'
-          +'<span style="font-size:12px;font-weight:600;color:'+statusColor+'">'+statusLabel+'</span></div>'
-          +'<div style="margin-top:10px;font-size:12px;color:var(--primary)">👥 Click to see students & grade →</div></div>';
+        var pillClass=e.status==='active'?'pill-live':e.status==='closed'?'pill-closed':'pill-draft';
+        var statusLabel=e.status==='active'?'Live':e.status==='closed'?'Closed':'Draft';
+        return '<div class="flow-row" onclick="openExamStudents('+e.id+')">'
+          +'<div><div style="font-size:14px;font-weight:600;color:var(--navy)">'+esc(e.title)+'</div>'
+          +'<div style="font-size:12px;color:var(--muted);margin-top:3px">'+esc(e.subject)+' · Grade '+e.grade+' · '+e.total_points+' pts · '+e.code+'</div></div>'
+          +'<span class="'+pillClass+'">'+statusLabel+'</span></div>';
       }).join('');
     }
     g.innerHTML=html;
@@ -1729,20 +1768,22 @@ async function loadSClasses(){
     var data=await res.json();
     var subs=data.submissions||[];
     var examTitle=data.exam?data.exam.title:'Exam';
-    var html='<div style="margin-bottom:14px"><button onclick="openClassExams(window._gradeClassId)" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to classes</button></div>';
-    html+='<div class="stitle">👥 '+esc(examTitle)+' — Students</div>';
+    var html='<button class="flow-back" onclick="openClassExams(window._gradeClassId)"><i class="ti ti-arrow-left"></i> Back to exams</button>';
+    html+='<div class="stitle">'+esc(examTitle)+' — students</div>';
     if(!subs.length){
       html+='<div class="ebox">No students have taken this exam yet.</div>';
     } else {
       html+=subs.map(function(s){
         var name=s.student_name||s.guest_name||'Anonymous';
-        var statusColor=s.status==='graded'?'rgba(16,185,129,0.8)':s.status==='submitted'?'rgba(59,130,246,0.8)':'rgba(123,140,222,0.8)';
-        var statusLabel=s.status==='graded'?'✅ Graded':s.status==='submitted'?'📝 Submitted':'⏳ In Progress';
+        var inits=name.trim().split(/\s+/).map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+        var pillClass=s.status==='graded'?'pill-graded':'pill-ungraded';
+        var statusLabel=s.status==='graded'?'Graded':s.status==='submitted'?'Ungraded':'In progress';
         var canGrade=(s.status==='submitted'||s.status==='graded');
-        return '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">'
-          +'<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">'+esc(name)+'</div>'
-          +'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+statusLabel+' · '+(s.total_score||0)+'/'+s.max_score+' pts</div></div>'
-          +(canGrade?'<button onclick="openGrading('+s.id+')" style="padding:7px 16px;border-radius:8px;background:rgba(0,180,166,0.15);border:1px solid rgba(0,180,166,0.3);color:rgba(0,150,138,0.95);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Grade →</button>':'<span style="font-size:12px;color:var(--muted)">Not submitted</span>')
+        return '<div class="flow-row"'+(canGrade?' onclick="openGrading('+s.id+')"':' style="cursor:default"')+'>'
+          +'<div style="display:flex;align-items:center;gap:10px"><div class="savatar">'+esc(inits)+'</div>'
+          +'<div><div style="font-size:14px;font-weight:600;color:var(--navy)">'+esc(name)+'</div>'
+          +'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+(s.total_score||0)+' / '+s.max_score+' pts</div></div></div>'
+          +(canGrade?'<span class="'+pillClass+'">'+statusLabel+'</span>':'<span style="font-size:12px;color:var(--muted)">Not submitted</span>')
           +'</div>';
       }).join('');
     }
@@ -1765,11 +1806,11 @@ async function loadSClasses(){
     var answers=sub.answers||[];
     var name=sub.student_name||sub.guest_name||'Anonymous';
     window._gradeSub=sub; window._gradeScores={};
-    var html='<div style="margin-bottom:14px"><button onclick="openExamStudents(window._gradeExamId)" style="padding:6px 14px;border-radius:8px;background:var(--card2);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to students</button></div>';
-    html+='<div class="stitle">✏️ Grading: '+esc(name)+'</div>';
+    var html='<button class="flow-back" onclick="openExamStudents(window._gradeExamId)"><i class="ti ti-arrow-left"></i> Back to students</button>';
+    html+='<div class="stitle">Grading: '+esc(name)+'</div>';
     var qNum=0;
     (questions.sections||[]).forEach(function(section){
-      html+='<div style="font-size:13px;font-weight:700;color:var(--primary);margin:14px 0 8px">'+esc(section.label||section.type)+'</div>';
+      html+='<div style="font-size:11px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px">'+esc(section.label||section.type)+'</div>';
       (section.questions||[]).forEach(function(q){
         qNum++;
         var sc=aiScores.find(function(a){ return a.id===q.id; })||{};
@@ -1779,17 +1820,17 @@ async function loadSClasses(){
         var maxP=q.points||1;
         window._gradeScores[q.id]=aiScore;
         var correct=q.answer!==undefined?q.answer:(sc.correctAnswer||'');
-        html+='<div style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:10px">'
-          +'<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">Q'+q.id+'. '+esc(q.question)+'</div>'
-          +'<div style="font-size:13px;color:var(--muted);margin-bottom:4px">Student answer: <span style="color:var(--text)">'+esc(String(stuVal))+'</span></div>'
-          +(correct!==''?'<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Correct answer: <span style="color:rgba(16,185,129,0.9)">'+esc(String(correct))+'</span></div>':'')
-          +'<div style="display:flex;align-items:center;gap:8px"><label style="font-size:13px;color:var(--muted)">Score:</label>'
-          +'<input type="number" min="0" max="'+maxP+'" value="'+aiScore+'" onchange="window._gradeScores['+q.id+']=parseFloat(this.value)||0" style="width:60px;padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--card);color:var(--text);font-family:var(--font);font-size:13px"/>'
-          +'<span style="font-size:13px;color:var(--muted)">/ '+maxP+' pts</span></div>'
+        html+='<div style="background:#fff;border:0.5px solid #e3e6f3;padding:14px;margin-bottom:8px">'
+          +'<div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:8px">Q'+q.id+'. '+esc(q.question)+'</div>'
+          +'<div style="font-size:13px;color:var(--muted);margin-bottom:4px">Student answer: <span style="color:var(--navy)">'+esc(String(stuVal))+'</span></div>'
+          +(correct!==''?'<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Correct answer: <span style="color:#0F6E56;font-weight:600">'+esc(String(correct))+'</span></div>':'')
+          +'<div style="display:flex;align-items:center;gap:8px"><label style="font-size:12px;color:var(--muted)">Score</label>'
+          +'<input type="number" min="0" max="'+maxP+'" value="'+aiScore+'" onchange="window._gradeScores['+q.id+']=parseFloat(this.value)||0" style="width:60px;padding:7px 8px;border:0.5px solid var(--teal);background:#fafffe;color:var(--navy);font-family:var(--font);font-size:13px;font-weight:600;text-align:center;outline:none"/>'
+          +'<span style="font-size:12px;color:var(--muted)">/ '+maxP+' pts</span></div>'
           +'</div>';
       });
     });
-    html+='<button onclick="saveGrades('+subId+')" style="margin-top:8px;padding:11px 24px;border-radius:10px;background:linear-gradient(135deg,rgba(16,185,129,0.7),rgba(5,150,105,0.6));border:1px solid rgba(16,185,129,0.4);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">💾 Save Grades</button>';
+    html+='<button onclick="saveGrades('+subId+')" style="margin-top:10px;padding:12px 26px;background:var(--teal);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-device-floppy" style="vertical-align:-2px"></i> Save grades</button>';
     g.innerHTML=html;
   }catch(e){ g.innerHTML='<div class="ebox">Failed to load: '+e.message+'</div>'; }
 }
@@ -1885,20 +1926,43 @@ async function loadFlashcards(){
   }catch(e){}
 }
 
+var _fcCards=[]; var _fcIdx=0; var _fcFlipped=false;
 function renderFlashcards(cards,prepend){
-  var grid=document.getElementById('fcgrid');
-  var html=cards.map(function(c){
-    return '<div class="fc-card" id="fc-'+c.id+'" onclick="flipCard(this)">'+
-      '<button class="fc-del" onclick="event.stopPropagation();deleteFlashcard(\''+c.id+'\')">✕</button>'+
-      '<div class="fc-front"><div class="fc-label">❓ Question</div><div class="fc-q">'+esc(c.question)+'</div><div class="fc-flip-hint">Tap to reveal answer</div></div>'+
-      '<div class="fc-back"><div class="fc-label">✅ Answer</div><div class="fc-a">'+esc(c.answer)+'</div>'+(c.hint?'<div class="fc-hint">💡 '+esc(c.hint)+'</div>':'')+'</div>'+
-    '</div>';
-  }).join('');
-  if(prepend){grid.innerHTML=html+grid.innerHTML;}else{grid.innerHTML=html;}
+  if(prepend){ _fcCards=(cards||[]).concat(_fcCards); } else { _fcCards=cards||[]; }
+  _fcIdx=0; _fcFlipped=false;
+  fcStudyRender();
 }
+function fcStudyRender(){
+  var grid=document.getElementById('fcgrid');
+  if(!_fcCards.length){ grid.innerHTML='<div class="ebox">No flashcards yet. Generate some above!</div>'; return; }
+  if(_fcIdx>=_fcCards.length)_fcIdx=_fcCards.length-1;
+  var c=_fcCards[_fcIdx];
+  var dots=_fcCards.map(function(_,i){ return '<span style="width:'+(i===_fcIdx?'18px':'6px')+';height:6px;border-radius:3px;background:'+(i===_fcIdx?'var(--teal)':'#d5d9ec')+';display:inline-block;transition:all .15s"></span>'; }).join('');
+  var face=_fcFlipped
+    ? '<div style="font-size:11px;color:#5DCAA5;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Answer</div><div style="font-size:20px;font-weight:700;color:#fff;text-align:center;line-height:1.4">'+esc(c.answer)+'</div>'+(c.hint?'<div style="font-size:12px;color:#9da3c9;margin-top:10px">'+esc(c.hint)+'</div>':'')
+    : '<div style="font-size:11px;color:#7B8CDE;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Question</div><div style="font-size:20px;font-weight:700;color:#fff;text-align:center;line-height:1.4">'+esc(c.question)+'</div><div style="font-size:11px;color:#9da3c9;margin-top:12px"><i class="ti ti-hand-finger" style="font-size:12px;vertical-align:-1px"></i> tap to flip</div>';
+  grid.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+      +'<span style="font-size:13px;color:var(--muted)">Card '+(_fcIdx+1)+' / '+_fcCards.length+'</span>'
+      +'<i class="ti ti-trash" title="Delete" style="cursor:pointer;color:#9da3c9" onclick="deleteFlashcard(\''+c.id+'\')"></i>'
+    +'</div>'
+    +'<div onclick="fcFlip()" style="background:var(--navy);min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;cursor:pointer;position:relative;overflow:hidden">'
+      +'<canvas id="fc-stars" style="position:absolute;inset:0;width:100%;height:100%;opacity:.4;pointer-events:none"></canvas>'
+      +'<div style="position:relative;display:flex;flex-direction:column;align-items:center">'+face+'</div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:center;gap:6px;margin:14px 0">'+dots+'</div>'
+    +'<div style="display:flex;justify-content:space-between">'
+      +'<button class="flow-back" style="margin:0" onclick="fcPrev()"><i class="ti ti-arrow-left"></i> Prev</button>'
+      +'<button style="padding:9px 20px;background:var(--teal);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)" onclick="fcNext()">Next <i class="ti ti-arrow-right" style="vertical-align:-2px"></i></button>'
+    +'</div>';
+  (function(){var c=document.getElementById('fc-stars');if(!c)return;var ctx=c.getContext('2d');var p=c.parentElement;c.width=p.offsetWidth;c.height=p.offsetHeight;var st=[];for(var i=0;i<30;i++)st.push({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.3,a:Math.random()*0.5+0.2,teal:Math.random()<0.5});st.forEach(function(s){ctx.beginPath();ctx.arc(s.x*c.width,s.y*c.height,s.r,0,6.28);ctx.fillStyle=(s.teal?'rgba(0,180,166,':'rgba(123,140,222,')+s.a+')';ctx.fill();});})();
+}
+function fcFlip(){ _fcFlipped=!_fcFlipped; fcStudyRender(); }
+function fcPrev(){ if(_fcIdx>0){_fcIdx--;_fcFlipped=false;fcStudyRender();} }
+function fcNext(){ if(_fcIdx<_fcCards.length-1){_fcIdx++;_fcFlipped=false;fcStudyRender();} }
 
 function flipCard(el){el.classList.toggle('flipped');}
-async function deleteFlashcard(id){try{await fetch(API+'/flashcards/'+id,{method:'DELETE',headers:ah()});var el=document.getElementById('fc-'+id);if(el)el.remove();}catch(e){}}
+async function deleteFlashcard(id){try{await fetch(API+'/flashcards/'+id,{method:'DELETE',headers:ah()});_fcCards=_fcCards.filter(function(c){return String(c.id)!==String(id);});if(_fcIdx>=_fcCards.length)_fcIdx=Math.max(0,_fcCards.length-1);_fcFlipped=false;fcStudyRender();}catch(e){}}
 
 function showUpgTab(n){
   document.getElementById('upg-plans').style.display=n===0?'block':'none';
@@ -2744,9 +2808,19 @@ async function loadMemory(){
       var q = e.questions;
       var qCount = 0;
       if(q&&q.sections) q.sections.forEach(function(s){qCount+=s.questions.length;});
-      var statusColor = e.status==='active'?'rgba(110,231,183,0.9)':e.status==='closed'?'rgba(252,165,165,0.9)':'rgba(180,83,9,0.9)';
-      var statusLabel = e.status==='active'?'🟢 Live':e.status==='closed'?'🔴 Closed':'📋 Draft';
-      return '<div class="tccard"><div class="tchdr"><div><div class="tcn">'+esc(e.title)+'</div><div class="tcm">'+esc(e.subject)+' · Grade '+e.grade+' · '+qCount+' questions · '+e.total_points+' pts</div></div><span class="tcbadge" style="color:'+statusColor+'">'+statusLabel+'</span></div><div class="tcst"><span style="font-family:monospace;color:var(--primary)">'+e.code+'</span>'+(e.status==='active'?'<button class="tcvb" onclick="viewLiveResults('+e.id+')">📊 Live Results</button>':'')+'<button class="tcvb" onclick="exportMemoryExam('+e.id+')">📄 Export</button><button class="tcvb" style="color:rgba(252,165,165,0.9)" onclick="deleteMemoryExam('+e.id+')">🗑️</button></div></div>';
+      var pillClass = e.status==='active'?'pill-live':e.status==='closed'?'pill-closed':'pill-draft';
+      var statusLabel = e.status==='active'?'Live':e.status==='closed'?'Closed':'Draft';
+      return '<div class="mem-row">'
+        +'<div style="min-width:0;flex:1">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:600;color:var(--navy);font-size:14px">'+esc(e.title)+'</span><span class="'+pillClass+'">'+statusLabel+'</span></div>'
+        +'<div style="font-size:12px;color:var(--muted);margin-top:3px">'+esc(e.subject)+' · Grade '+e.grade+' · '+qCount+' Q · <span style="color:var(--teal);font-weight:600">'+e.code+'</span></div>'
+        +'</div>'
+        +'<div class="mem-acts">'
+        +(e.status==='active'?'<i class="ti ti-chart-bar" title="Live results" onclick="viewLiveResults('+e.id+')"></i>':'')
+        +'<i class="ti ti-download" title="Export" onclick="exportMemoryExam('+e.id+')"></i>'
+        +'<i class="ti ti-trash" title="Delete" onclick="deleteMemoryExam('+e.id+')"></i>'
+        +'</div>'
+        +'</div>';
     }).join('');
   }catch(e){document.getElementById('memory-list').innerHTML='<div class="ebox">Failed to load</div>';}
 }
