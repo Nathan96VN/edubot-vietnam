@@ -1957,6 +1957,12 @@ GEOMETRY:
 - sector (circle): { "kind":"sector","angle":60,"radiusLabel":"r = 5 cm" }
 - angleline (angles on a straight line): { "kind":"angleline","rayAngle":52,"rightLabel":"x","leftLabel":"130°" }
 - coordshape (polygon on a grid): { "kind":"coordshape","vertices":[[-1,2],[2,2],[2,-1],[-1,-1]],"xRange":[-4,4],"yRange":[-4,4] }
+SCIENCE DIAGRAMS (black-and-white, for Science questions):
+- circuit (electric circuit): { "kind":"circuit","components":[{"type":"cell","label":"cell"},{"type":"switch","label":"switch"},{"type":"bulb","label":"lamp"}] }  (component types: cell, bulb, switch, resistor, ammeter, voltmeter; up to 4 components placed around a loop)
+- foodchain (energy flow): { "kind":"foodchain","organisms":["grass","grasshopper","frog","snake"] }  (arrows show energy flow; wraps to next row automatically)
+- forces (arrows on an object): { "kind":"forces","objectLabel":"box","forces":[{"dir":"up","label":"lift"},{"dir":"down","label":"weight"},{"dir":"left","label":"drag"},{"dir":"right","label":"thrust"}] }
+- cell (biology cell): { "kind":"cell","cellType":"plant","labels":["cell wall","cell membrane","nucleus","cytoplasm","vacuole","chloroplast"] }  (cellType: "plant" or "animal")
+- apparatus (lab setup): { "kind":"apparatus","setup":"beaker_tripod" }  (setup: "beaker_tripod" or "filtration")
 Choose the kind that matches the topic: graphs for functions/algebra, bar/pie/scatter/boxplot for statistics & data, numberline for inequalities, trig for trigonometry, triangle/sector/angleline/coordshape for geometry. For a Math exam on these topics, include at least one relevant visual.
 
 Respond ONLY with valid JSON, no markdown, no explanation:
@@ -2091,6 +2097,83 @@ Respond ONLY with valid JSON, no markdown, no explanation:
     res.json({ exam: result.rows[0], examData });
   } catch (e) {
     console.error('Exam generate error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CAMBRIDGE CHECKPOINT MODULE
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/checkpoint', (req, res) => res.sendFile(__dirname + '/public/checkpoint.html'));
+
+app.post('/checkpoint/generate', authenticate, aiLimiter, async (req, res) => {
+  try {
+    const { subject, stage, strands, topic, marks, includeDiagrams } = req.body;
+    const userId = req.user.id;
+    const user = await pool.query('SELECT * FROM users WHERE id=$1', [userId]);
+    if (!user.rows[0] || (user.rows[0].role !== 'teacher' && user.rows[0].role !== 'admin')) {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
+
+    const subj = (subject || 'Science');
+    const stageLabel = stage ? ('Stage ' + stage) : 'Stage 8';
+    const strandLabel = (strands && strands.length) ? strands.join(', ') : 'mixed strands';
+    const totalMarks = marks || 40;
+
+    // Subject-specific command words & guidance (Cambridge Checkpoint style)
+    let subjectGuide = '';
+    if (/sci/i.test(subj)) {
+      subjectGuide = `Use Cambridge Checkpoint Science command words: State, Describe, Explain, Suggest, Identify, Calculate. Test knowledge AND application. Include some questions on scientific enquiry / fair tests (variables, predictions). Strands: ${strandLabel} (Biology, Chemistry, Physics, Earth & Space).`;
+    } else if (/math/i.test(subj)) {
+      subjectGuide = `Use Cambridge Checkpoint Mathematics command words: Work out, Calculate, Find, Solve, Show that. Award method marks for working. Strands: ${strandLabel} (Number, Algebra, Geometry & Measure, Statistics & Probability). Prefer numeric/auto-checkable answers where possible.`;
+    } else {
+      subjectGuide = `Use Cambridge Checkpoint English skills: reading comprehension of a provided passage, writing, and grammar/usage. Strands: ${strandLabel}.`;
+    }
+
+    const diagramNote = includeDiagrams
+      ? 'Where a question benefits from a diagram, add a "visual" field. For Science use circuit, foodchain, forces, cell, apparatus; for Math use quadratic, linear, bar, pie, triangle, etc. Keep diagrams accurate and clearly labelled.'
+      : 'Do not include visuals.';
+
+    const prompt = `You are an expert Cambridge Lower Secondary Checkpoint examiner creating a ${stageLabel} ${subj} practice paper worth ${totalMarks} marks.
+${topic ? 'Focus on this topic: ' + topic + '.' : 'Cover a representative mix of the chosen strands.'}
+${subjectGuide}
+${diagramNote}
+
+Make it authentic to Cambridge Checkpoint: clear command words, appropriate difficulty for ${stageLabel}, mark allocations that add up to about ${totalMarks}, and a complete mark scheme (answers + brief marking notes) for every question.
+
+Use these question "type" codes: mcq, truefalse, fillinblank, shortanswer, numeric, labeldiagram, matching, comprehension.
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "title": "Cambridge Checkpoint ${subj} — ${stageLabel}",
+  "instructions": "brief instructions for students",
+  "sections": [
+    { "type": "shortanswer", "label": "Section A", "questions": [ { "id": 1, "question": "...", "answer": "...", "points": 2, "explanation": "marking notes" } ] }
+  ]
+}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    let text = response.content[0].text.replace(/```json|```/g, '').trim();
+    const examData = JSON.parse(text);
+
+    let totalPoints = 0;
+    examData.sections.forEach(s => s.questions.forEach(q => { totalPoints += q.points || 1; }));
+    const code = 'CP-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+
+    const result = await pool.query(
+      `INSERT INTO exams (teacher_id, title, subject, grade, context, purpose, difficulty, adapted_for_weak, time_limit, show_answers, questions, total_points, code, status)
+       VALUES ($1,$2,$3,$4,'international','exam','standard',false,60,true,$5,$6,$7,'draft') RETURNING *`,
+      [userId, examData.title, subj, stage || null, JSON.stringify(examData), totalPoints, code]
+    );
+
+    res.json({ exam: result.rows[0], examData });
+  } catch (e) {
+    console.error('Checkpoint generate error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
