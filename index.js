@@ -2131,15 +2131,24 @@ app.post('/checkpoint/generate', authenticate, aiLimiter, async (req, res) => {
     }
 
     const diagramNote = includeDiagrams
-      ? 'Where a question benefits from a diagram, add a "visual" field. For Science use circuit, foodchain, forces, cell, apparatus; for Math use quadratic, linear, bar, pie, triangle, etc. Keep diagrams accurate and clearly labelled.'
-      : 'Do not include visuals.';
+      ? `DIAGRAMS ARE REQUIRED. You MUST include at least 3 questions that have a "visual" field. A question about circuits MUST include a circuit visual; a question about cells MUST include a cell visual; a question about food chains MUST include a foodchain visual. Add the "visual" field to the question object. Use these EXACT formats:
+- Circuit: "visual": { "kind":"circuit","components":[{"type":"cell","label":"cell"},{"type":"switch","label":"switch"},{"type":"bulb","label":"lamp"}] } (types: cell, bulb, switch, resistor, ammeter, voltmeter)
+- Food chain: "visual": { "kind":"foodchain","organisms":["grass","grasshopper","frog","snake"] }
+- Forces: "visual": { "kind":"forces","objectLabel":"box","forces":[{"dir":"up","label":"lift"},{"dir":"down","label":"weight"}] }
+- Cell: "visual": { "kind":"cell","cellType":"plant","labels":["cell wall","nucleus","cytoplasm","vacuole"] } (cellType: plant or animal)
+- Apparatus: "visual": { "kind":"apparatus","setup":"beaker_tripod" } (setup: beaker_tripod or filtration)
+- Math graphs/charts: quadratic, linear, bar, pie, triangle (same formats as a normal exam).
+Make the question text refer to the diagram (e.g. "The circuit diagram shows...", "Use the diagram to..."). A "labeldiagram" type question should always carry a "visual" plus a "labels" array.`
+      : 'Do not include any "visual" fields.';
 
     const prompt = `You are an expert Cambridge Lower Secondary Checkpoint examiner creating a ${stageLabel} ${subj} practice paper worth ${totalMarks} marks.
 ${topic ? 'Focus on this topic: ' + topic + '.' : 'Cover a representative mix of the chosen strands.'}
 ${subjectGuide}
 ${diagramNote}
 
-Make it authentic to Cambridge Checkpoint: clear command words, appropriate difficulty for ${stageLabel}, mark allocations that add up to about ${totalMarks}, and a complete mark scheme (answers + brief marking notes) for every question.
+Make it authentic to Cambridge Checkpoint: clear command words, appropriate difficulty for ${stageLabel}, and a complete mark scheme (answers + brief marking notes) for every question.
+
+CRITICAL — TOTAL MARKS: The marks of all questions MUST add up to EXACTLY ${totalMarks}. Count as you go. Use a mix of mark values (1-mark recall questions and 2-4 mark "explain"/multi-part questions) so the paper reaches exactly ${totalMarks} marks. Do not stop early and do not exceed ${totalMarks}. For a ${totalMarks}-mark paper, expect roughly ${Math.round(totalMarks*0.7)}-${totalMarks} questions depending on mark values.
 
 Use these question "type" codes: mcq, truefalse, fillinblank, shortanswer, numeric, labeldiagram, matching, comprehension.
 
