@@ -401,6 +401,27 @@ input[type=file]#cfi{display:none}
 .bnav-item .bni{font-size:20px}
 .bnav-item.on{color:var(--teal)}
 .bnav-item:hover{color:var(--navy)}
+
+/* ── DASHBOARD HEADER + TILES (Step 2) ── */
+.dash-head{margin-bottom:20px}
+.dash-name{font-size:28px;font-weight:900;color:var(--navy);line-height:1.1}
+.dash-name .dash-accent{color:var(--teal)}
+.dash-role{font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.tile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px}
+.dtile{padding:16px;min-height:84px;cursor:pointer;position:relative;overflow:hidden;transition:transform .12s,box-shadow .12s;display:flex;flex-direction:column;justify-content:flex-start}
+.dtile:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(30,27,75,0.12)}
+.dtile i{font-size:20px}
+.dtile-l{font-weight:600;font-size:13px;margin-top:6px}
+.dtile-navy{background:var(--navy)}
+.dtile-navy i{color:var(--teal)}
+.dtile-navy .dtile-l{color:#fff}
+.dtile-teal{background:var(--teal)}
+.dtile-teal i,.dtile-teal .dtile-l{color:#fff}
+.dtile-white{background:#fff;border:0.5px solid #e3e6f3}
+.dtile-white i{color:var(--secondary)}
+.dtile-white .dtile-l{color:var(--navy)}
+.dtile-spark{position:absolute;top:-6px;right:-6px;width:46px;height:46px;background:radial-gradient(circle at 70% 30%,rgba(0,180,166,0.35),transparent 60%);pointer-events:none}
+@media(max-width:760px){.tile-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -487,6 +508,29 @@ input[type=file]#cfi{display:none}
 
     <!-- TAB 2: TEACHER DASHBOARD -->
     <div class="panel" id="p2">
+      <div class="dash-head">
+        <div class="dash-name"><span id="dash-fname">Nathan</span> <span id="dash-lname" class="dash-accent">Steyn</span></div>
+        <div class="dash-role" id="dash-role">Teacher workspace</div>
+      </div>
+      <div class="tile-grid">
+        <div class="dtile dtile-navy" onclick="showPanel(0)">
+          <span class="dtile-spark"></span>
+          <i class="ti ti-message-circle"></i>
+          <div class="dtile-l">Ask Stella</div>
+        </div>
+        <div class="dtile dtile-teal" onclick="showPanel(5)">
+          <i class="ti ti-file-text"></i>
+          <div class="dtile-l">Create exam</div>
+        </div>
+        <div class="dtile dtile-white" onclick="showPanel(3)">
+          <i class="ti ti-cards"></i>
+          <div class="dtile-l">Flashcards</div>
+        </div>
+        <div class="dtile dtile-white" onclick="showPanel(4)">
+          <i class="ti ti-device-gamepad-2"></i>
+          <div class="dtile-l">Games</div>
+        </div>
+      </div>
       <div id="tpanel">
         <div class="ttabs">
           <button class="stb on" id="stb0">🏫 Lớp học</button>
@@ -1359,6 +1403,15 @@ function showApp(){
   document.getElementById('uinfo').style.display='flex';
   document.getElementById('uname').textContent=uname;
   document.getElementById('ubadge').textContent=urole==='admin'?L('adm'):urole==='teacher'?L('tch'):L('std');
+  (function(){
+    var parts=(uname||'').trim().split(/\s+/);
+    var fn=parts.shift()||uname; var ln=parts.join(' ');
+    var fEl=document.getElementById('dash-fname'); var lEl=document.getElementById('dash-lname');
+    if(fEl) fEl.textContent=fn; if(lEl) lEl.textContent=ln;
+    var rEl=document.getElementById('dash-role');
+    if(rEl){ var isT=(urole==='teacher'||urole==='admin');
+      rEl.textContent=(lang==='en')?(isT?'Teacher workspace':'Student workspace'):(isT?'Không gian giáo viên':'Không gian học sinh'); }
+  })();
   document.getElementById('ubadge').className='rbadge '+(urole==='teacher'||urole==='admin'?'rt':'rs');
   var wc=document.getElementById('wcard');if(wc)wc.remove();
   fetchCredits();
