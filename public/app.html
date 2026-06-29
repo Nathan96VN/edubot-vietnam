@@ -2245,53 +2245,439 @@ var currentExamCode = null;
 // Supported kinds: "quadratic" (y=ax^2+bx+c), "linear" (y=mx+c), "points" (plot marked points)
 // renderMathVisual(spec) -> SVG string. Exam-paper style. Pure function, no deps.
 // Supported kinds: "quadratic" (y=ax^2+bx+c), "linear" (y=mx+c), "points" (plot marked points)
+// ============================================================
+// renderMathVisual(spec) -> SVG string
+// Exam-paper style: solid black ink, light grey grid.
+// CORE RULE: text/numbers NEVER overlap curves, lines, shapes, or each other.
+//  - axis numbers live in the MARGIN (outside the plot box)
+//  - floating labels are collision-checked against drawn ink before placement
+// Pure function, no dependencies. Backward compatible: unknown/empty -> ''
+// ============================================================
 function renderMathVisual(spec){
   if(!spec || !spec.kind) return '';
-  var W=440, H=380, pad=30;
-  var xr = spec.xRange || [-6,6];
-  var yr = spec.yRange || [-6,6];
-  var x0=xr[0], x1=xr[1], y0=yr[0], y1=yr[1];
-  var plotW=W-2*pad, plotH=H-2*pad;
-  function sx(x){ return pad + (x - x0)/(x1 - x0) * plotW; }
-  function sy(y){ return pad + (y1 - y)/(y1 - y0) * plotH; }
-  var ink='#1a1a1a', grid='#e2e2e2', axis='#1a1a1a', frame='#bbbbbb';
+  var K=spec.kind;
+  // shared palette
+  var INK='#1a1a1a', GRID='#e6e6e6', FRAME='#c8c8c8';
+  // Router
+  if(K==='quadratic'||K==='linear'||K==='cubic'||K==='reciprocal'||K==='exponential'||K==='absolute'||K==='simultaneous'||K==='inequality')
+    return _mvGraph(spec, INK, GRID, FRAME);
+  if(K==='trig') return _mvTrig(spec, INK, GRID, FRAME);
+  if(K==='numberline') return _mvNumberLine(spec, INK);
+  if(K==='bar') return _mvBar(spec, INK, GRID);
+  if(K==='pie') return _mvPie(spec, INK);
+  if(K==='scatter') return _mvScatter(spec, INK, GRID);
+  if(K==='boxplot') return _mvBox(spec, INK);
+  if(K==='triangle') return _mvTriangle(spec, INK);
+  if(K==='sector') return _mvSector(spec, INK);
+  if(K==='angleline') return _mvAngleLine(spec, INK);
+  if(K==='coordshape') return _mvCoordShape(spec, INK, GRID, FRAME);
+  return '';
+}
+function _mvR(n){ return Math.round(n*100)/100; }
+
+// ---------- Core coordinate-graph renderer ----------
+function _mvGraph(spec, INK, GRID, FRAME){
+  var W=440, H=400;
+  // margins: generous left (y-numbers) and bottom (x-numbers) so labels sit OUTSIDE the plot
+  var mL=48, mR=26, mT=26, mB=46;
+  var xr=spec.xRange||[-6,6], yr=spec.yRange||[-6,6];
+  var x0=xr[0],x1=xr[1],y0=yr[0],y1=yr[1];
+  var pW=W-mL-mR, pH=H-mT-mB;
+  function sx(x){ return mL + (x-x0)/(x1-x0)*pW; }
+  function sy(y){ return mT + (y1-y)/(y1-y0)*pH; }
   var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
-  s+='<g stroke="'+grid+'" stroke-width="0.4">';
-  for(var gx=Math.ceil(x0); gx<=x1; gx++){ if(gx===0) continue; s+='<line x1="'+sx(gx).toFixed(1)+'" y1="'+pad+'" x2="'+sx(gx).toFixed(1)+'" y2="'+(H-pad)+'"/>'; }
-  for(var gy=Math.ceil(y0); gy<=y1; gy++){ if(gy===0) continue; s+='<line x1="'+pad+'" y1="'+sy(gy).toFixed(1)+'" x2="'+(W-pad)+'" y2="'+sy(gy).toFixed(1)+'"/>'; }
+
+  // grid
+  var xStep=spec.xStep||_mvNiceStep(x0,x1), yStep=spec.yStep||_mvNiceStep(y0,y1);
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var gx=Math.ceil(x0/xStep)*xStep; gx<=x1+1e-9; gx+=xStep){ if(Math.abs(gx)<1e-9)continue; s+='<line x1="'+sx(gx).toFixed(1)+'" y1="'+mT+'" x2="'+sx(gx).toFixed(1)+'" y2="'+(H-mB)+'"/>'; }
+  for(var gy=Math.ceil(y0/yStep)*yStep; gy<=y1+1e-9; gy+=yStep){ if(Math.abs(gy)<1e-9)continue; s+='<line x1="'+mL+'" y1="'+sy(gy).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(gy).toFixed(1)+'"/>'; }
   s+='</g>';
-  s+='<rect x="'+pad+'" y="'+pad+'" width="'+plotW+'" height="'+plotH+'" fill="none" stroke="'+frame+'" stroke-width="0.6"/>';
-  var hasYaxis = x0<=0 && x1>=0, hasXaxis = y0<=0 && y1>=0;
-  if(hasYaxis){ var ax=sx(0); s+='<line x1="'+ax.toFixed(1)+'" y1="'+pad+'" x2="'+ax.toFixed(1)+'" y2="'+(H-pad)+'" stroke="'+axis+'" stroke-width="1"/>';
-    s+='<polygon points="'+ax.toFixed(1)+','+(pad-6)+' '+(ax-4).toFixed(1)+','+(pad+4)+' '+(ax+4).toFixed(1)+','+(pad+4)+'" fill="'+axis+'"/>';
-    s+='<text x="'+(ax+8).toFixed(1)+'" y="'+(pad)+'" font-style="italic" font-size="15" fill="'+ink+'">y</text>'; }
-  if(hasXaxis){ var ay=sy(0); s+='<line x1="'+pad+'" y1="'+ay.toFixed(1)+'" x2="'+(W-pad)+'" y2="'+ay.toFixed(1)+'" stroke="'+axis+'" stroke-width="1"/>';
-    s+='<polygon points="'+(W-pad+6)+','+ay.toFixed(1)+' '+(W-pad-4)+','+(ay-4).toFixed(1)+' '+(W-pad-4)+','+(ay+4).toFixed(1)+'" fill="'+axis+'"/>';
-    s+='<text x="'+(W-pad+2)+'" y="'+(ay-6).toFixed(1)+'" font-style="italic" font-size="15" fill="'+ink+'">x</text>'; }
-  function fval(x){ if(spec.kind==='quadratic') return spec.a*x*x+spec.b*x+spec.c; if(spec.kind==='linear') return spec.m*x+spec.c; return null; }
-  if(spec.kind==='quadratic' || spec.kind==='linear'){
-    var d='', started=false;
-    for(var px=0; px<=plotW; px+=2){ var xv=x0+(px/plotW)*(x1-x0); var yv=fval(xv); if(yv==null||yv<y0-1||yv>y1+1){ started=false; continue; } d+=(started?'L':'M')+sx(xv).toFixed(1)+' '+sy(yv).toFixed(1)+' '; started=true; }
-    s+='<path d="'+d.trim()+'" fill="none" stroke="'+ink+'" stroke-width="1.6"/>';
-    if(spec.label){ s+='<text x="'+(W-pad-70)+'" y="'+(pad+40)+'" font-style="italic" font-size="15" fill="'+ink+'">'+spec.label+'</text>'; }
+  // frame
+  s+='<rect x="'+mL+'" y="'+mT+'" width="'+pW+'" height="'+pH+'" fill="none" stroke="'+FRAME+'" stroke-width="0.7"/>';
+
+  // axes (only if 0 in range)
+  var hasY=x0<=0&&x1>=0, hasX=y0<=0&&y1>=0;
+  if(hasY){ var ax=sx(0); s+='<line x1="'+ax.toFixed(1)+'" y1="'+mT+'" x2="'+ax.toFixed(1)+'" y2="'+(H-mB)+'" stroke="'+INK+'" stroke-width="1.1"/>'+'<polygon points="'+ax.toFixed(1)+','+(mT-6)+' '+(ax-4).toFixed(1)+','+(mT+3)+' '+(ax+4).toFixed(1)+','+(mT+3)+'" fill="'+INK+'"/>'+'<text x="'+(ax+7).toFixed(1)+'" y="'+(mT+2)+'" font-style="italic" font-size="14" fill="'+INK+'">y</text>'; }
+  if(hasX){ var ay=sy(0); s+='<line x1="'+mL+'" y1="'+ay.toFixed(1)+'" x2="'+(W-mR)+'" y2="'+ay.toFixed(1)+'" stroke="'+INK+'" stroke-width="1.1"/>'+'<polygon points="'+(W-mR+6)+','+ay.toFixed(1)+' '+(W-mR-3)+','+(ay-4).toFixed(1)+' '+(W-mR-3)+','+(ay+4).toFixed(1)+'" fill="'+INK+'"/>'+'<text x="'+(W-mR+2)+'" y="'+(ay-6).toFixed(1)+'" font-style="italic" font-size="14" fill="'+INK+'">x</text>'; }
+
+  // collect ink segments (for label collision avoidance)
+  var inkBoxes=[];
+  function fval(x){
+    switch(spec.kind){
+      case 'quadratic': return spec.a*x*x+spec.b*x+spec.c;
+      case 'linear': return spec.m*x+spec.c;
+      case 'cubic': return spec.a*x*x*x+spec.b*x*x+spec.c*x+spec.d;
+      case 'reciprocal': return x===0?null:(spec.a||1)/x;
+      case 'exponential': return Math.pow(spec.base||2,x)*(spec.a||1);
+      case 'absolute': return (spec.a||1)*Math.abs(x-(spec.h||0))+(spec.k||0);
+      default: return null;
+    }
   }
-  var marks = spec.marks || [];
-  marks.forEach(function(m){
+  // shading for inequality (drawn before curve)
+  if(spec.kind==='inequality' && spec.m!=null){
+    // region relative to line y=mx+c
+    var above = spec.region!=='below';
     var pts=[];
-    if(m.type==='vertex' && spec.kind==='quadratic'){ var vx=-spec.b/(2*spec.a); var vy=fval(vx); pts.push([vx,vy,'('+_mvRound(vx)+', '+_mvRound(vy)+')']); }
-    else if(m.type==='roots' && spec.kind==='quadratic'){ var disc=spec.b*spec.b-4*spec.a*spec.c; if(disc>=0){ var r1=(-spec.b-Math.sqrt(disc))/(2*spec.a), r2=(-spec.b+Math.sqrt(disc))/(2*spec.a); pts.push([r1,0,null]); pts.push([r2,0,null]); } }
-    else if(m.type==='point' && m.x!=null){ var yy=m.y!=null?m.y:fval(m.x); pts.push([m.x,yy,m.labelText||('('+_mvRound(m.x)+', '+_mvRound(yy)+')')]); }
+    pts.push([mL, above?mT:H-mB]);
+    for(var px=0;px<=pW;px+=6){ var xv=x0+(px/pW)*(x1-x0); var yv=spec.m*xv+spec.c; var yy=sy(Math.max(y0,Math.min(y1,yv))); pts.push([sx(xv),yy]); }
+    pts.push([W-mR, above?mT:H-mB]);
+    var dd='M'+pts.map(function(p){return p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' L ')+' Z';
+    s+='<defs><pattern id="mvhatch'+(spec._id||'')+'" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="#bdbdbd" stroke-width="0.6"/></pattern></defs>';
+    s+='<clipPath id="mvclip'+(spec._id||'')+'"><rect x="'+mL+'" y="'+mT+'" width="'+pW+'" height="'+pH+'"/></clipPath>';
+    s+='<path d="'+dd+'" fill="url(#mvhatch'+(spec._id||'')+')" clip-path="url(#mvclip'+(spec._id||'')+')"/>';
+  }
+
+  // draw curve(s)
+  function drawCurve(fn,store){
+    var d='',started=false;
+    for(var px=0;px<=pW;px+=1.5){ var xv=x0+(px/pW)*(x1-x0); var yv=fn(xv); if(yv==null||!isFinite(yv)||yv<y0-2||yv>y1+2){started=false;continue;} var X=sx(xv),Y=sy(yv); d+=(started?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' '; if(store)inkBoxes.push([X-3,Y-3,X+3,Y+3]); started=true; }
+    return '<path d="'+d.trim()+'" fill="none" stroke="'+INK+'" stroke-width="1.6"/>';
+  }
+  if(spec.kind==='simultaneous'){
+    s+=drawCurve(function(x){return spec.m1*x+spec.c1;},true);
+    s+=drawCurve(function(x){return spec.m2*x+spec.c2;},true);
+    // intersection
+    if(spec.m1!==spec.m2){ var ix=(spec.c2-spec.c1)/(spec.m1-spec.m2); var iy=spec.m1*ix+spec.c1; if(ix>=x0&&ix<=x1&&iy>=y0&&iy<=y1){ s+='<circle cx="'+sx(ix).toFixed(1)+'" cy="'+sy(iy).toFixed(1)+'" r="3.5" fill="'+INK+'"/>'; } }
+  } else if(spec.kind==='inequality'){
+    s+=drawCurve(function(x){return spec.m*x+spec.c;},true);
+  } else {
+    s+=drawCurve(fval,true);
+  }
+
+  // marks (vertex/roots/points) - dot + coordinate label placed clear of curve
+  var labelBoxes=[];
+  (spec.marks||[]).forEach(function(m){
+    var pts=[];
+    if(m.type==='vertex'&&spec.kind==='quadratic'){ var vx=-spec.b/(2*spec.a),vy=fval(vx); pts.push([vx,vy]); }
+    else if(m.type==='roots'&&spec.kind==='quadratic'){ var disc=spec.b*spec.b-4*spec.a*spec.c; if(disc>=0){ pts.push([(-spec.b-Math.sqrt(disc))/(2*spec.a),0]); pts.push([(-spec.b+Math.sqrt(disc))/(2*spec.a),0]); } }
+    else if(m.type==='point'&&m.x!=null){ pts.push([m.x, m.y!=null?m.y:fval(m.x)]); }
     pts.forEach(function(p){
-      s+='<circle cx="'+sx(p[0]).toFixed(1)+'" cy="'+sy(p[1]).toFixed(1)+'" r="3.5" fill="'+ink+'"/>';
-      if(p[2]){ var mlX=sx(p[0]), mlY=sy(p[1])+18, mlw=p[2].length*7+6; s+='<rect x="'+(mlX-mlw/2).toFixed(1)+'" y="'+(mlY-12).toFixed(1)+'" width="'+mlw+'" height="16" fill="#ffffff"/>'+'<text x="'+mlX.toFixed(1)+'" y="'+mlY.toFixed(1)+'" font-size="13" fill="'+ink+'" text-anchor="middle">'+p[2]+'</text>'; }
+      if(p[0]<x0||p[0]>x1||p[1]==null) return;
+      var cx=sx(p[0]),cy=sy(p[1]);
+      s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="3.5" fill="'+INK+'"/>';
+      var txt='('+_mvR(p[0])+', '+_mvR(p[1])+')';
+      var place=_mvPlaceLabel(cx,cy,txt.length*6.5+6,16,inkBoxes.concat(labelBoxes),mL,mT,W-mR,H-mB);
+      if(place){ labelBoxes.push(place.box); s+='<text x="'+place.x.toFixed(1)+'" y="'+place.y.toFixed(1)+'" font-size="12.5" fill="'+INK+'" text-anchor="middle">'+txt+'</text>'; }
     });
   });
-  if(hasXaxis){ for(var lx=Math.ceil(x0); lx<=x1; lx++){ if(lx===0) continue; if(lx%(spec.xStep||2)!==0) continue; var lxX=sx(lx), lxY=sy(0)+16, lw=(''+lx).length*7+4; s+='<rect x="'+(lxX-lw/2).toFixed(1)+'" y="'+(lxY-11).toFixed(1)+'" width="'+lw+'" height="15" fill="#ffffff"/>'+'<text x="'+lxX.toFixed(1)+'" y="'+lxY.toFixed(1)+'" font-size="12" fill="'+ink+'" text-anchor="middle">'+lx+'</text>'; } }
-  if(hasYaxis){ for(var ly=Math.ceil(y0); ly<=y1; ly++){ if(ly===0) continue; if(ly%(spec.yStep||2)!==0) continue; var lyX=sx(0)-12, lyY=sy(ly)+4, lyw=(''+ly).length*7+4; s+='<rect x="'+(lyX-lyw/2).toFixed(1)+'" y="'+(lyY-11).toFixed(1)+'" width="'+lyw+'" height="15" fill="#ffffff"/>'+'<text x="'+lyX.toFixed(1)+'" y="'+lyY.toFixed(1)+'" font-size="12" fill="'+ink+'" text-anchor="middle">'+ly+'</text>'; } }
+
+  // equation label - collision-checked, placed in clearest top corner/gap
+  if(spec.label){
+    var lw=spec.label.length*7+8;
+    var place=_mvPlaceLabel((mL+W-mR)/2, mT+14, lw, 18, inkBoxes.concat(labelBoxes), mL+4, mT+4, W-mR-4, H-mB-4);
+    if(place){ s+='<text x="'+place.x.toFixed(1)+'" y="'+place.y.toFixed(1)+'" font-style="italic" font-size="14" fill="'+INK+'" text-anchor="middle">'+spec.label+'</text>'; }
+  }
+
+  // AXIS NUMBERS in the MARGIN (never on the plot)
+  s+='<g font-size="12" fill="'+INK+'">';
+  if(hasX){ var ny=sy(0); var belowOK = ny < H-mB-14; // if x-axis near bottom, put nums just under axis; else in bottom margin
+    var numY = H-mB+15;
+    for(var lx=Math.ceil(x0/xStep)*xStep; lx<=x1+1e-9; lx+=xStep){ if(Math.abs(lx)<1e-9)continue; s+='<text x="'+sx(lx).toFixed(1)+'" y="'+numY.toFixed(1)+'" text-anchor="middle">'+_mvR(lx)+'</text>'; }
+  }
+  if(hasY){ var numX = mL-8;
+    for(var ly=Math.ceil(y0/yStep)*yStep; ly<=y1+1e-9; ly+=yStep){ if(Math.abs(ly)<1e-9)continue; s+='<text x="'+numX.toFixed(1)+'" y="'+(sy(ly)+4).toFixed(1)+'" text-anchor="end">'+_mvR(ly)+'</text>'; }
+  }
+  s+='</g>';
   s+='</svg>';
   return s;
 }
-function _mvRound(n){ return Math.round(n*100)/100; }
+
+// choose a "nice" step so we show ~6-10 gridlines
+function _mvNiceStep(a,b){ var span=Math.abs(b-a); var raw=span/8; var pow=Math.pow(10,Math.floor(Math.log10(raw))); var n=raw/pow; var step= n<1.5?1: n<3?2: n<7?5:10; return step*pow; }
+
+// collision-aware label placement: try candidate spots, return first clear one
+function _mvPlaceLabel(cx,cy,w,h,boxes,minX,minY,maxX,maxY){
+  // candidate anchor points (x is CENTER, y is BASELINE)
+  var cands=[
+    [cx, cy+18],            // just below point
+    [cx, cy-10],            // just above point
+    [cx+w/2+8, cy+5],       // right of point
+    [cx-w/2-8, cy+5],       // left of point
+    [cx, cy+30],            // a bit further below
+    [cx, cy-22],            // a bit further above
+    [cx+w/2+8, cy+18],      // lower-right
+    [cx-w/2-8, cy+18],      // lower-left
+    [cx+w/2+8, cy-8],       // upper-right
+    [cx-w/2-8, cy-8],       // upper-left
+    [(minX+maxX)/2, minY+14],// fallback: top center
+    [maxX-w/2-4, minY+14],  // fallback: top right
+    [minX+w/2+4, minY+14]   // fallback: top left
+  ];
+  for(var i=0;i<cands.length;i++){
+    var lx=cands[i][0], by=cands[i][1];
+    var bx0=lx-w/2, by0=by-h+3, bx1=lx+w/2, by1=by+3;
+    if(bx0<minX||bx1>maxX||by0<minY||by1>maxY) continue;
+    var clash=false;
+    for(var k=0;k<boxes.length;k++){ var bb=boxes[k]; if(bx0<bb[2]&&bx1>bb[0]&&by0<bb[3]&&by1>bb[1]){clash=true;break;} }
+    if(!clash) return {x:lx,y:by,box:[bx0,by0,bx1,by1]};
+  }
+  return null; // no clear spot -> omit rather than overlap
+}
+
+// ---------- Trig ----------
+function _mvTrig(spec, INK, GRID, FRAME){
+  var W=520,H=260, mL=46,mR=30,mT=24,mB=44;
+  var pW=W-mL-mR,pH=H-mT-mB;
+  var maxDeg=spec.maxDeg||360, amp=spec.amp||1;
+  var midY=mT+pH/2;
+  function sx(d){ return mL+(d/maxDeg)*pW; }
+  function sy(v){ return midY-(v/(amp*1.1))*(pH/2); }
+  var fn = spec.fn==='cos'?Math.cos:(spec.fn==='tan'?Math.tan:Math.sin);
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  // grid verticals every 90
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var d=90; d<maxDeg; d+=90){ s+='<line x1="'+sx(d).toFixed(1)+'" y1="'+mT+'" x2="'+sx(d).toFixed(1)+'" y2="'+(H-mB)+'"/>'; }
+  s+='<line x1="'+mL+'" y1="'+sy(amp).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(amp).toFixed(1)+'"/>';
+  s+='<line x1="'+mL+'" y1="'+sy(-amp).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(-amp).toFixed(1)+'"/></g>';
+  // axes
+  s+='<line x1="'+mL+'" y1="'+mT+'" x2="'+mL+'" y2="'+(H-mB)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<line x1="'+mL+'" y1="'+midY.toFixed(1)+'" x2="'+(W-mR)+'" y2="'+midY.toFixed(1)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<polygon points="'+(W-mR+6)+','+midY.toFixed(1)+' '+(W-mR-3)+','+(midY-4).toFixed(1)+' '+(W-mR-3)+','+(midY+4).toFixed(1)+'" fill="'+INK+'"/>';
+  s+='<text x="'+(W-mR+2)+'" y="'+(midY-6).toFixed(1)+'" font-style="italic" font-size="13" fill="'+INK+'">x</text>';
+  // curve
+  var dpath='',started=false;
+  for(var px=0;px<=pW;px+=1.2){ var deg=(px/pW)*maxDeg; var v=fn(deg*Math.PI/180); if(spec.fn==='tan'&&Math.abs(v)>amp*1.2){started=false;continue;} var X=sx(deg),Y=sy(v); dpath+=(started?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' '; started=true; }
+  s+='<path d="'+dpath.trim()+'" fill="none" stroke="'+INK+'" stroke-width="1.6"/>';
+  // x labels in margin
+  s+='<g font-size="12" fill="'+INK+'" text-anchor="middle">';
+  for(var dd2=90; dd2<=maxDeg; dd2+=90){ s+='<text x="'+sx(dd2).toFixed(1)+'" y="'+(H-mB+16)+'">'+dd2+'\u00b0</text>'; }
+  s+='</g>';
+  // y labels in margin
+  s+='<g font-size="12" fill="'+INK+'" text-anchor="end">';
+  s+='<text x="'+(mL-7)+'" y="'+(sy(amp)+4).toFixed(1)+'">'+amp+'</text>';
+  s+='<text x="'+(mL-7)+'" y="'+(sy(-amp)+4).toFixed(1)+'">\u2212'+amp+'</text>';
+  s+='</g>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Number line ----------
+function _mvNumberLine(spec, INK){
+  var W=520,H=96, mX=40, y=46;
+  var lo=spec.min!=null?spec.min:-3, hi=spec.max!=null?spec.max:3;
+  var pW=W-2*mX;
+  function sx(v){ return mX+((v-lo)/(hi-lo))*pW; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<line x1="'+mX+'" y1="'+y+'" x2="'+(W-mX)+'" y2="'+y+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<polygon points="'+(W-mX+8)+','+y+' '+(W-mX-2)+','+(y-5)+' '+(W-mX-2)+','+(y+5)+'" fill="'+INK+'"/>';
+  s+='<polygon points="'+(mX-8)+','+y+' '+(mX+2)+','+(y-5)+' '+(mX+2)+','+(y+5)+'" fill="'+INK+'"/>';
+  // ticks + numbers (below, in margin)
+  s+='<g font-size="13" fill="'+INK+'" text-anchor="middle">';
+  for(var v=lo; v<=hi+1e-9; v++){ var X=sx(v); s+='<line x1="'+X.toFixed(1)+'" y1="'+(y-6)+'" x2="'+X.toFixed(1)+'" y2="'+(y+6)+'" stroke="'+INK+'" stroke-width="1"/>'+'<text x="'+X.toFixed(1)+'" y="'+(y+24)+'">'+(v<0?'\u2212'+Math.abs(v):v)+'</text>'; }
+  s+='</g>';
+  // intervals: array of {from,to,fromClosed,toClosed} OR {at,closed} points
+  (spec.intervals||[]).forEach(function(iv){
+    var xa=sx(iv.from), xb=sx(iv.to);
+    s+='<line x1="'+xa.toFixed(1)+'" y1="'+y+'" x2="'+xb.toFixed(1)+'" y2="'+y+'" stroke="'+INK+'" stroke-width="3.5"/>';
+    s+=_mvDot(xa,y,iv.fromClosed,INK);
+    s+=_mvDot(xb,y,iv.toClosed,INK);
+  });
+  (spec.points||[]).forEach(function(pt){ s+=_mvDot(sx(pt.at),y,pt.closed,INK); });
+  s+='</svg>'; return s;
+}
+function _mvDot(x,y,closed,INK){ return closed? '<circle cx="'+x.toFixed(1)+'" cy="'+y+'" r="6.5" fill="'+INK+'"/>' : '<circle cx="'+x.toFixed(1)+'" cy="'+y+'" r="6.5" fill="#ffffff" stroke="'+INK+'" stroke-width="1.6"/>'; }
+
+// ---------- Bar chart ----------
+function _mvBar(spec, INK, GRID){
+  var W=440,H=320, mL=50,mR=24,mT=24,mB=70;
+  var pW=W-mL-mR,pH=H-mT-mB;
+  var bars=spec.bars||[]; var maxV=spec.maxY||Math.max.apply(null,bars.map(function(b){return b.value;}).concat([1]));
+  var step=_mvNiceStep(0,maxV); maxV=Math.ceil(maxV/step)*step;
+  function sy(v){ return mT+pH-(v/maxV)*pH; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  // gridlines + y numbers in margin
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var v=step; v<=maxV+1e-9; v+=step){ s+='<line x1="'+mL+'" y1="'+sy(v).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(v).toFixed(1)+'"/>'; }
+  s+='</g>';
+  s+='<line x1="'+mL+'" y1="'+mT+'" x2="'+mL+'" y2="'+(mT+pH)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<line x1="'+mL+'" y1="'+(mT+pH)+'" x2="'+(W-mR)+'" y2="'+(mT+pH)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  // bars
+  var n=bars.length, gap=pW/(n*1.6), bw=(pW-gap*(n+1))/n;
+  s+='<g font-size="11.5" fill="'+INK+'" text-anchor="middle">';
+  bars.forEach(function(b,i){ var x=mL+gap+(bw+gap)*i; var top=sy(b.value); s+='<rect x="'+x.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(mT+pH-top).toFixed(1)+'" fill="none" stroke="'+INK+'" stroke-width="1.3"/>'+'<text x="'+(x+bw/2).toFixed(1)+'" y="'+(mT+pH+16)+'">'+b.label+'</text>'; });
+  s+='</g>';
+  // y numbers margin
+  s+='<g font-size="11.5" fill="'+INK+'" text-anchor="end"><text x="'+(mL-7)+'" y="'+(mT+pH+4)+'">0</text>';
+  for(var v2=step; v2<=maxV+1e-9; v2+=step){ s+='<text x="'+(mL-7)+'" y="'+(sy(v2)+4).toFixed(1)+'">'+_mvR(v2)+'</text>'; }
+  s+='</g>';
+  if(spec.yLabel) s+='<text x="14" y="'+(mT+pH/2)+'" font-size="12" fill="'+INK+'" text-anchor="middle" transform="rotate(-90 14 '+(mT+pH/2)+')">'+spec.yLabel+'</text>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Pie chart ---------- (labels placed OUTSIDE slices, never on lines)
+function _mvPie(spec, INK){
+  var W=380,H=300, cx=150,cy=150,r=110;
+  var slices=spec.slices||[]; var total=slices.reduce(function(a,b){return a+b.value;},0)||1;
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+INK+'" stroke-width="1.4"/>';
+  var ang=-90; // start at top
+  slices.forEach(function(sl){
+    var a0=ang*Math.PI/180; var sweep=sl.value/total*360; var mid=(ang+sweep/2)*Math.PI/180; ang+=sweep;
+    // radius line
+    var lx=cx+r*Math.cos(a0), ly=cy+r*Math.sin(a0);
+    s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+lx.toFixed(1)+'" y2="'+ly.toFixed(1)+'" stroke="'+INK+'" stroke-width="1.2"/>';
+    // label OUTSIDE the circle along mid-angle
+    var L=r+24; var tx=cx+L*Math.cos(mid), ty=cy+L*Math.sin(mid);
+    var anchor = Math.cos(mid)>0.3?'start':(Math.cos(mid)<-0.3?'end':'middle');
+    var pct=Math.round(sl.value/total*100);
+    s+='<text x="'+tx.toFixed(1)+'" y="'+(ty+4).toFixed(1)+'" font-size="12.5" fill="'+INK+'" text-anchor="'+anchor+'">'+sl.label+' '+pct+'%</text>';
+  });
+  s+='</svg>'; return s;
+}
+
+// ---------- Scatter ----------
+function _mvScatter(spec, INK, GRID){
+  var W=440,H=320, mL=50,mR=24,mT=24,mB=50;
+  var pW=W-mL-mR,pH=H-mT-mB;
+  var pts=spec.points||[];
+  var xr=spec.xRange||[0,Math.max.apply(null,pts.map(function(p){return p.x;}).concat([10]))];
+  var yr=spec.yRange||[0,Math.max.apply(null,pts.map(function(p){return p.y;}).concat([10]))];
+  function sx(x){ return mL+(x-xr[0])/(xr[1]-xr[0])*pW; }
+  function sy(y){ return mT+pH-(y-yr[0])/(yr[1]-yr[0])*pH; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  var xStep=_mvNiceStep(xr[0],xr[1]), yStep=_mvNiceStep(yr[0],yr[1]);
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var gy=yr[0]+yStep; gy<=yr[1]+1e-9; gy+=yStep){ s+='<line x1="'+mL+'" y1="'+sy(gy).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(gy).toFixed(1)+'"/>'; }
+  s+='</g>';
+  s+='<line x1="'+mL+'" y1="'+mT+'" x2="'+mL+'" y2="'+(mT+pH)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<line x1="'+mL+'" y1="'+(mT+pH)+'" x2="'+(W-mR)+'" y2="'+(mT+pH)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  // line of best fit
+  if(spec.bestFit && pts.length>1){ var n=pts.length,sxx=0,sy_=0,sxy=0,sx_=0; pts.forEach(function(p){sx_+=p.x;sy_+=p.y;sxx+=p.x*p.x;sxy+=p.x*p.y;}); var m=(n*sxy-sx_*sy_)/(n*sxx-sx_*sx_); var b=(sy_-m*sx_)/n; s+='<line x1="'+sx(xr[0]).toFixed(1)+'" y1="'+sy(m*xr[0]+b).toFixed(1)+'" x2="'+sx(xr[1]).toFixed(1)+'" y2="'+sy(m*xr[1]+b).toFixed(1)+'" stroke="'+INK+'" stroke-width="1.1"/>'; }
+  pts.forEach(function(p){ s+='<circle cx="'+sx(p.x).toFixed(1)+'" cy="'+sy(p.y).toFixed(1)+'" r="2.8" fill="'+INK+'"/>'; });
+  // numbers in margin
+  s+='<g font-size="11.5" fill="'+INK+'" text-anchor="end"><text x="'+(mL-7)+'" y="'+(mT+pH+4)+'">'+yr[0]+'</text>';
+  for(var gy2=yr[0]+yStep; gy2<=yr[1]+1e-9; gy2+=yStep){ s+='<text x="'+(mL-7)+'" y="'+(sy(gy2)+4).toFixed(1)+'">'+_mvR(gy2)+'</text>'; }
+  s+='</g>';
+  if(spec.xLabel) s+='<text x="'+(mL+pW/2)+'" y="'+(H-12)+'" font-size="12" fill="'+INK+'" text-anchor="middle">'+spec.xLabel+'</text>';
+  if(spec.yLabel) s+='<text x="14" y="'+(mT+pH/2)+'" font-size="12" fill="'+INK+'" text-anchor="middle" transform="rotate(-90 14 '+(mT+pH/2)+')">'+spec.yLabel+'</text>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Box plot ----------
+function _mvBox(spec, INK){
+  var W=440,H=200, mX=44, axisY=150, boxY=70, boxH=46;
+  var lo=spec.min, q1=spec.q1, med=spec.median, q3=spec.q3, hi=spec.max;
+  var sLo=spec.scaleMin!=null?spec.scaleMin:lo, sHi=spec.scaleMax!=null?spec.scaleMax:hi;
+  var pad=(sHi-sLo)*0.1; sLo-=pad; sHi+=pad;
+  var pW=W-2*mX;
+  function sx(v){ return mX+((v-sLo)/(sHi-sLo))*pW; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  // scale axis
+  s+='<line x1="'+mX+'" y1="'+axisY+'" x2="'+(W-mX)+'" y2="'+axisY+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  var step=_mvNiceStep(sLo,sHi);
+  s+='<g font-size="11.5" fill="'+INK+'" text-anchor="middle">';
+  for(var v=Math.ceil(sLo/step)*step; v<=sHi+1e-9; v+=step){ var X=sx(v); s+='<line x1="'+X.toFixed(1)+'" y1="'+(axisY-5)+'" x2="'+X.toFixed(1)+'" y2="'+(axisY+5)+'" stroke="'+INK+'"/>'+'<text x="'+X.toFixed(1)+'" y="'+(axisY+20)+'">'+_mvR(v)+'</text>'; }
+  s+='</g>';
+  // whiskers + box
+  var cY=boxY+boxH/2;
+  s+='<line x1="'+sx(lo).toFixed(1)+'" y1="'+boxY+'" x2="'+sx(lo).toFixed(1)+'" y2="'+(boxY+boxH)+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<line x1="'+sx(hi).toFixed(1)+'" y1="'+boxY+'" x2="'+sx(hi).toFixed(1)+'" y2="'+(boxY+boxH)+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<line x1="'+sx(lo).toFixed(1)+'" y1="'+cY+'" x2="'+sx(q1).toFixed(1)+'" y2="'+cY+'" stroke="'+INK+'" stroke-width="1"/>';
+  s+='<line x1="'+sx(q3).toFixed(1)+'" y1="'+cY+'" x2="'+sx(hi).toFixed(1)+'" y2="'+cY+'" stroke="'+INK+'" stroke-width="1"/>';
+  s+='<rect x="'+sx(q1).toFixed(1)+'" y="'+boxY+'" width="'+(sx(q3)-sx(q1)).toFixed(1)+'" height="'+boxH+'" fill="none" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<line x1="'+sx(med).toFixed(1)+'" y1="'+boxY+'" x2="'+sx(med).toFixed(1)+'" y2="'+(boxY+boxH)+'" stroke="'+INK+'" stroke-width="1.5"/>';
+  // labels above (clear of each other)
+  s+='<g font-size="10" fill="'+INK+'" text-anchor="middle">';
+  [['min',lo],['Q1',q1],['med',med],['Q3',q3],['max',hi]].forEach(function(p){ s+='<text x="'+sx(p[1]).toFixed(1)+'" y="'+(boxY-6)+'">'+p[0]+'</text>'; });
+  s+='</g>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Geometry helpers ----------
+// arc that sits INSIDE the angle at vertex V between rays to A and B, radius rr
+function _mvAngleArc(V,A,B,rr,INK){
+  var a1=Math.atan2(A[1]-V[1],A[0]-V[0]);
+  var a2=Math.atan2(B[1]-V[1],B[0]-V[0]);
+  // ensure we sweep the smaller angle
+  var diff=a2-a1; while(diff<=-Math.PI)diff+=2*Math.PI; while(diff>Math.PI)diff-=2*Math.PI;
+  var start=[V[0]+rr*Math.cos(a1), V[1]+rr*Math.sin(a1)];
+  var end=[V[0]+rr*Math.cos(a1+diff), V[1]+rr*Math.sin(a1+diff)];
+  var sweepFlag = diff>0?1:0;
+  return {path:'<path d="M'+start[0].toFixed(1)+' '+start[1].toFixed(1)+' A '+rr+' '+rr+' 0 0 '+sweepFlag+' '+end[0].toFixed(1)+' '+end[1].toFixed(1)+'" fill="none" stroke="'+INK+'" stroke-width="1.1"/>', mid:[V[0]+(rr+12)*Math.cos(a1+diff/2), V[1]+(rr+12)*Math.sin(a1+diff/2)]};
+}
+
+// ---------- Triangle ---------- vertices A,B,C given as [x,y] in svg space via spec or default
+function _mvTriangle(spec, INK){
+  var W=320,H=260;
+  var A=spec.A||[55,200], B=spec.B||[265,200], C=spec.C||[110,60];
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<polygon points="'+A.join(',')+' '+B.join(',')+' '+C.join(',')+'" fill="none" stroke="'+INK+'" stroke-width="1.5"/>';
+  // angle arc at A if given
+  if(spec.angleA){ var ar=_mvAngleArc(A,B,C,26,INK); s+=ar.path; s+='<text x="'+ar.mid[0].toFixed(1)+'" y="'+(ar.mid[1]+4).toFixed(1)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+spec.angleA+'</text>'; }
+  // side labels: placed at midpoint, offset OUTWARD (away from centroid)
+  var cen=[(A[0]+B[0]+C[0])/3,(A[1]+B[1]+C[1])/3];
+  function sideLabel(P,Q,txt){ if(!txt)return''; var mx=(P[0]+Q[0])/2,my=(P[1]+Q[1])/2; var dx=mx-cen[0],dy=my-cen[1]; var L=Math.hypot(dx,dy)||1; var ox=mx+dx/L*16, oy=my+dy/L*16; return '<text x="'+ox.toFixed(1)+'" y="'+(oy+4).toFixed(1)+'" font-size="12" fill="'+INK+'" text-anchor="middle">'+txt+'</text>'; }
+  s+=sideLabel(A,B,spec.sideAB);
+  s+=sideLabel(A,C,spec.sideAC);
+  s+=sideLabel(B,C,spec.sideBC);
+  // vertex letters offset outward
+  function vlabel(P,name){ if(!name)return''; var dx=P[0]-cen[0],dy=P[1]-cen[1]; var L=Math.hypot(dx,dy)||1; var ox=P[0]+dx/L*14, oy=P[1]+dy/L*14; return '<text x="'+ox.toFixed(1)+'" y="'+(oy+4).toFixed(1)+'" font-size="12" font-weight="bold" fill="'+INK+'" text-anchor="middle">'+name+'</text>'; }
+  s+=vlabel(A,spec.labelA||'A'); s+=vlabel(B,spec.labelB||'B'); s+=vlabel(C,spec.labelC||'C');
+  s+='</svg>'; return s;
+}
+
+// ---------- Sector ----------
+function _mvSector(spec, INK){
+  var W=320,H=250, cx=140,cy=120, r=85;
+  var ang=spec.angle||60; // degrees, sector opening from 0 (east) going CCW up
+  var a0=0, a1=-ang*Math.PI/180; // negative = upward in svg
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+INK+'" stroke-width="1.5"/>';
+  var p0=[cx+r*Math.cos(a0),cy+r*Math.sin(a0)], p1=[cx+r*Math.cos(a1),cy+r*Math.sin(a1)];
+  s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p0[0].toFixed(1)+'" y2="'+p0[1].toFixed(1)+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p1[0].toFixed(1)+'" y2="'+p1[1].toFixed(1)+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  // angle arc inside opening
+  var ar=_mvAngleArc([cx,cy],p0,p1,28,INK); s+=ar.path;
+  s+='<text x="'+ar.mid[0].toFixed(1)+'" y="'+(ar.mid[1]+4).toFixed(1)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+ang+'\u00b0</text>';
+  // radius label below the horizontal radius, clear space
+  if(spec.radiusLabel){ s+='<text x="'+(cx+r/2).toFixed(1)+'" y="'+(cy+16)+'" font-size="11.5" fill="'+INK+'" text-anchor="middle">'+spec.radiusLabel+'</text>'; }
+  s+='</svg>'; return s;
+}
+
+// ---------- Angles on a straight line ----------
+function _mvAngleLine(spec, INK){
+  var W=320,H=240, V=[150,160];
+  var left=[40,160], right=[260,160];
+  var rayAng=spec.rayAngle||52; // degrees above horizontal, toward upper-right
+  var ray=[V[0]+110*Math.cos(-rayAng*Math.PI/180), V[1]+110*Math.sin(-rayAng*Math.PI/180)];
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<line x1="'+left[0]+'" y1="'+left[1]+'" x2="'+right[0]+'" y2="'+right[1]+'" stroke="'+INK+'" stroke-width="1.5"/>';
+  s+='<line x1="'+V[0]+'" y1="'+V[1]+'" x2="'+ray[0].toFixed(1)+'" y2="'+ray[1].toFixed(1)+'" stroke="'+INK+'" stroke-width="1.5"/>';
+  // right angle (between ray and right side) and left angle
+  var arR=_mvAngleArc(V,right,ray,32,INK); s+=arR.path; s+='<text x="'+arR.mid[0].toFixed(1)+'" y="'+(arR.mid[1]+4).toFixed(1)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+(spec.rightLabel||'x')+'</text>';
+  var arL=_mvAngleArc(V,ray,left,38,INK); s+=arL.path; s+='<text x="'+arL.mid[0].toFixed(1)+'" y="'+(arL.mid[1]+4).toFixed(1)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+(spec.leftLabel||'130\u00b0')+'</text>';
+  s+='<circle cx="'+V[0]+'" cy="'+V[1]+'" r="2.2" fill="'+INK+'"/>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Coordinate shape ----------
+function _mvCoordShape(spec, INK, GRID, FRAME){
+  var W=320,H=300, mL=42,mR=20,mT=18,mB=40;
+  var xr=spec.xRange||[-4,4], yr=spec.yRange||[-4,4];
+  var pW=W-mL-mR,pH=H-mT-mB;
+  function sx(x){ return mL+(x-xr[0])/(xr[1]-xr[0])*pW; }
+  function sy(y){ return mT+(yr[1]-y)/(yr[1]-yr[0])*pH; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  var xStep=_mvNiceStep(xr[0],xr[1]),yStep=_mvNiceStep(yr[0],yr[1]);
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var gx=Math.ceil(xr[0]/xStep)*xStep; gx<=xr[1]+1e-9; gx+=xStep){ if(Math.abs(gx)<1e-9)continue; s+='<line x1="'+sx(gx).toFixed(1)+'" y1="'+mT+'" x2="'+sx(gx).toFixed(1)+'" y2="'+(H-mB)+'"/>'; }
+  for(var gy=Math.ceil(yr[0]/yStep)*yStep; gy<=yr[1]+1e-9; gy+=yStep){ if(Math.abs(gy)<1e-9)continue; s+='<line x1="'+mL+'" y1="'+sy(gy).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(gy).toFixed(1)+'"/>'; }
+  s+='</g>';
+  s+='<line x1="'+sx(0).toFixed(1)+'" y1="'+mT+'" x2="'+sx(0).toFixed(1)+'" y2="'+(H-mB)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<line x1="'+mL+'" y1="'+sy(0).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(0).toFixed(1)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  // shape
+  var verts=spec.vertices||[];
+  if(verts.length){ s+='<polygon points="'+verts.map(function(v){return sx(v[0]).toFixed(1)+','+sy(v[1]).toFixed(1);}).join(' ')+'" fill="none" stroke="'+INK+'" stroke-width="1.5"/>'; }
+  // vertex dots + coordinate labels (offset outward from shape centroid, clear of edges)
+  if(verts.length){
+    var cx=verts.reduce(function(a,v){return a+v[0];},0)/verts.length, cy=verts.reduce(function(a,v){return a+v[1];},0)/verts.length;
+    verts.forEach(function(v){ var X=sx(v[0]),Y=sy(v[1]); s+='<circle cx="'+X.toFixed(1)+'" cy="'+Y.toFixed(1)+'" r="2.8" fill="'+INK+'"/>';
+      var dx=v[0]-cx, dy=v[1]-cy; var L=Math.hypot(dx,dy)||1; var ox=X+(dx/L)*4 + (dx>=0?6:-6), oy=Y-(dy/L)*4 + (dy>=0?-6:14);
+      var anchor= dx>0.2?'start':(dx<-0.2?'end':'middle');
+      s+='<text x="'+ox.toFixed(1)+'" y="'+oy.toFixed(1)+'" font-size="10.5" fill="'+INK+'" text-anchor="'+anchor+'">('+v[0]+', '+v[1]+')</text>'; });
+  }
+  s+='</svg>'; return s;
+}
 
 function showExamPreview(examData, exam){
   // examData could be the questions object or full exam data
