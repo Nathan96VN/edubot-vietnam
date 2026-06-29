@@ -1224,8 +1224,9 @@ function buildSidebar(){
   function row(icon,label,panel){
     return '<div class="sideitem" id="snav'+panel+'" onclick="showPanel('+panel+')"><span class="si"><i class="ti '+icon+'"></i></span><span class="sl">'+label+'</span></div>';
   }
-  var ielts='<a href="/ielts" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-certificate"></i></span><span class="sl">IELTS</span></a>';
-  var checkpoint='<a href="/checkpoint" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-list-check"></i></span><span class="sl">Checkpoint</span></a>';
+  var ielts='<a href="/ielts" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-certificate"></i></span><span class="sl">English Proficiency Practice</span></a>';
+  var checkpoint='<a href="/checkpoint" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-list-check"></i></span><span class="sl">Lower Secondary Practice</span></a>';
+  var intenglish='<a href="/international-english" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-language"></i></span><span class="sl">International English Practice</span></a>';
   var d=lang==='en'
     ?{t0:'Ask Stella',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games',t5:'Exam Generator',t6:'Memory'}
     :{t0:'Ask Stella',t1:'Lớp học',t2:'Bảng điều khiển',t3:'Flashcards',t4:'Trò chơi',t5:'Tạo đề thi',t6:'Bộ nhớ'};
@@ -1240,6 +1241,7 @@ function buildSidebar(){
     html+=row('ti-school',d.t1,1);
     html+=ielts;
     html+=checkpoint;
+    html+=intenglish;
   } else {
     html+=row('ti-layout-dashboard',d.t0,0);
     html+=row('ti-cards',d.t3,3);
@@ -1247,6 +1249,7 @@ function buildSidebar(){
     html+=row('ti-school',d.t1,1);
     html+=ielts;
     html+=checkpoint;
+    html+=intenglish;
   }
   nav.innerHTML=html;
   document.getElementById('side-uname').textContent=uname;
