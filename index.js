@@ -329,10 +329,13 @@ app.post('/chat', authenticate, async (req, res) => {
         const gradeNum = detectedGrade || 0;
 
         // RAG: Try Pinecone semantic search first, fallback to DB
+        // Wrapped in a timeout so a slow/hanging Pinecone can never stall the chat response.
         let pineconeResults = [];
         try {
-          pineconeResults = await searchPinecone(message, detectedSubject, gradeNum, 6);
-        } catch(e) { console.error('Pinecone search failed:', e.message); }
+          const pineconePromise = searchPinecone(message, detectedSubject, gradeNum, 6);
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Pinecone timeout')), 4000));
+          pineconeResults = await Promise.race([pineconePromise, timeoutPromise]);
+        } catch(e) { console.error('Pinecone search skipped:', e.message); pineconeResults = []; }
 
         if (pineconeResults.length === 0) {
           // Fallback: DB keyword search
@@ -436,8 +439,13 @@ ${curriculumContext}`;
 
     res.json({ reply, daily_count: user.daily_count + 1, credits: creditsRemaining });
   } catch (err) {
-    console.error('Chat error:', err);
-    res.status(500).json({ error: 'Chat failed' });
+    console.error('Chat error:', err && err.stack ? err.stack : err);
+    const msg = (err && err.message) ? err.message : 'Chat failed';
+    // Surface a clearer hint for common cases without leaking internals
+    let userMsg = 'The AI is temporarily unavailable. Please try again.';
+    if (/overloaded|rate|429/i.test(msg)) userMsg = 'The AI is busy right now. Please wait a moment and try again.';
+    else if (/timeout|ETIMEDOUT|ECONNRESET|fetch failed/i.test(msg)) userMsg = 'The request timed out. Please try again.';
+    res.status(500).json({ error: userMsg });
   }
 });
 
