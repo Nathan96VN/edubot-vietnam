@@ -2123,11 +2123,11 @@ app.post('/checkpoint/generate', authenticate, aiLimiter, async (req, res) => {
     // Subject-specific command words & guidance (Cambridge Checkpoint style)
     let subjectGuide = '';
     if (/sci/i.test(subj)) {
-      subjectGuide = `Use Cambridge Checkpoint Science command words: State, Describe, Explain, Suggest, Identify, Calculate. Test knowledge AND application. Include some questions on scientific enquiry / fair tests (variables, predictions). Strands: ${strandLabel} (Biology, Chemistry, Physics, Earth & Space).`;
+      subjectGuide = `Use lower-secondary Science command words: State, Describe, Explain, Suggest, Identify, Calculate. Test knowledge AND application. Include some questions on scientific enquiry / fair tests (variables, predictions). Strands: ${strandLabel} (Biology, Chemistry, Physics, Earth & Space).`;
     } else if (/math/i.test(subj)) {
-      subjectGuide = `Use Cambridge Checkpoint Mathematics command words: Work out, Calculate, Find, Solve, Show that. Award method marks for working. Strands: ${strandLabel} (Number, Algebra, Geometry & Measure, Statistics & Probability). Prefer numeric/auto-checkable answers where possible.`;
+      subjectGuide = `Use lower-secondary Mathematics command words: Work out, Calculate, Find, Solve, Show that. Award method marks for working. Strands: ${strandLabel} (Number, Algebra, Geometry & Measure, Statistics & Probability). Prefer numeric/auto-checkable answers where possible.`;
     } else {
-      subjectGuide = `Use Cambridge Checkpoint English skills: reading comprehension of a provided passage, writing, and grammar/usage. Strands: ${strandLabel}.`;
+      subjectGuide = `Use lower-secondary English skills: reading comprehension of a provided passage, writing, and grammar/usage. Strands: ${strandLabel}.`;
     }
 
     const diagramNote = includeDiagrams
@@ -2141,12 +2141,12 @@ app.post('/checkpoint/generate', authenticate, aiLimiter, async (req, res) => {
 Make the question text refer to the diagram (e.g. "The circuit diagram shows...", "Use the diagram to..."). A "labeldiagram" type question should always carry a "visual" plus a "labels" array.`
       : 'Do not include any "visual" fields.';
 
-    const prompt = `You are an expert Cambridge Lower Secondary Checkpoint examiner creating a ${stageLabel} ${subj} practice paper worth ${totalMarks} marks.
+    const prompt = `You are an expert lower-secondary examiner creating a ${stageLabel} ${subj} practice paper worth ${totalMarks} marks.
 ${topic ? 'Focus on this topic: ' + topic + '.' : 'Cover a representative mix of the chosen strands.'}
 ${subjectGuide}
 ${diagramNote}
 
-Make it authentic to Cambridge Checkpoint: clear command words, appropriate difficulty for ${stageLabel}, and a complete mark scheme (answers + brief marking notes) for every question.
+Make it authentic to a rigorous lower-secondary standard: clear command words, appropriate difficulty for ${stageLabel}, and a complete mark scheme (answers + brief marking notes) for every question.
 
 CRITICAL — TOTAL MARKS: The marks of all questions MUST add up to EXACTLY ${totalMarks}. Count as you go. Use a mix of mark values (1-mark recall questions and 2-4 mark "explain"/multi-part questions) so the paper reaches exactly ${totalMarks} marks. Do not stop early and do not exceed ${totalMarks}. For a ${totalMarks}-mark paper, expect roughly ${Math.round(totalMarks*0.7)}-${totalMarks} questions depending on mark values.
 
@@ -2154,7 +2154,7 @@ Use these question "type" codes: mcq, truefalse, fillinblank, shortanswer, numer
 
 Respond ONLY with valid JSON, no markdown:
 {
-  "title": "Cambridge Checkpoint ${subj} — ${stageLabel}",
+  "title": "Lower Secondary ${subj} Practice — ${stageLabel}",
   "instructions": "brief instructions for students",
   "sections": [
     { "type": "shortanswer", "label": "Section A", "questions": [ { "id": 1, "question": "...", "answer": "...", "points": 2, "explanation": "marking notes" } ] }
@@ -2206,6 +2206,99 @@ Respond ONLY with valid JSON, no markdown:
     res.json({ exam: result.rows[0], examData });
   } catch (e) {
     console.error('Checkpoint generate error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INTERNATIONAL ENGLISH MODULE (CEFR A2–C2 practice)
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/international-english', (req, res) => res.sendFile(__dirname + '/public/international-english.html'));
+
+app.post('/international-english/generate', authenticate, aiLimiter, async (req, res) => {
+  try {
+    const { level, skills, topic, questionCount } = req.body;
+    const userId = req.user.id;
+    const user = await pool.query('SELECT * FROM users WHERE id=$1', [userId]);
+    if (!user.rows[0] || (user.rows[0].role !== 'teacher' && user.rows[0].role !== 'admin')) {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
+
+    const lvl = (level || 'B1').toUpperCase();
+    const skillLabel = (skills && skills.length) ? skills.join(', ') : 'Reading, Grammar & Vocabulary';
+    const count = Math.min(Math.max(parseInt(questionCount) || 15, 5), 40);
+
+    // CEFR descriptors to keep difficulty authentic per level
+    const cefrGuide = {
+      A2: 'CEFR A2 (elementary): simple everyday language, basic tenses, common vocabulary, short texts.',
+      B1: 'CEFR B1 (intermediate): familiar topics, straightforward connected text, common idioms, clear opinions.',
+      B2: 'CEFR B2 (upper-intermediate): abstract topics, more complex grammar, nuance, longer texts, implied meaning.',
+      C1: 'CEFR C1 (advanced): demanding texts, fluent and flexible language, subtle meaning, sophisticated structures.',
+      C2: 'CEFR C2 (proficiency): near-native precision, complex/abstract texts, fine shades of meaning, idiomatic mastery.'
+    }[lvl] || 'CEFR B1 (intermediate).';
+
+    const prompt = `You are an expert English-language assessment writer creating a CEFR ${lvl} English practice paper (independent practice material, not an official exam).
+Difficulty: ${cefrGuide}
+Skills to cover: ${skillLabel}.
+${topic ? 'Where natural, theme the content around: ' + topic + '.' : ''}
+Create approximately ${count} questions total. Provide a complete answer key for every question, with a brief explanation for each.
+
+Guidance per skill:
+- Reading: include a short passage appropriate to ${lvl}, then comprehension questions (use the "comprehension" type with sub-questions, or mcq/truefalse referencing the passage).
+- Grammar & Vocabulary: use mcq, fillinblank, errorcorrection, and dropdown (cloze) types at ${lvl} difficulty.
+- Writing: use shortanswer type with a clear task and a model answer + marking notes in the answer/explanation.
+- Listening: NOT included in this text-based generator.
+
+Use these question "type" codes: mcq, truefalse, fillinblank, shortanswer, matching, comprehension, errorcorrection, dropdown.
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "title": "International English ${lvl} Practice",
+  "instructions": "brief instructions for students",
+  "sections": [
+    { "type": "mcq", "label": "Reading", "questions": [ { "id": 1, "question": "...", "options": ["A ...","B ...","C ...","D ..."], "answer": "A ...", "points": 1, "explanation": "why" } ] }
+  ]
+}`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 8000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    let text = response.content[0].text.replace(/```json|```/g, '').trim();
+    let examData;
+    try {
+      examData = JSON.parse(text);
+    } catch (parseErr) {
+      let salvage = text;
+      const lastBrace = salvage.lastIndexOf('}');
+      if (lastBrace > 0) {
+        salvage = salvage.slice(0, lastBrace + 1);
+        const opens = (salvage.match(/{/g) || []).length, closes = (salvage.match(/}/g) || []).length;
+        const aOpens = (salvage.match(/\[/g) || []).length, aCloses = (salvage.match(/\]/g) || []).length;
+        salvage += ']'.repeat(Math.max(0, aOpens - aCloses)) + '}'.repeat(Math.max(0, opens - closes));
+      }
+      try { examData = JSON.parse(salvage); }
+      catch (e2) { return res.status(502).json({ error: 'The paper was too long to generate in one go. Please try fewer questions or one skill, then try again.' }); }
+    }
+    if (!examData || !Array.isArray(examData.sections)) {
+      return res.status(502).json({ error: 'Generation produced no questions. Please try again with fewer questions or one skill.' });
+    }
+
+    let totalPoints = 0;
+    examData.sections.forEach(s => (s.questions || []).forEach(q => { totalPoints += q.points || 1; }));
+    const code = 'IE-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+
+    const result = await pool.query(
+      `INSERT INTO exams (teacher_id, title, subject, grade, context, purpose, difficulty, adapted_for_weak, time_limit, show_answers, questions, total_points, code, status)
+       VALUES ($1,$2,'English',$3,'international','exam','standard',false,60,true,$4,$5,$6,'draft') RETURNING *`,
+      [userId, examData.title, lvl, JSON.stringify(examData), totalPoints, code]
+    );
+
+    res.json({ exam: result.rows[0], examData });
+  } catch (e) {
+    console.error('International English generate error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
