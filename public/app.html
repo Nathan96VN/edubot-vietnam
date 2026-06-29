@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>StellaStride</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css" rel="stylesheet"/>
 <style>
 /* ── RESET ── */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -427,8 +428,8 @@ input[type=file]#cfi{display:none}
     </div>
     <div id="side-nav"></div>
     <div class="sidebar-bottom" id="side-bottom">
-      <div class="sideitem" id="side-user"><span class="si">👤</span><span class="sl" id="side-uname"></span></div>
-      <div class="sideitem" onclick="doLogout()"><span class="si">🚪</span><span class="sl" id="side-logout">Đăng xuất</span></div>
+      <div class="sideitem" id="side-user"><span class="si"><i class="ti ti-user-circle"></i></span><span class="sl" id="side-uname"></span></div>
+      <div class="sideitem" onclick="doLogout()"><span class="si"><i class="ti ti-logout"></i></span><span class="sl" id="side-logout">Đăng xuất</span></div>
     </div>
   </div>
 
@@ -1104,40 +1105,31 @@ function toggleSidebar(){
 
 function buildSidebar(){
   var nav=document.getElementById('side-nav');
-  var items=[];
-  if(urole==='teacher'||urole==='admin'){
-    var d=lang==='en'?{t0:'Ask Stella',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games',t5:'Exam Generator',t6:'Memory'}:{t0:'✨ Ask Stella',t1:'Lớp học',t2:'Dashboard',t3:'Flashcards',t4:'Games',t5:'Tạo đề thi',t6:'Bộ nhớ'};
-    items=[
-      {i:'👩‍🏫',l:d.t2,p:2},
-      {i:'💬',l:d.t0,p:0},
-      {i:'📝',l:d.t5,p:5},
-      {i:'🗂️',l:d.t6,p:6},
-      {i:'📚',l:d.t3,p:3},
-      {i:'🎮',l:d.t4,p:4},
-      {i:'🏫',l:d.t1,p:1},
-    ];
-    // Add IELTS link for teacher/admin
-    nav.innerHTML=items.map(function(it){return '<div class="sideitem" id="snav'+it.p+'" onclick="showPanel('+it.p+')"><span class="si">'+it.i+'</span><span class="sl">'+it.l+'</span></div>';}).join('')+'<a href="/ielts" class="sideitem" style="text-decoration:none;display:flex"><span class="si">🎓</span><span class="sl">IELTS</span></a>';
-    document.getElementById('side-uname').textContent=uname;
-    document.getElementById('side-logout').textContent=L('logout');
-    return;
-  } else {
-    var d=lang==='en'?{t0:'Ask Stella',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games',t5:'Exam Generator',t6:'Memory'}:{t0:'✨ Ask Stella',t1:'Lớp học',t2:'Dashboard',t3:'Flashcards',t4:'Games',t5:'Tạo đề thi',t6:'Bộ nhớ'};
-    items=[
-      {i:'💬',l:d.t0,p:0},
-      {i:'📚',l:d.t3,p:3},
-      {i:'🎮',l:d.t4,p:4},
-      {i:'🏫',l:d.t1,p:1},
-    ];
-    // Add IELTS link for students
-    nav.innerHTML=items.map(function(it){return '<div class="sideitem" id="snav'+it.p+'" onclick="showPanel('+it.p+')"><span class="si">'+it.i+'</span><span class="sl">'+it.l+'</span></div>';}).join('')+'<a href="/ielts" class="sideitem" style="text-decoration:none;display:flex"><span class="si">🎓</span><span class="sl">IELTS</span></a>';
-    document.getElementById('side-uname').textContent=uname;
-    document.getElementById('side-logout').textContent=L('logout');
-    return;
+  function row(icon,label,panel){
+    return '<div class="sideitem" id="snav'+panel+'" onclick="showPanel('+panel+')"><span class="si"><i class="ti '+icon+'"></i></span><span class="sl">'+label+'</span></div>';
   }
-  nav.innerHTML=items.map(function(it){
-    return '<div class="sideitem" id="snav'+it.p+'" onclick="showPanel('+it.p+')"><span class="si">'+it.i+'</span><span class="sl">'+it.l+'</span></div>';
-  }).join('');
+  var ielts='<a href="/ielts" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-certificate"></i></span><span class="sl">IELTS</span></a>';
+  var d=lang==='en'
+    ?{t0:'Ask Stella',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games',t5:'Exam Generator',t6:'Memory'}
+    :{t0:'Ask Stella',t1:'Lớp học',t2:'Bảng điều khiển',t3:'Flashcards',t4:'Trò chơi',t5:'Tạo đề thi',t6:'Bộ nhớ'};
+  var html='';
+  if(urole==='teacher'||urole==='admin'){
+    html+=row('ti-layout-dashboard',d.t2,2);
+    html+=row('ti-message-circle',d.t0,0);
+    html+=row('ti-file-text',d.t5,5);
+    html+=row('ti-folder',d.t6,6);
+    html+=row('ti-cards',d.t3,3);
+    html+=row('ti-device-gamepad-2',d.t4,4);
+    html+=row('ti-school',d.t1,1);
+    html+=ielts;
+  } else {
+    html+=row('ti-layout-dashboard',d.t0,0);
+    html+=row('ti-cards',d.t3,3);
+    html+=row('ti-device-gamepad-2',d.t4,4);
+    html+=row('ti-school',d.t1,1);
+    html+=ielts;
+  }
+  nav.innerHTML=html;
   document.getElementById('side-uname').textContent=uname;
   document.getElementById('side-logout').textContent=L('logout');
 }
