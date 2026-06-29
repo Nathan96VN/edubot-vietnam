@@ -2603,6 +2603,7 @@ function exportExamWord(version){
     body += '<h2>'+esc(section.label)+'</h2>';
     section.questions.forEach(function(q){
       body += '<div class="q"><span class="qn">'+q.id+'. </span>'+esc(q.question)+'<br/>';
+      if(q.visual){ body += '<div style="margin:8px 0">'+renderMathVisual(q.visual)+'</div>'; }
       if(q.options) q.options.forEach(function(opt){ body += '&nbsp;&nbsp;&nbsp;'+esc(opt)+'<br/>'; });
       if(isTeacher) body += '<div class="ans">Answer: '+esc(q.answer||'')+(q.explanation?' — '+esc(q.explanation):'')+'</div>';
       body += '</div>';
@@ -2874,6 +2875,7 @@ function exportExamWord(type){
     (section.questions||[]).forEach(function(q){
       html += '<div class="q">';
       html += '<div><span class="qn">Q'+q.id+'.</span> '+esc(q.question)+'</div>';
+      if(q.visual){ html += '<div style="margin:8px 0">'+renderMathVisual(q.visual)+'</div>'; }
       if(q.options){ q.options.forEach(function(opt){ html += '<div class="opt">'+esc(opt)+'</div>'; }); }
       if(q.pairs){
         html += '<table style="margin-top:6px;border-collapse:collapse;width:100%">';
