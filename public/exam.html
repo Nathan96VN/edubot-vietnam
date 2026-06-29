@@ -871,6 +871,64 @@ function renderAnswerArea(q){
       });
       html += '</div>';
     }
+  } else if(type==='numeric'){
+    html = '<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Enter your numeric answer (e.g. 4, 3.5, or x = 4):</div>';
+    html += '<input class="blank-inp" id="blank-'+q.id+'" placeholder="Your answer..." value="'+(saved||'')+'" oninput="answers[\''+q.id+'\']=this.value"/>';
+  } else if(type==='labeldiagram'){
+    html = '';
+    if(q.visual && typeof renderMathVisual==='function'){ html += '<div style="background:#fff;padding:12px;border:0.5px solid #e3e6f3;margin:0 0 12px;max-width:440px">'+renderMathVisual(q.visual)+'</div>'; }
+    var lbls = q.labels || [];
+    var lsaved = saved || {};
+    html += '<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Name each numbered part:</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:8px">';
+    lbls.forEach(function(_, i){
+      var n = i+1; var v = (lsaved && lsaved[n]) ? lsaved[n] : '';
+      html += '<div style="display:flex;align-items:center;gap:10px"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--navy,#1E1B4B);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">'+n+'</div>'+
+        '<input class="blank-inp" style="flex:1" id="label-'+q.id+'-'+n+'" placeholder="Name of part '+n+'" value="'+v+'" oninput="(function(el){ if(!answers[\''+q.id+'\']||typeof answers[\''+q.id+'\']!=\'object\')answers[\''+q.id+'\']={}; answers[\''+q.id+'\'][\''+n+'\']=el.value; })(this)"/></div>';
+    });
+    html += '</div>';
+  } else if(type==='dragorder'){
+    var items = q._shuffled || (q._shuffled = shuffleArr((q.items||[]).slice()));
+    var order = Array.isArray(saved) ? saved.slice() : items.slice();
+    answers[q.id] = order;
+    html = '<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Use the arrows to put these in the correct order:</div>';
+    html += '<div id="drag-'+q.id+'" style="display:flex;flex-direction:column;gap:8px">';
+    order.forEach(function(item, i){
+      html += '<div style="display:flex;align-items:center;gap:8px;border:0.5px solid #d8dcef;border-radius:8px;padding:8px 10px;background:#fafbff">'+
+        '<div style="display:flex;flex-direction:column;gap:2px">'+
+        '<button onclick="moveOrder(\''+q.id+'\','+i+',-1)" style="border:none;background:none;cursor:pointer;color:#7B8CDE;font-size:14px;line-height:1;padding:0">\u25B2</button>'+
+        '<button onclick="moveOrder(\''+q.id+'\','+i+',1)" style="border:none;background:none;cursor:pointer;color:#7B8CDE;font-size:14px;line-height:1;padding:0">\u25BC</button></div>'+
+        '<div style="flex:1;font-size:13px;color:var(--text)">'+esc(item)+'</div></div>';
+    });
+    html += '</div>';
+  } else if(type==='highlight'){
+    var tokens = q.tokens || [];
+    var sel = Array.isArray(saved) ? saved : [];
+    html = '<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Click the correct word(s):</div>';
+    html += '<div style="font-size:15px;line-height:2.4;color:var(--text)">';
+    tokens.forEach(function(tok, i){
+      var on = sel.indexOf(i) !== -1;
+      html += '<span onclick="toggleHL(\''+q.id+'\','+i+',this)" data-i="'+i+'" style="cursor:pointer;border-radius:5px;padding:2px 6px;margin:0 1px;'+(on?'background:#00B4A6;color:#fff':'border:0.5px solid #e3e6f3')+'">'+esc(tok)+'</span> ';
+    });
+    html += '</div>';
+  } else if(type==='dropdown'){
+    var segs = q.segments || [];
+    var dsaved = (saved && typeof saved==='object') ? saved : {};
+    var bi = 0;
+    html = '<div style="font-size:15px;line-height:2.6;color:var(--text)">';
+    segs.forEach(function(seg){
+      if(seg.text){ html += esc(seg.text); }
+      else if(seg.blank){
+        var idx = bi++;
+        var opts = (seg.blank.options||[]).slice();
+        var cur = dsaved[idx] != null ? dsaved[idx] : '';
+        html += '<select onchange="setDropdown(\''+q.id+'\','+idx+',this.value)" style="border:0.5px solid #00B4A6;border-radius:6px;padding:4px 8px;font-size:14px;color:var(--text);background:#fff;margin:0 2px">';
+        html += '<option value=""'+(cur===''?' selected':'')+'>— select —</option>';
+        opts.forEach(function(o){ html += '<option value="'+esc(o)+'"'+(cur===o?' selected':'')+'>'+esc(o)+'</option>'; });
+        html += '</select>';
+      }
+    });
+    html += '</div>';
   } else {
     html = '<textarea class="text-ans" id="text-'+q.id+'" placeholder="Write your answer here..." oninput="answers[\''+q.id+'\']=this.value">'+(saved||'')+'</textarea>';
   }
@@ -888,6 +946,29 @@ function selectTF(qid, val, el){
   answers[qid] = val;
   el.closest('.tf-wrap').querySelectorAll('.tf-btn').forEach(function(b){b.classList.remove('selected');});
   el.classList.add('selected');
+  updateDots();
+}
+
+// ── Helpers for dragorder / highlight / dropdown question types ──
+function shuffleArr(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function moveOrder(qid, idx, dir){
+  var arr = answers[qid]; if(!Array.isArray(arr)) return;
+  var ni = idx + dir; if(ni < 0 || ni >= arr.length) return;
+  var t = arr[idx]; arr[idx] = arr[ni]; arr[ni] = t;
+  answers[qid] = arr;
+  showQuestion(currentQ); // re-render to reflect new order
+}
+function toggleHL(qid, i, el){
+  if(!Array.isArray(answers[qid])) answers[qid] = [];
+  var arr = answers[qid]; var pos = arr.indexOf(i);
+  if(pos === -1){ arr.push(i); el.style.background='#00B4A6'; el.style.color='#fff'; el.style.border='none'; }
+  else { arr.splice(pos,1); el.style.background=''; el.style.color=''; el.style.border='0.5px solid #e3e6f3'; }
+  answers[qid] = arr;
+  updateDots();
+}
+function setDropdown(qid, idx, val){
+  if(!answers[qid] || typeof answers[qid] !== 'object' || Array.isArray(answers[qid])) answers[qid] = {};
+  answers[qid][idx] = val;
   updateDots();
 }
 
@@ -1164,6 +1245,64 @@ function renderAnswerArea(q){
       });
       html += '</div>';
     }
+  } else if(type==='numeric'){
+    html = '<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Enter your numeric answer (e.g. 4, 3.5, or x = 4):</div>';
+    html += '<input class="blank-inp" id="blank-'+q.id+'" placeholder="Your answer..." value="'+(saved||'')+'" oninput="answers[\''+q.id+'\']=this.value"/>';
+  } else if(type==='labeldiagram'){
+    html = '';
+    if(q.visual && typeof renderMathVisual==='function'){ html += '<div style="background:#fff;padding:12px;border:0.5px solid #e3e6f3;margin:0 0 12px;max-width:440px">'+renderMathVisual(q.visual)+'</div>'; }
+    var lbls = q.labels || [];
+    var lsaved = saved || {};
+    html += '<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Name each numbered part:</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:8px">';
+    lbls.forEach(function(_, i){
+      var n = i+1; var v = (lsaved && lsaved[n]) ? lsaved[n] : '';
+      html += '<div style="display:flex;align-items:center;gap:10px"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--navy,#1E1B4B);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">'+n+'</div>'+
+        '<input class="blank-inp" style="flex:1" id="label-'+q.id+'-'+n+'" placeholder="Name of part '+n+'" value="'+v+'" oninput="(function(el){ if(!answers[\''+q.id+'\']||typeof answers[\''+q.id+'\']!=\'object\')answers[\''+q.id+'\']={}; answers[\''+q.id+'\'][\''+n+'\']=el.value; })(this)"/></div>';
+    });
+    html += '</div>';
+  } else if(type==='dragorder'){
+    var items = q._shuffled || (q._shuffled = shuffleArr((q.items||[]).slice()));
+    var order = Array.isArray(saved) ? saved.slice() : items.slice();
+    answers[q.id] = order;
+    html = '<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Use the arrows to put these in the correct order:</div>';
+    html += '<div id="drag-'+q.id+'" style="display:flex;flex-direction:column;gap:8px">';
+    order.forEach(function(item, i){
+      html += '<div style="display:flex;align-items:center;gap:8px;border:0.5px solid #d8dcef;border-radius:8px;padding:8px 10px;background:#fafbff">'+
+        '<div style="display:flex;flex-direction:column;gap:2px">'+
+        '<button onclick="moveOrder(\''+q.id+'\','+i+',-1)" style="border:none;background:none;cursor:pointer;color:#7B8CDE;font-size:14px;line-height:1;padding:0">\u25B2</button>'+
+        '<button onclick="moveOrder(\''+q.id+'\','+i+',1)" style="border:none;background:none;cursor:pointer;color:#7B8CDE;font-size:14px;line-height:1;padding:0">\u25BC</button></div>'+
+        '<div style="flex:1;font-size:13px;color:var(--text)">'+esc(item)+'</div></div>';
+    });
+    html += '</div>';
+  } else if(type==='highlight'){
+    var tokens = q.tokens || [];
+    var sel = Array.isArray(saved) ? saved : [];
+    html = '<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Click the correct word(s):</div>';
+    html += '<div style="font-size:15px;line-height:2.4;color:var(--text)">';
+    tokens.forEach(function(tok, i){
+      var on = sel.indexOf(i) !== -1;
+      html += '<span onclick="toggleHL(\''+q.id+'\','+i+',this)" data-i="'+i+'" style="cursor:pointer;border-radius:5px;padding:2px 6px;margin:0 1px;'+(on?'background:#00B4A6;color:#fff':'border:0.5px solid #e3e6f3')+'">'+esc(tok)+'</span> ';
+    });
+    html += '</div>';
+  } else if(type==='dropdown'){
+    var segs = q.segments || [];
+    var dsaved = (saved && typeof saved==='object') ? saved : {};
+    var bi = 0;
+    html = '<div style="font-size:15px;line-height:2.6;color:var(--text)">';
+    segs.forEach(function(seg){
+      if(seg.text){ html += esc(seg.text); }
+      else if(seg.blank){
+        var idx = bi++;
+        var opts = (seg.blank.options||[]).slice();
+        var cur = dsaved[idx] != null ? dsaved[idx] : '';
+        html += '<select onchange="setDropdown(\''+q.id+'\','+idx+',this.value)" style="border:0.5px solid #00B4A6;border-radius:6px;padding:4px 8px;font-size:14px;color:var(--text);background:#fff;margin:0 2px">';
+        html += '<option value=""'+(cur===''?' selected':'')+'>— select —</option>';
+        opts.forEach(function(o){ html += '<option value="'+esc(o)+'"'+(cur===o?' selected':'')+'>'+esc(o)+'</option>'; });
+        html += '</select>';
+      }
+    });
+    html += '</div>';
   } else {
     html = '<textarea class="text-ans" id="text-'+q.id+'" placeholder="Write your answer here..." oninput="answers[\''+q.id+'\']=this.value">'+(saved||'')+'</textarea>';
   }
