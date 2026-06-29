@@ -87,14 +87,73 @@ async function upsertToPinecone(id, text, metadata) {
 }
 
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: '150mb' }));
-app.use(express.urlencoded({ limit: '150mb', extended: true }));
+app.set('trust proxy', 1); // Render runs behind a proxy; needed for correct client IPs (rate limiting)
+
+// ─── Security headers (helmet) ────────────────────────────────────────────────
+const helmet = require('helmet');
+app.use(helmet({
+  contentSecurityPolicy: false, // app uses inline scripts/CDNs; disable CSP to avoid breaking the SPA
+  crossOriginEmbedderPolicy: false
+}));
+
+// ─── CORS (locked to known origins; set ALLOWED_ORIGINS env to override) ───────
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ||
+  'https://edubot-vietnam.onrender.com').split(',').map(s => s.trim());
+app.use(cors({
+  origin: function(origin, cb){
+    // allow same-origin / server-to-server (no origin) and any listed origin
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) return cb(null, true);
+    return cb(null, false);
+  },
+  credentials: true
+}));
+
+// Body limits: 25mb is generous for base64 PDF/image uploads but blocks memory-abuse.
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ limit: '25mb', extended: true }));
 app.use(express.static('public'));
+
+// ─── Rate limiting (in-memory now; Redis-swap ready for scale) ─────────────────
+const rateLimit = require('express-rate-limit');
+// General limiter: protects all /api-style routes from flooding & runaway API cost.
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,        // 1 minute
+  max: 60,                    // 60 requests/min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please slow down and try again shortly.' }
+});
+// Strict limiter for auth: stops brute-force password guessing.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 minutes
+  max: 8,                     // 8 attempts per 15 min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // only failed logins count toward the limit
+  message: { error: 'Too many login attempts. Please wait 15 minutes and try again.' }
+});
+// Limiter for expensive AI endpoints: protects your Claude/OpenAI API spend.
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,                    // 20 AI calls/min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'You are sending requests too quickly. Please wait a moment.' }
+});
+// NOTE: to scale to multiple servers later, add a Redis store here (rate-limit-redis)
+// and pass `store: new RedisStore({...})` to each limiter — no other code changes needed.
+app.use(generalLimiter); // global cap on every route
 app.get('/exam', (req, res) => res.sendFile(__dirname + '/public/exam.html'));
 
 // ─── DB + AI clients ──────────────────────────────────────────────────────────
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  max: parseInt(process.env.DB_POOL_MAX || '10'),  // cap connections per instance (raise via env when scaling)
+  idleTimeoutMillis: 30000,                          // release idle clients
+  connectionTimeoutMillis: 10000                     // fail fast instead of hanging
+});
+pool.on('error', (e) => console.error('PG pool error:', e.message)); // don't crash on idle client errors
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ─── Pricing config ───────────────────────────────────────────────────────────
@@ -126,12 +185,14 @@ const PLAN_CREDITS = {
 // ─── Auth middleware ──────────────────────────────────────────────────────────
 const authenticate = (req, res, next) => {
   const header = req.headers.authorization;
-  if (!header) return res.status(401).json({ error: 'No token' });
+  if (!header || !header.startsWith('Bearer ')) return res.status(401).json({ error: 'No token' });
+  const token = header.slice(7).trim();
+  if (!token) return res.status(401).json({ error: 'No token' });
   try {
-    req.user = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch {
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
 
@@ -139,6 +200,12 @@ const adminOnly = (req, res, next) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
   next();
 };
+
+// ─── Input validation helpers ─────────────────────────────────────────────────
+function isValidEmail(e){ return typeof e === 'string' && e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+function strOK(v, max){ return typeof v === 'string' && v.length > 0 && v.length <= max; }
+// cap free-text sent to AI / stored in DB to block abuse (very large payloads)
+function capText(v, max){ return (typeof v === 'string') ? v.slice(0, max) : v; }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGE ROUTES
@@ -155,10 +222,14 @@ app.get('/app',      (req, res) => res.sendFile(__dirname + '/public/app.html'))
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
-app.post('/auth/register', async (req, res) => {
+app.post('/auth/register', authLimiter, async (req, res) => {
   try {
     const { email, password, name, role = 'student', grade, institution } = req.body;
     if (!email || !password || !name) return res.status(400).json({ error: 'Missing fields' });
+    if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email' });
+    if (!strOK(password, 200) || password.length < 6) return res.status(400).json({ error: 'Password must be 6–200 characters' });
+    if (!strOK(name, 100)) return res.status(400).json({ error: 'Invalid name' });
+    if (role && ['student','teacher','teacher_pro'].indexOf(role) === -1 && email !== 'nathansteyn96@gmail.com') return res.status(400).json({ error: 'Invalid role' });
 
     const exists = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (exists.rows.length > 0) return res.status(400).json({ error: 'Email already registered' });
@@ -181,9 +252,10 @@ app.post('/auth/register', async (req, res) => {
   }
 });
 
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!isValidEmail(email) || !strOK(password, 200)) return res.status(401).json({ error: 'Invalid credentials' });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
 
@@ -202,7 +274,7 @@ app.post('/auth/login', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // DOCUMENT ANALYSIS ROUTE
 // ─────────────────────────────────────────────────────────────────────────────
-app.post('/chat/document', authenticate, async (req, res) => {
+app.post('/chat/document', authenticate, aiLimiter, async (req, res) => {
   try {
     const { message, lang, role: userRole, document: doc } = req.body;
     const userId = req.user.id;
@@ -273,9 +345,11 @@ CRITICAL FORMATTING RULES:
 // ─────────────────────────────────────────────────────────────────────────────
 // CHAT ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
-app.post('/chat', authenticate, async (req, res) => {
+app.post('/chat', authenticate, aiLimiter, async (req, res) => {
   try {
-    const { message, subject, grade, lang, role: userRequestRole } = req.body;
+    let { message, subject, grade, lang, role: userRequestRole } = req.body;
+    if (!strOK(message, 8000)) return res.status(400).json({ error: 'Message is empty or too long (max 8000 characters).' });
+    message = capText(message, 8000);
     const userId = req.user.id;
     const isTeacher = userRequestRole === 'teacher' || req.user.role === 'teacher';
     const language = lang === 'en' ? 'English' : 'Vietnamese';
@@ -1159,7 +1233,7 @@ app.get('/payment/status', authenticate, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // FLASHCARD ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
-app.post('/flashcards/generate', authenticate, async (req, res) => {
+app.post('/flashcards/generate', authenticate, aiLimiter, async (req, res) => {
   try {
     const { subject, grade, topic, count = 5, lang } = req.body;
     const language = lang === 'en' ? 'English' : 'Vietnamese';
@@ -1236,7 +1310,7 @@ app.delete('/flashcards/:id', authenticate, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // IMAGE GENERATION ROUTE
 // ─────────────────────────────────────────────────────────────────────────────
-app.post('/image/generate', authenticate, async (req, res) => {
+app.post('/image/generate', authenticate, aiLimiter, async (req, res) => {
   try {
     const { prompt, subject, grade } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
@@ -1276,7 +1350,7 @@ app.post('/image/generate', authenticate, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GRAPH GENERATION ROUTE
 // ─────────────────────────────────────────────────────────────────────────────
-app.post('/graph/generate', authenticate, async (req, res) => {
+app.post('/graph/generate', authenticate, aiLimiter, async (req, res) => {
   try {
     const { topic, subject, grade, lang } = req.body;
     if (!topic) return res.status(400).json({ error: 'Missing topic' });
@@ -1535,7 +1609,7 @@ async function startServer() {
 
 app.get('/ielts', (req, res) => res.sendFile(__dirname + '/public/ielts.html'));
 
-app.post('/ielts/reading/generate', authenticate, async (req, res) => {
+app.post('/ielts/reading/generate', authenticate, aiLimiter, async (req, res) => {
   try {
     const { topic, difficulty } = req.body;
     const prompt = `Generate a complete IELTS ${difficulty||'Academic'} Reading passage about "${topic||'Science and Technology'}".
@@ -1576,7 +1650,7 @@ Generate exactly 13 questions total. All answers must come from the passage.`;
   } catch(e) { console.error('IELTS reading error:',e.message); res.status(500).json({error:e.message}); }
 });
 
-app.post('/ielts/listening/generate', authenticate, async (req, res) => {
+app.post('/ielts/listening/generate', authenticate, aiLimiter, async (req, res) => {
   try {
     const { section } = req.body;
     const sNum = parseInt(section)||1;
@@ -1626,7 +1700,7 @@ Script must be 300-400 words natural English. Generate exactly 10 questions tota
   } catch(e) { console.error('IELTS listening error:',e.message); res.status(500).json({error:e.message}); }
 });
 
-app.post('/ielts/writing/generate', authenticate, async (req, res) => {
+app.post('/ielts/writing/generate', authenticate, aiLimiter, async (req, res) => {
   try {
     const { task } = req.body;
     const taskNum = parseInt(task)||1;
@@ -1823,7 +1897,7 @@ app.post('/exam/scan-file', authenticate, async (req, res) => {
 // ─── EXAM ROUTES ──────────────────────────────────────────────────────────────
 
 // Generate exam with AI
-app.post('/exam/generate', authenticate, async (req, res) => {
+app.post('/exam/generate', authenticate, aiLimiter, async (req, res) => {
   try {
     const { subject, topics, context, purpose, difficulty, questionTypes, questionCount, adaptForWeak, timeLimit, showAnswers, grade } = req.body;
     const userId = req.user.id;
