@@ -4,114 +4,141 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>StellaStride — Đăng nhập</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#F5F9FF;--primary:#00B4A6;--secondary:#7B8CDE;
-  --pg:rgba(0,180,166,0.8);--sg:rgba(123,140,222,0.6);
-  --card:rgba(0,180,166,0.05);--border:rgba(0,180,166,0.15);
-  --border2:rgba(0,180,166,0.08);--text:#1E1B4B;
-  --muted:rgba(45,45,45,0.6);--muted2:rgba(30,27,75,0.4);
-  --font:'Poppins',system-ui,sans-serif;
+  --navy:#1E1B4B;--navy-line:#312E6B;--primary:#00B4A6;--primary-dark:#009488;--secondary:#7B8CDE;
+  --text:#1E1B4B;--muted:rgba(45,45,45,0.6);--muted2:rgba(30,27,75,0.4);
+  --border:#E0E0E5;--font:'Poppins',system-ui,sans-serif;
 }
-html,body{min-height:100vh;background:#F5F9FF;color:var(--text);font-family:var(--font);display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden}
-.orb{position:fixed;border-radius:50%;pointer-events:none}
-.o1{width:500px;height:500px;background:radial-gradient(circle,rgba(0,180,166,0.12),transparent 70%);top:-150px;right:-100px}
-.o2{width:350px;height:350px;background:radial-gradient(circle,rgba(123,140,222,0.1),transparent 70%);bottom:-80px;left:-60px}
-.card{background:#ffffff;backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:100%;max-width:400px;position:relative;z-index:1}
-.lang-wrap{display:flex;justify-content:center;background:rgba(0,180,166,0.05);border:1px solid var(--border);border-radius:20px;overflow:hidden;width:fit-content;margin:0 auto 24px}
+html,body{min-height:100vh;background:#fff;color:var(--text);font-family:var(--font)}
+.screen{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+
+/* LEFT — starfield panel */
+.starpanel{background:var(--navy);position:relative;overflow:hidden;padding:56px;display:flex;flex-direction:column;justify-content:space-between;color:#fff}
+.sp-brand{font-weight:900;font-size:26px;letter-spacing:.5px;position:relative;z-index:2}
+.sp-brand span{color:var(--primary)}
+.sp-tag{color:var(--secondary);font-size:17px;line-height:1.55;max-width:340px;position:relative;z-index:2}
+.stars{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70%;max-width:520px;opacity:.95}
+.tw{animation:tw 3s ease-in-out infinite}
+.tw:nth-child(6){animation-delay:.5s}.tw:nth-child(7){animation-delay:1s}
+.tw:nth-child(8){animation-delay:1.5s}.tw:nth-child(9){animation-delay:2s}
+@keyframes tw{0%,100%{opacity:.4}50%{opacity:1}}
+.dust{position:absolute;border-radius:50%;background:#fff}
+
+/* RIGHT — form panel */
+.formpanel{background:#fff;display:flex;align-items:center;justify-content:center;padding:48px}
+.card{width:100%;max-width:380px;position:relative;z-index:1}
+.lang-wrap{display:flex;justify-content:center;border:1px solid var(--border);overflow:hidden;width:fit-content;margin:0 auto 24px}
 .lb{padding:6px 16px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:var(--font)}
-.lb.on{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
-.brand{text-align:center;margin-bottom:24px}
-.brand-text{font-size:26px;font-weight:800;color:#1E1B4B}
-.brand-text span{color:#00B4A6;-webkit-text-fill-color:#00B4A6}
-.title{font-size:22px;font-weight:700;text-align:center;margin-bottom:6px;color:var(--text)}
-.subtitle{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px}
-.tabs{display:flex;background:rgba(0,180,166,0.04);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:22px}
-.tab{flex:1;padding:8px;text-align:center;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;font-family:var(--font);transition:all 0.2s}
-.tab.on{background:linear-gradient(135deg,var(--pg),var(--sg));color:#fff}
+.lb.on{background:var(--primary);color:#fff}
+.brand{text-align:center;margin-bottom:22px}
+.brand-text{font-size:24px;font-weight:900;color:var(--navy)}
+.brand-text span{color:var(--primary)}
+.tabs{display:flex;border:1px solid var(--border);padding:3px;margin-bottom:22px}
+.tab{flex:1;padding:9px;text-align:center;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all 0.2s}
+.tab.on{background:var(--primary);color:#fff}
 .field{margin-bottom:16px}
-.field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
-.field input,.field select{width:100%;padding:11px 14px;background:#F5F9FF;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--font);outline:none;transition:border-color 0.2s}
-.field input:focus,.field select:focus{border-color:rgba(0,180,166,0.4)}
-.field input::placeholder{color:var(--muted2)}
-.field select option{background:#F5F9FF;color:var(--text)}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+.field input,.field select{width:100%;padding:12px 14px;background:#fff;border:1px solid var(--border);color:var(--text);font-size:14px;font-family:var(--font);outline:none;transition:border-color 0.2s}
+.field input:focus,.field select:focus{border-color:var(--primary)}
+.field input::placeholder{color:#bbb}
+.field select option{background:#fff;color:var(--text)}
 .role-wrap{display:flex;gap:8px;margin-bottom:18px}
-.role-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.2s;font-family:var(--font)}
-.role-btn.on{border-color:rgba(0,180,166,0.4);color:var(--primary);background:rgba(0,180,166,0.08)}
-.role-btn.ton.on{border-color:rgba(16,185,129,0.4);color:rgba(110,231,183,0.9);background:rgba(16,185,129,0.08)}
-.submit{width:100%;padding:13px;background:linear-gradient(135deg,var(--pg),var(--sg));border:1px solid rgba(0,180,166,0.3);border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);margin-top:4px;transition:opacity 0.2s}
-.submit:hover{opacity:0.88}
+.role-btn{flex:1;padding:11px;border:1.5px solid var(--border);background:#fff;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all 0.2s;font-family:var(--font)}
+.role-btn.on{border-color:var(--primary);color:var(--primary);background:rgba(0,180,166,0.06)}
+.role-btn.ton.on{border-color:var(--secondary);color:var(--secondary);background:rgba(123,140,222,0.08)}
+.submit{width:100%;padding:14px;background:var(--primary);border:none;color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:4px;transition:background 0.2s}
+.submit:hover{background:var(--primary-dark)}
 .submit:disabled{opacity:0.5;cursor:not-allowed}
-.err{color:rgba(252,165,165,0.9);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+.err{color:#C0392B;font-size:13px;text-align:center;margin-top:10px;min-height:18px}
 .switch{text-align:center;margin-top:18px;font-size:13px;color:var(--muted2)}
-.switch a{color:#00B4A6;text-decoration:none;font-weight:600}
+.switch a{color:var(--primary);text-decoration:none;font-weight:600}
 .switch a:hover{text-decoration:underline}
-.divider{height:1px;background:rgba(0,180,166,0.1);margin:18px 0}
 .sp2{width:16px;height:16px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:rn .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
 @keyframes rn{to{transform:rotate(360deg)}}
+
+@media(max-width:760px){
+  .screen{grid-template-columns:1fr;grid-template-rows:32vh 1fr}
+  .starpanel{padding:32px}.sp-tag{font-size:14px}.formpanel{padding:36px 24px}
+}
 </style>
 </head>
 <body>
-<div class="orb o1"></div>
-<div class="orb o2"></div>
+<div class="screen">
 
-<div class="card">
-  <div class="lang-wrap">
-    <button class="lb on" id="lvi" onclick="setLang('vi')">🇻🇳 VI</button>
-    <button class="lb" id="len" onclick="setLang('en')">🇬🇧 EN</button>
-  </div>
-  <div class="brand"><span class="brand-text">Stella<span>Stride</span></span></div>
-  <div class="tabs">
-    <button class="tab on" id="tab-login" onclick="setMode('login')"><span id="t0">Đăng nhập</span></button>
-    <button class="tab" id="tab-reg" onclick="setMode('reg')"><span id="t1">Đăng ký</span></button>
-  </div>
-
-  <!-- Role selector (register only) -->
-  <div id="role-wrap" class="role-wrap" style="display:none">
-    <button class="role-btn on" id="role-s" onclick="setRole('student')">🎒 <span id="rl-s">Học sinh</span></button>
-    <button class="role-btn ton" id="role-t" onclick="setRole('teacher')">👩‍🏫 <span id="rl-t">Giáo viên</span></button>
-  </div>
-
-  <!-- Name (register only) -->
-  <div class="field" id="f-name" style="display:none">
-    <label id="l-name">Họ và tên</label>
-    <input type="text" id="inp-name" placeholder="Nguyễn Văn A"/>
+  <div class="starpanel" id="starpanel">
+    <div class="sp-brand">Stella<span>Stride</span></div>
+    <svg class="stars" viewBox="0 0 260 220">
+      <line x1="50" y1="55" x2="120" y2="38" stroke="var(--navy-line)" stroke-width="1.2"/>
+      <line x1="120" y1="38" x2="165" y2="92" stroke="var(--navy-line)" stroke-width="1.2"/>
+      <line x1="165" y1="92" x2="215" y2="72" stroke="var(--navy-line)" stroke-width="1.2"/>
+      <line x1="165" y1="92" x2="135" y2="158" stroke="var(--navy-line)" stroke-width="1.2"/>
+      <line x1="135" y1="158" x2="80" y2="175" stroke="var(--navy-line)" stroke-width="1.2"/>
+      <circle class="tw" cx="50" cy="55" r="4.5" fill="var(--primary)"/>
+      <circle class="tw" cx="120" cy="38" r="3" fill="var(--secondary)"/>
+      <circle class="tw" cx="165" cy="92" r="5" fill="var(--primary)"/>
+      <circle class="tw" cx="215" cy="72" r="3" fill="var(--secondary)"/>
+      <circle class="tw" cx="135" cy="158" r="4" fill="var(--primary)"/>
+      <circle class="tw" cx="80" cy="175" r="3.5" fill="var(--secondary)"/>
+    </svg>
+    <div class="sp-tag" id="sp-tag">Chart your course through every subject, one star at a time.</div>
   </div>
 
-  <!-- Grade (student register only) -->
-  <div class="field" id="f-grade" style="display:none">
-    <label id="l-grade">Lớp</label>
-    <select id="inp-grade">
-      <option value="1" id="g1">Lớp 1</option><option value="2" id="g2">Lớp 2</option><option value="3" id="g3">Lớp 3</option>
-      <option value="4" id="g4">Lớp 4</option><option value="5" id="g5">Lớp 5</option><option value="6" id="g6">Lớp 6</option>
-      <option value="7" id="g7">Lớp 7</option><option value="8" id="g8">Lớp 8</option><option value="9" id="g9">Lớp 9</option>
-      <option value="10" id="g10">Lớp 10</option><option value="11" id="g11">Lớp 11</option><option value="12" id="g12">Lớp 12</option>
-    </select>
+  <div class="formpanel">
+  <div class="card">
+    <div class="lang-wrap">
+      <button class="lb on" id="lvi" onclick="setLang('vi')">🇻🇳 VI</button>
+      <button class="lb" id="len" onclick="setLang('en')">🇬🇧 EN</button>
+    </div>
+    <div class="brand"><span class="brand-text">Stella<span>Stride</span></span></div>
+    <div class="tabs">
+      <button class="tab on" id="tab-login" onclick="setMode('login')"><span id="t0">Đăng nhập</span></button>
+      <button class="tab" id="tab-reg" onclick="setMode('reg')"><span id="t1">Đăng ký</span></button>
+    </div>
+
+    <div id="role-wrap" class="role-wrap" style="display:none">
+      <button class="role-btn on" id="role-s" onclick="setRole('student')">🎒 <span id="rl-s">Học sinh</span></button>
+      <button class="role-btn ton" id="role-t" onclick="setRole('teacher')">👩‍🏫 <span id="rl-t">Giáo viên</span></button>
+    </div>
+
+    <div class="field" id="f-name" style="display:none">
+      <label id="l-name">Họ và tên</label>
+      <input type="text" id="inp-name" placeholder="Nguyễn Văn A"/>
+    </div>
+
+    <div class="field" id="f-grade" style="display:none">
+      <label id="l-grade">Lớp</label>
+      <select id="inp-grade">
+        <option value="1" id="g1">Lớp 1</option><option value="2" id="g2">Lớp 2</option><option value="3" id="g3">Lớp 3</option>
+        <option value="4" id="g4">Lớp 4</option><option value="5" id="g5">Lớp 5</option><option value="6" id="g6">Lớp 6</option>
+        <option value="7" id="g7">Lớp 7</option><option value="8" id="g8">Lớp 8</option><option value="9" id="g9">Lớp 9</option>
+        <option value="10" id="g10">Lớp 10</option><option value="11" id="g11">Lớp 11</option><option value="12" id="g12">Lớp 12</option>
+      </select>
+    </div>
+
+    <div class="field" id="f-inst" style="display:none">
+      <label id="l-inst">Trường / Tổ chức</label>
+      <input type="text" id="inp-inst" placeholder="Trường THPT Nguyễn Trãi"/>
+    </div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="inp-email" placeholder="email@example.com"/>
+    </div>
+
+    <div class="field">
+      <label id="l-pw">Mật khẩu</label>
+      <input type="password" id="inp-pw" placeholder="••••••••"/>
+    </div>
+
+    <button class="submit" id="btn-submit" onclick="doAuth()">Đăng nhập</button>
+    <div class="err" id="err"></div>
+    <div class="switch" id="sw">Chưa có tài khoản? <a href="#" onclick="setMode('reg');return false;" id="sw-link">Đăng ký miễn phí</a></div>
+  </div>
   </div>
 
-  <!-- Institution (teacher register only) -->
-  <div class="field" id="f-inst" style="display:none">
-    <label id="l-inst">Trường / Tổ chức</label>
-    <input type="text" id="inp-inst" placeholder="Trường THPT Nguyễn Trãi"/>
-  </div>
-
-  <!-- Email -->
-  <div class="field">
-    <label>Email</label>
-    <input type="email" id="inp-email" placeholder="email@example.com"/>
-  </div>
-
-  <!-- Password -->
-  <div class="field">
-    <label id="l-pw">Mật khẩu</label>
-    <input type="password" id="inp-pw" placeholder="••••••••"/>
-  </div>
-
-  <button class="submit" id="btn-submit" onclick="doAuth()">Đăng nhập</button>
-  <div class="err" id="err"></div>
-  <div class="switch" id="sw">Chưa có tài khoản? <a href="#" onclick="setMode('reg');return false;" id="sw-link">Đăng ký miễn phí</a></div>
 </div>
 
 <script>
@@ -168,7 +195,6 @@ function applyLang(){
   ['inp-name','inp-inst'].forEach(function(k){
     var el = document.getElementById(k); if(el) el.placeholder = t(k);
   });
-  // Translate grade options
   var prefix = lang==='en' ? 'Grade ' : 'Lớp ';
   for(var i=1;i<=12;i++){
     var el = document.getElementById('g'+i);
@@ -251,15 +277,26 @@ async function doAuth(){
   }
 }
 
-// Enter key
 document.addEventListener('keydown', function(e){ if(e.key==='Enter') doAuth(); });
 
-// Check URL for role param
 var urlp = new URLSearchParams(window.location.search);
 if(urlp.get('role') === 'teacher'){ setMode('reg'); setRole('teacher'); }
 else if(urlp.get('role') === 'student'){ setMode('reg'); }
 
 setLang(lang);
+
+// ambient star dust
+var sp = document.getElementById('starpanel');
+for(var d=0; d<26; d++){
+  var el = document.createElement('div');
+  el.className = 'dust';
+  var sz = Math.random()*2+1;
+  el.style.width = el.style.height = sz+'px';
+  el.style.left = Math.random()*100+'%';
+  el.style.top = Math.random()*100+'%';
+  el.style.opacity = (Math.random()*0.5+0.2).toFixed(2);
+  sp.appendChild(el);
+}
 </script>
 </body>
 </html>
