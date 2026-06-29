@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>StellaStride — Đăng ký</title>
+<title>StellaStride — Đăng nhập</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -20,12 +20,7 @@ html,body{min-height:100vh;background:#fff;color:var(--text);font-family:var(--f
 .sp-brand{font-weight:900;font-size:26px;letter-spacing:.5px;position:relative;z-index:2}
 .sp-brand span{color:var(--primary)}
 .sp-tag{color:var(--secondary);font-size:17px;line-height:1.55;max-width:340px;position:relative;z-index:2}
-.stars{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70%;max-width:520px;opacity:.95}
-.tw{animation:tw 3s ease-in-out infinite}
-.tw:nth-child(6){animation-delay:.5s}.tw:nth-child(7){animation-delay:1s}
-.tw:nth-child(8){animation-delay:1.5s}.tw:nth-child(9){animation-delay:2s}
-@keyframes tw{0%,100%{opacity:.4}50%{opacity:1}}
-.dust{position:absolute;border-radius:50%;background:#fff}
+#zodiac-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
 
 /* RIGHT — form panel */
 .formpanel{background:#fff;display:flex;align-items:center;justify-content:center;padding:48px}
@@ -69,20 +64,8 @@ html,body{min-height:100vh;background:#fff;color:var(--text);font-family:var(--f
 <div class="screen">
 
   <div class="starpanel" id="starpanel">
+    <canvas id="zodiac-canvas"></canvas>
     <div class="sp-brand">Stella<span>Stride</span></div>
-    <svg class="stars" viewBox="0 0 260 220">
-      <line x1="50" y1="55" x2="120" y2="38" stroke="var(--navy-line)" stroke-width="1.2"/>
-      <line x1="120" y1="38" x2="165" y2="92" stroke="var(--navy-line)" stroke-width="1.2"/>
-      <line x1="165" y1="92" x2="215" y2="72" stroke="var(--navy-line)" stroke-width="1.2"/>
-      <line x1="165" y1="92" x2="135" y2="158" stroke="var(--navy-line)" stroke-width="1.2"/>
-      <line x1="135" y1="158" x2="80" y2="175" stroke="var(--navy-line)" stroke-width="1.2"/>
-      <circle class="tw" cx="50" cy="55" r="4.5" fill="var(--primary)"/>
-      <circle class="tw" cx="120" cy="38" r="3" fill="var(--secondary)"/>
-      <circle class="tw" cx="165" cy="92" r="5" fill="var(--primary)"/>
-      <circle class="tw" cx="215" cy="72" r="3" fill="var(--secondary)"/>
-      <circle class="tw" cx="135" cy="158" r="4" fill="var(--primary)"/>
-      <circle class="tw" cx="80" cy="175" r="3.5" fill="var(--secondary)"/>
-    </svg>
     <div class="sp-tag" id="sp-tag">Chart your course through every subject, one star at a time.</div>
   </div>
 
@@ -281,22 +264,68 @@ document.addEventListener('keydown', function(e){ if(e.key==='Enter') doAuth(); 
 
 var urlp = new URLSearchParams(window.location.search);
 if(urlp.get('role') === 'teacher'){ setMode('reg'); setRole('teacher'); }
-else { setMode('reg'); }
+else if(urlp.get('role') === 'student'){ setMode('reg'); }
 
 setLang(lang);
 
-// ambient star dust
-var sp = document.getElementById('starpanel');
-for(var d=0; d<26; d++){
-  var el = document.createElement('div');
-  el.className = 'dust';
-  var sz = Math.random()*2+1;
-  el.style.width = el.style.height = sz+'px';
-  el.style.left = Math.random()*100+'%';
-  el.style.top = Math.random()*100+'%';
-  el.style.opacity = (Math.random()*0.5+0.2).toFixed(2);
-  sp.appendChild(el);
-}
+// Real morphing zodiac engine — all 12 signs (matches landing page)
+(function(){
+  var canvas=document.getElementById('zodiac-canvas');
+  if(!canvas)return;
+  var ctx=canvas.getContext('2d');
+  function resizeCanvas(){var p=canvas.parentElement;canvas.width=p.offsetWidth;canvas.height=p.offsetHeight;}
+  resizeCanvas();window.addEventListener('resize',resizeCanvas);
+  // 12 signs from landing; x shifted left 0.28 to center in the panel
+  var RAW=[
+    {pts:[[0.62,0.20],[0.67,0.25],[0.72,0.30],[0.77,0.25],[0.82,0.20],[0.72,0.38],[0.67,0.46],[0.77,0.46],[0.72,0.54]],lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[5,7],[6,8]]},
+    {pts:[[0.65,0.22],[0.70,0.27],[0.75,0.22],[0.80,0.27],[0.75,0.33],[0.70,0.40],[0.65,0.47],[0.75,0.47],[0.70,0.54],[0.75,0.60]],lines:[[0,1],[1,2],[2,3],[3,4],[4,1],[1,5],[5,6],[5,7],[6,8],[7,8],[8,9]]},
+    {pts:[[0.63,0.18],[0.63,0.26],[0.63,0.34],[0.63,0.42],[0.63,0.50],[0.80,0.18],[0.80,0.26],[0.80,0.34],[0.80,0.42],[0.80,0.50],[0.715,0.34]],lines:[[0,1],[1,2],[2,3],[3,4],[5,6],[6,7],[7,8],[8,9],[2,10],[7,10],[0,5],[1,6]]},
+    {pts:[[0.68,0.20],[0.74,0.26],[0.80,0.22],[0.76,0.34],[0.70,0.40],[0.78,0.44],[0.72,0.50],[0.66,0.44]],lines:[[0,1],[1,2],[1,3],[3,4],[3,5],[4,6],[5,6],[4,7],[7,0]]},
+    {pts:[[0.64,0.20],[0.70,0.16],[0.76,0.20],[0.80,0.27],[0.76,0.34],[0.68,0.34],[0.62,0.30],[0.72,0.44],[0.72,0.54],[0.66,0.60],[0.78,0.60]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[5,7],[7,8],[8,9],[8,10]]},
+    {pts:[[0.64,0.18],[0.70,0.22],[0.76,0.18],[0.80,0.26],[0.76,0.34],[0.70,0.38],[0.64,0.34],[0.68,0.46],[0.74,0.52],[0.80,0.46]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,1],[5,7],[7,8],[8,9],[9,4]]},
+    {pts:[[0.66,0.26],[0.74,0.20],[0.82,0.26],[0.74,0.32],[0.68,0.42],[0.80,0.42],[0.74,0.54]],lines:[[0,1],[1,2],[2,3],[3,0],[3,4],[3,5],[4,6],[5,6]]},
+    {pts:[[0.62,0.20],[0.67,0.24],[0.72,0.22],[0.77,0.26],[0.80,0.32],[0.77,0.38],[0.72,0.42],[0.67,0.46],[0.63,0.52],[0.68,0.58],[0.74,0.54]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10]]},
+    {pts:[[0.64,0.22],[0.70,0.18],[0.76,0.22],[0.80,0.30],[0.74,0.36],[0.68,0.32],[0.72,0.44],[0.66,0.50],[0.78,0.50],[0.72,0.58]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[4,6],[6,7],[6,8],[7,9],[8,9]]},
+    {pts:[[0.64,0.20],[0.70,0.16],[0.76,0.20],[0.80,0.28],[0.74,0.36],[0.66,0.36],[0.62,0.44],[0.70,0.48],[0.78,0.44]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[5,6],[6,7],[7,8],[8,4]]},
+    {pts:[[0.62,0.28],[0.68,0.24],[0.74,0.28],[0.80,0.24],[0.80,0.32],[0.74,0.36],[0.68,0.32],[0.62,0.36],[0.62,0.44],[0.74,0.44],[0.80,0.40]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[7,8],[8,9],[9,5],[9,10],[10,4]]},
+    {pts:[[0.64,0.20],[0.70,0.16],[0.76,0.20],[0.72,0.28],[0.66,0.28],[0.70,0.36],[0.64,0.44],[0.70,0.48],[0.76,0.44],[0.72,0.36]],lines:[[0,1],[1,2],[2,3],[3,4],[4,0],[4,5],[3,5],[5,9],[5,6],[9,8],[6,7],[7,8]]}
+  ];
+  var SIGNS=RAW.map(function(s){return {pts:s.pts.map(function(p){return [p[0]-0.28,p[1]];}),lines:s.lines};});
+  var MAX=Math.max.apply(null,SIGNS.map(function(s){return s.pts.length;}));
+  function padPts(pts){
+    if(pts.length>=MAX) return pts.slice(0,MAX);
+    var cx=pts.reduce(function(a,p){return a+p[0];},0)/pts.length;
+    var cy=pts.reduce(function(a,p){return a+p[1];},0)/pts.length;
+    var out=pts.slice();
+    var jitter=[{x:0.018,y:0.012},{x:-0.015,y:0.018},{x:0.012,y:-0.015},{x:-0.018,y:0.012},{x:0.015,y:-0.018}];
+    while(out.length<MAX){var j=jitter[out.length%jitter.length];out.push([cx+j.x,cy+j.y]);}
+    return out;
+  }
+  var PAD=SIGNS.map(function(s){return {pts:s.pts,lines:s.lines,pad:padPts(s.pts)};});
+  var BG=[];for(var i=0;i<200;i++)BG.push({x:Math.random(),y:Math.random(),r:Math.random()*1.1+0.2,ph:Math.random()*Math.PI*2,sp:0.2+Math.random()*0.5,c:Math.random()<0.55?[123,140,222]:[0,180,166]});
+  function ease(t){return t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+  var HOLD=3.2,MORPH=2.4;
+  var idx=0,timer=0,morphing=false,mp=0;
+  function px(pad){return pad.map(function(p){return{x:p[0]*canvas.width,y:p[1]*canvas.height};});}
+  var fromPx=px(PAD[0].pad),toPx=null,curPx=fromPx.map(function(p){return{x:p.x,y:p.y};});
+  var last=null;
+  function drawZodiac(ts){
+    if(!last)last=ts;
+    var dt=Math.min((ts-last)/1000,0.05);last=ts;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    BG.forEach(function(s){s.ph+=dt*s.sp;var a=0.12+0.22*Math.abs(Math.sin(s.ph));ctx.beginPath();ctx.arc(s.x*canvas.width,s.y*canvas.height,s.r,0,Math.PI*2);ctx.fillStyle='rgba('+s.c[0]+','+s.c[1]+','+s.c[2]+','+a+')';ctx.fill();});
+    timer+=dt;
+    if(!morphing){if(timer>=HOLD){morphing=true;mp=0;timer=0;var next=(idx+1)%SIGNS.length;fromPx=curPx.map(function(p){return{x:p.x,y:p.y};});toPx=px(PAD[next].pad);}}
+    else{mp=Math.min(timer/MORPH,1);var e=ease(mp);curPx=fromPx.map(function(f,i){return{x:f.x+(toPx[i].x-f.x)*e,y:f.y+(toPx[i].y-f.y)*e};});if(mp>=1){idx=(idx+1)%SIGNS.length;fromPx=curPx.map(function(p){return{x:p.x,y:p.y};});toPx=null;morphing=false;timer=0;}}
+    var sign=SIGNS[idx];
+    var la=morphing?(0.30*(1-ease(mp))):0.38;
+    sign.lines.forEach(function(l){var a=curPx[l[0]],b=curPx[l[1]];if(!a||!b)return;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(123,140,222,'+la+')';ctx.lineWidth=0.9;ctx.setLineDash([3,6]);ctx.stroke();ctx.setLineDash([]);});
+    if(morphing&&toPx){var nl=SIGNS[(idx+1)%SIGNS.length].lines;var na=0.30*ease(mp);nl.forEach(function(l){var a=curPx[l[0]],b=curPx[l[1]];if(!a||!b)return;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(123,140,222,'+na+')';ctx.lineWidth=0.9;ctx.setLineDash([3,6]);ctx.stroke();ctx.setLineDash([]);});}
+    curPx.forEach(function(s,i){var isR=i<sign.pts.length;var r=isR?3.6:1.4;var a=isR?0.9:0.28;ctx.beginPath();ctx.arc(s.x,s.y,r+6,0,Math.PI*2);ctx.fillStyle='rgba(0,180,166,'+(0.06*a)+')';ctx.fill();ctx.beginPath();ctx.arc(s.x,s.y,r+2.5,0,Math.PI*2);ctx.fillStyle='rgba(0,180,166,'+(0.12*a)+')';ctx.fill();ctx.beginPath();ctx.arc(s.x,s.y,r,0,Math.PI*2);ctx.fillStyle='rgba(0,180,166,'+a+')';ctx.fill();ctx.beginPath();ctx.arc(s.x,s.y,r*0.3,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,'+(0.95*a)+')';ctx.fill();});
+    requestAnimationFrame(drawZodiac);
+  }
+  requestAnimationFrame(drawZodiac);
+})();
 </script>
 </body>
 </html>
