@@ -2154,15 +2154,38 @@ Respond ONLY with valid JSON, no markdown:
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
+      max_tokens: 8000,
       messages: [{ role: 'user', content: prompt }]
     });
 
     let text = response.content[0].text.replace(/```json|```/g, '').trim();
-    const examData = JSON.parse(text);
+    let examData;
+    try {
+      examData = JSON.parse(text);
+    } catch (parseErr) {
+      // The model output may have been cut off mid-JSON. Try to salvage by trimming
+      // back to the last complete "}" and closing open arrays/objects.
+      let salvage = text;
+      const lastBrace = salvage.lastIndexOf('}');
+      if (lastBrace > 0) {
+        salvage = salvage.slice(0, lastBrace + 1);
+        // close any unbalanced arrays/objects roughly
+        const opens = (salvage.match(/{/g) || []).length, closes = (salvage.match(/}/g) || []).length;
+        const aOpens = (salvage.match(/\[/g) || []).length, aCloses = (salvage.match(/\]/g) || []).length;
+        salvage += ']'.repeat(Math.max(0, aOpens - aCloses)) + '}'.repeat(Math.max(0, opens - closes));
+      }
+      try {
+        examData = JSON.parse(salvage);
+      } catch (e2) {
+        return res.status(502).json({ error: 'The paper was too long to generate in one go. Please try fewer marks (e.g. 20) or a single strand, then try again.' });
+      }
+    }
+    if (!examData || !Array.isArray(examData.sections)) {
+      return res.status(502).json({ error: 'Generation produced no questions. Please try again with fewer marks or a single strand.' });
+    }
 
     let totalPoints = 0;
-    examData.sections.forEach(s => s.questions.forEach(q => { totalPoints += q.points || 1; }));
+    examData.sections.forEach(s => (s.questions || []).forEach(q => { totalPoints += q.points || 1; }));
     const code = 'CP-' + crypto.randomBytes(3).toString('hex').toUpperCase();
 
     const result = await pool.query(
