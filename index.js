@@ -1855,11 +1855,12 @@ Question type codes:
 - ordering: Steps/items to put in correct order (provide 4-5 items)
 - comprehension: Short passage followed by 2-3 questions about it
 
-VISUALS (for Math/Science graph questions ONLY):
-If a question requires a coordinate graph to answer it (e.g. reading a vertex, roots, gradient, or interpreting a parabola/line), add a "visual" field to that question object. Only add it when the question genuinely needs a graph. Supported:
-- Quadratic: "visual": { "kind": "quadratic", "a": <num>, "b": <num>, "c": <num>, "xRange": [-6,6], "yRange": [-6,6], "marks": [{"type":"vertex"},{"type":"roots"}], "label": "y = f(x)" }
-- Linear: "visual": { "kind": "linear", "m": <num>, "c": <num>, "xRange": [-6,6], "yRange": [-6,6], "label": "y = mx + c" }
-Use marks to dot key features (vertex, roots) when the question asks about them. Choose xRange/yRange so the whole curve and its key points are visible. Do NOT add a visual to questions that do not need one.
+VISUALS — IMPORTANT (Math graph questions):
+When the subject is Math and a topic involves graphs, parabolas, quadratics, straight lines, gradients, coordinates, vertices, or roots, you MUST create questions that show a graph, and add a "visual" field to those question objects so students can read values off the graph. Make the question text refer to the graph (e.g. "The graph shows y = f(x). State the coordinates of the vertex." or "Use the graph to find the roots.").
+The "visual" field format (add it INSIDE the question object, alongside "question", "answer", "points"):
+- Quadratic (parabola): "visual": { "kind": "quadratic", "a": <num>, "b": <num>, "c": <num>, "xRange": [-6,6], "yRange": [-6,6], "marks": [{"type":"vertex"},{"type":"roots"}], "label": "y = f(x)" }
+- Linear (straight line): "visual": { "kind": "linear", "m": <num>, "c": <num>, "xRange": [-6,6], "yRange": [-6,6], "label": "y = mx + c" }
+Rules: pick a, b, c (or m, c) so the answer to the question is exactly readable from the graph. Choose xRange and yRange so the whole curve and all marked points fit inside. Use "marks" to dot the vertex and/or roots when the question asks about them. For a Math exam that mentions graphs/quadratics/lines, AT LEAST ONE question must include a visual. Do NOT add visuals to non-graph questions (arithmetic, word problems, etc.) or to non-Math subjects.
 
 Respond ONLY with valid JSON, no markdown, no explanation:
 {
