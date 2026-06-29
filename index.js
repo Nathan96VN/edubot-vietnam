@@ -1928,6 +1928,11 @@ Question type codes:
 - errorcorrection: Sentence with an error to find and correct
 - ordering: Steps/items to put in correct order (provide 4-5 items)
 - comprehension: Short passage followed by 2-3 questions about it
+- numeric: A question with an exact numeric or short equation answer (auto-checkable). Provide the answer as the exact value (e.g. "4" or "x = 4" or "3.5"). Use for math/science calculations.
+- labeldiagram: A diagram with numbered pointers (1, 2, 3...) where the student names each labelled part. Provide a "visual" field for the diagram and a "labels" array giving the correct name for each numbered pointer. Use for science (label cell parts, circuit components, etc.).
+- dragorder: Items the student drags into the correct sequence. Provide an "items" array IN THE CORRECT ORDER (the system shuffles them for the student). Use for sequencing steps, timelines, or sentence ordering.
+- highlight: A sentence or short passage where the student clicks the correct word(s). Provide "tokens" (the sentence split into an array of words/punctuation) and "correct" (an array of the zero-based indices of the correct token(s)). Use for "click the verb", "select the error", etc.
+- dropdown: A sentence with one or more inline dropdown blanks (cloze). Provide "segments" — an array where each element is either {"text":"plain words"} or {"blank":{"options":["opt1","opt2","opt3"],"answer":"opt1"}}. Use for grammar/cloze tests.
 
 VISUALS — add a "visual" field to a question when a diagram helps answer it. Make the question text refer to the visual (e.g. "The graph shows...", "Use the diagram..."). Add visuals ONLY where they genuinely help; never on plain arithmetic/word questions. Pick numbers so the answer is readable from the visual, and ranges so everything fits. Supported "visual" kinds:
 GRAPHS (coordinate plane):
@@ -1983,6 +1988,77 @@ Respond ONLY with valid JSON, no markdown, no explanation:
           "answer": "True",
           "points": 1,
           "explanation": "why this is true/false"
+        }
+      ]
+    },
+    {
+      "type": "numeric",
+      "label": "Section C: Calculation",
+      "questions": [
+        {
+          "id": 8,
+          "question": "Solve for x: 2x + 5 = 13",
+          "answer": "4",
+          "points": 2,
+          "explanation": "2x = 8, so x = 4"
+        }
+      ]
+    },
+    {
+      "type": "labeldiagram",
+      "label": "Section D: Label the Diagram",
+      "questions": [
+        {
+          "id": 9,
+          "question": "Label the marked parts of the diagram.",
+          "visual": { "kind": "coordshape", "vertices": [[-1,2],[2,2],[2,-1],[-1,-1]], "xRange": [-4,4], "yRange": [-4,4] },
+          "labels": ["Vertex A", "Vertex B", "Vertex C", "Vertex D"],
+          "points": 4,
+          "explanation": "Each numbered pointer corresponds to a labelled part"
+        }
+      ]
+    },
+    {
+      "type": "dragorder",
+      "label": "Section E: Put in Order",
+      "questions": [
+        {
+          "id": 10,
+          "question": "Put the steps of making tea in the correct order.",
+          "items": ["Boil the water", "Add the tea leaves", "Let it steep", "Pour into a cup"],
+          "points": 4,
+          "explanation": "The items above are listed in the correct order"
+        }
+      ]
+    },
+    {
+      "type": "highlight",
+      "label": "Section F: Click the Word",
+      "questions": [
+        {
+          "id": 11,
+          "question": "Click the verb in the sentence.",
+          "tokens": ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"],
+          "correct": [4],
+          "points": 1,
+          "explanation": "\"jumps\" is the verb"
+        }
+      ]
+    },
+    {
+      "type": "dropdown",
+      "label": "Section G: Choose the Correct Word",
+      "questions": [
+        {
+          "id": 12,
+          "question": "Choose the correct verb forms.",
+          "segments": [
+            { "text": "She " },
+            { "blank": { "options": ["has lived", "live", "living"], "answer": "has lived" } },
+            { "text": " in Hanoi since 2010." }
+          ],
+          "points": 2,
+          "explanation": "Present perfect for an action continuing from the past"
         }
       ]
     }
@@ -2291,9 +2367,54 @@ app.post('/exam/submission/:id/submit', async (req, res) => {
         let autoGraded = false;
 
         if (['mcq', 'truefalse', 'matching'].includes(section.type)) {
-          // Auto-grade
+          // Auto-grade exact match
           autoGraded = true;
           if (ans.toString().trim().toLowerCase() === q.answer.toString().trim().toLowerCase()) {
+            score = q.points || 1;
+          }
+        } else if (section.type === 'numeric') {
+          // Auto-grade numeric: compare numeric values, tolerant of "x = 4", "4.0", spaces
+          autoGraded = true;
+          const norm = (s) => {
+            const m = (s == null ? '' : s.toString()).replace(/\s+/g, '').replace(/^[a-zA-Z]+=/, '');
+            const num = parseFloat(m);
+            return isNaN(num) ? m.toLowerCase() : num;
+          };
+          const a = norm(ans), b = norm(q.answer);
+          if (typeof a === 'number' && typeof b === 'number') {
+            if (Math.abs(a - b) < 1e-6) score = q.points || 1;
+          } else if (a === b && a !== '') {
+            score = q.points || 1;
+          }
+        } else if (section.type === 'dragorder') {
+          // ans is the student's ordered array of items (or comma string); compare to q.items
+          autoGraded = true;
+          const correct = (q.items || []).map(x => x.toString().trim());
+          let studentArr = Array.isArray(ans) ? ans : (ans ? ans.toString().split('|||') : []);
+          studentArr = studentArr.map(x => x.toString().trim());
+          if (correct.length && studentArr.length === correct.length &&
+              correct.every((v, i) => v === studentArr[i])) {
+            score = q.points || 1;
+          }
+        } else if (section.type === 'highlight') {
+          // ans is an array of selected indices; compare to q.correct
+          autoGraded = true;
+          const correct = (q.correct || []).map(Number).sort((x, y) => x - y);
+          let sel = Array.isArray(ans) ? ans.map(Number) : (ans !== '' && ans != null ? ans.toString().split(',').map(Number) : []);
+          sel = sel.sort((x, y) => x - y);
+          if (correct.length && sel.length === correct.length &&
+              correct.every((v, i) => v === sel[i])) {
+            score = q.points || 1;
+          }
+        } else if (section.type === 'dropdown') {
+          // ans is an object/array of chosen options per blank; compare each to its answer
+          autoGraded = true;
+          const blanks = (q.segments || []).filter(s => s.blank).map(s => s.blank.answer);
+          let chosen = [];
+          if (Array.isArray(ans)) chosen = ans;
+          else if (ans && typeof ans === 'object') chosen = Object.keys(ans).sort((x,y)=>Number(x)-Number(y)).map(k => ans[k]);
+          if (blanks.length && chosen.length === blanks.length &&
+              blanks.every((v, i) => (v || '').toString().trim().toLowerCase() === (chosen[i] || '').toString().trim().toLowerCase())) {
             score = q.points || 1;
           }
         } else {
