@@ -1397,6 +1397,8 @@ async function fetchCredits(){
 }
 
 window.onload=function(){
+  // Warm up the server (Render free tier sleeps) so the first chat doesn't fail
+  try{ fetch(API+'/', {method:'GET', mode:'no-cors'}).catch(function(){}); }catch(e){}
   applyLang();
   document.getElementById('lvi').onclick=function(){lang='vi';localStorage.setItem('eb_lang','vi');applyLang();};
   document.getElementById('len').onclick=function(){lang='en';localStorage.setItem('eb_lang','en');applyLang();};
@@ -1528,6 +1530,26 @@ function onFile(f){
 }
 function rmFile(){cfd=null;cft=null;cfn='';examFileData=null;examFileType=null;examFileName='';document.getElementById('fbar').className='fbar';document.getElementById('battach').className='';document.getElementById('cfi').value='';}
 
+async function fetchWithRetry(url, opts, attempts, onWake){
+  attempts = attempts || 2;
+  for(var i=0;i<attempts;i++){
+    try{
+      var ctrl = new AbortController();
+      var to = setTimeout(function(){ ctrl.abort(); }, 75000);
+      var res = await fetch(url, Object.assign({}, opts, {signal: ctrl.signal}));
+      clearTimeout(to);
+      return res;
+    }catch(e){
+      if(i < attempts-1){
+        if(typeof onWake==='function') onWake();
+        await new Promise(function(r){ setTimeout(r, 3000); });
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
 async function doSend(){
   if(!tok){openModal();return;}
   var inp=document.getElementById('cinput');var msg=inp.value.trim();if(!msg)return;
@@ -1535,12 +1557,15 @@ async function doSend(){
   var _cfd=cfd,_cft=cft,_cfn=cfn;
   if(!_cfd)addMsg('u',msg);
   if(_cfd){addMsg('u',msg);rmFile();}
-  var btn=document.getElementById('bsend');btn.disabled=true;
+  var btn=document.getElementById('bsend');if(btn)btn.disabled=true;
   var tid=addTyping('msgs');
+  var wakeMsg = (lang==='en') ? 'Waking up the server, one moment\u2026' : 'M\u00e1y ch\u1ee7 \u0111ang kh\u1edfi \u0111\u1ed9ng, vui l\u00f2ng ch\u1edd\u2026';
   try{
     var bd={message:msg,subject:document.getElementById('selsub').value,grade:parseInt(document.getElementById('selgrd').value),lang:lang,role:urole};
     if(_cfd){bd.document={type:_cft,data:_cfd,name:_cfn};}
-    var res=await fetch(_cfd?API+'/chat/document':API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify(bd)});
+    var res=await fetchWithRetry(_cfd?API+'/chat/document':API+'/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah()},body:JSON.stringify(bd)}, 3, function(){
+      var t=document.getElementById(tid); if(t){ var b=t.querySelector('.bub'); if(b) b.innerHTML='<p style="color:var(--muted)">'+wakeMsg+'</p>'; }
+    });
     var data=await res.json();
     var te=document.getElementById(tid);if(te)te.remove();
     if(!res.ok){
@@ -1552,8 +1577,12 @@ async function doSend(){
       if(data.daily_count!=null){var rem=5-data.daily_count;document.getElementById('drem').textContent=rem<0?0:rem;}
       if(data.credits!=null)updateCredits(data.credits);
     }
-  }catch(e){var te=document.getElementById(tid);if(te)te.remove();addMsg('a','<p>❌ '+L('cerr')+'</p>');}
-  finally{btn.disabled=false;inp.focus();}
+  }catch(e){
+    var te=document.getElementById(tid);if(te)te.remove();
+    var emsg=(lang==='en')?'The server is taking longer than usual. Please try again in a moment.':'M\u00e1y ch\u1ee7 ph\u1ea3n h\u1ed3i ch\u1eadm h\u01a1n b\u00ecnh th\u01b0\u1eddng. Vui l\u00f2ng th\u1eed l\u1ea1i sau gi\u00e2y l\u00e1t.';
+    addMsg('a','<p>'+emsg+'</p>');
+  }
+  finally{if(btn)btn.disabled=false;inp.focus();}
 }
 
 async function doImage(){
