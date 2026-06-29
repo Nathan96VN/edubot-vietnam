@@ -1855,12 +1855,30 @@ Question type codes:
 - ordering: Steps/items to put in correct order (provide 4-5 items)
 - comprehension: Short passage followed by 2-3 questions about it
 
-VISUALS — IMPORTANT (Math graph questions):
-When the subject is Math and a topic involves graphs, parabolas, quadratics, straight lines, gradients, coordinates, vertices, or roots, you MUST create questions that show a graph, and add a "visual" field to those question objects so students can read values off the graph. Make the question text refer to the graph (e.g. "The graph shows y = f(x). State the coordinates of the vertex." or "Use the graph to find the roots.").
-The "visual" field format (add it INSIDE the question object, alongside "question", "answer", "points"):
-- Quadratic (parabola): "visual": { "kind": "quadratic", "a": <num>, "b": <num>, "c": <num>, "xRange": [-6,6], "yRange": [-6,6], "marks": [{"type":"vertex"},{"type":"roots"}], "label": "y = f(x)" }
-- Linear (straight line): "visual": { "kind": "linear", "m": <num>, "c": <num>, "xRange": [-6,6], "yRange": [-6,6], "label": "y = mx + c" }
-Rules: pick a, b, c (or m, c) so the answer to the question is exactly readable from the graph. Choose xRange and yRange so the whole curve and all marked points fit inside. Use "marks" to dot the vertex and/or roots when the question asks about them. For a Math exam that mentions graphs/quadratics/lines, AT LEAST ONE question must include a visual. Do NOT add visuals to non-graph questions (arithmetic, word problems, etc.) or to non-Math subjects.
+VISUALS — add a "visual" field to a question when a diagram helps answer it. Make the question text refer to the visual (e.g. "The graph shows...", "Use the diagram..."). Add visuals ONLY where they genuinely help; never on plain arithmetic/word questions. Pick numbers so the answer is readable from the visual, and ranges so everything fits. Supported "visual" kinds:
+GRAPHS (coordinate plane):
+- quadratic: { "kind":"quadratic","a":1,"b":-4,"c":3,"xRange":[-2,6],"yRange":[-2,6],"marks":[{"type":"vertex"},{"type":"roots"}],"label":"y = x² − 4x + 3" }
+- linear: { "kind":"linear","m":2,"c":1,"xRange":[-6,6],"yRange":[-6,6],"label":"y = 2x + 1" }
+- cubic: { "kind":"cubic","a":1,"b":0,"c":-3,"d":0,"xRange":[-3,3],"yRange":[-4,4],"label":"y = x³ − 3x" }
+- reciprocal: { "kind":"reciprocal","a":1,"xRange":[-5,5],"yRange":[-5,5],"label":"y = 1/x" }
+- exponential: { "kind":"exponential","base":2,"a":1,"xRange":[-3,3],"yRange":[0,8],"label":"y = 2ˣ" }
+- absolute: { "kind":"absolute","a":1,"h":0,"k":0,"xRange":[-5,5],"yRange":[0,6],"label":"y = |x|" }
+- simultaneous (two lines + intersection dot): { "kind":"simultaneous","m1":1,"c1":-1,"m2":-1,"c2":3,"xRange":[-2,6],"yRange":[-2,6] }
+- inequality (shaded region): { "kind":"inequality","m":1,"c":1,"region":"above","xRange":[-4,4],"yRange":[-2,6],"label":"y ≥ x + 1" }
+TRIG & NUMBER LINE:
+- trig: { "kind":"trig","fn":"sin","maxDeg":360,"amp":1 }   (fn: "sin"|"cos"|"tan")
+- numberline: { "kind":"numberline","min":-3,"max":3,"intervals":[{"from":-2,"to":3,"fromClosed":true,"toClosed":false}],"points":[{"at":1,"closed":true}] }  (closed=filled dot/included, open=hollow/not included)
+DATA & STATISTICS:
+- bar: { "kind":"bar","bars":[{"label":"Red","value":8},{"label":"Blue","value":14}],"yLabel":"Frequency" }
+- pie: { "kind":"pie","slices":[{"label":"Walk","value":40},{"label":"Bus","value":25},{"label":"Car","value":35}] }  (values are percentages or counts)
+- scatter: { "kind":"scatter","points":[{"x":1,"y":2},{"x":2,"y":3}],"bestFit":true,"xLabel":"Hours","yLabel":"Score" }
+- boxplot: { "kind":"boxplot","min":2,"q1":8,"median":15,"q3":22,"max":30 }
+GEOMETRY:
+- triangle: { "kind":"triangle","angleA":"40°","sideAB":"12 cm","sideAC":"8 cm","sideBC":"x","labelA":"A","labelB":"B","labelC":"C" }
+- sector (circle): { "kind":"sector","angle":60,"radiusLabel":"r = 5 cm" }
+- angleline (angles on a straight line): { "kind":"angleline","rayAngle":52,"rightLabel":"x","leftLabel":"130°" }
+- coordshape (polygon on a grid): { "kind":"coordshape","vertices":[[-1,2],[2,2],[2,-1],[-1,-1]],"xRange":[-4,4],"yRange":[-4,4] }
+Choose the kind that matches the topic: graphs for functions/algebra, bar/pie/scatter/boxplot for statistics & data, numberline for inequalities, trig for trigonometry, triangle/sector/angleline/coordshape for geometry. For a Math exam on these topics, include at least one relevant visual.
 
 Respond ONLY with valid JSON, no markdown, no explanation:
 {
