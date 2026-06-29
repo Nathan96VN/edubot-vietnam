@@ -619,7 +619,7 @@ input[type=file]#cfi{display:none}
                 <div class="fg"><label>Credits Amount</label><input type="number" id="promo-credits" placeholder="e.g. 100" min="1"/></div>
                 <div class="fg"><label>Max Uses</label><input type="number" id="promo-uses" placeholder="1" min="1" value="1"/></div>
               </div>
-              <button onclick="createPromo('credits')" style="background:linear-gradient(135deg,rgba(245,158,11,0.5),rgba(123,140,222,0.4));border:1px solid rgba(245,158,11,0.3);border-radius:var(--rs);color:#fff;padding:9px 18px;font-weight:600;cursor:pointer;font-family:var(--font)">⚡ Generate Credits Code</button>
+              <button onclick="createPromo('credits')" style="background:var(--teal);border:none;color:#fff;padding:10px 18px;font-weight:600;cursor:pointer;font-family:var(--font);font-size:13px"><i class="ti ti-bolt" style="vertical-align:-2px"></i> Generate credits code</button>
             </div>
             <div class="crcard">
               <div class="stitle">📦 Plan Upgrade Promo</div>
@@ -627,7 +627,7 @@ input[type=file]#cfi{display:none}
                 <div class="fg"><label>Plan</label><select id="promo-plan" style="width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none"><option value="basic">Student Basic</option><option value="plus">Student Plus</option><option value="teacher">Teacher</option><option value="teacher_pro">Teacher Pro</option></select></div>
                 <div class="fg"><label>Max Uses</label><input type="number" id="promo-plan-uses" placeholder="1" min="1" value="1"/></div>
               </div>
-              <button onclick="createPromo('plan')" style="background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);border-radius:var(--rs);color:#fff;padding:9px 18px;font-weight:600;cursor:pointer;font-family:var(--font)">📦 Generate Plan Code</button>
+              <button onclick="createPromo('plan')" style="background:var(--navy);border:none;color:#fff;padding:10px 18px;font-weight:600;cursor:pointer;font-family:var(--font);font-size:13px"><i class="ti ti-package" style="vertical-align:-2px"></i> Generate plan code</button>
             </div>
           </div>
           <div class="stitle">📋 All Promo Codes</div>
@@ -658,7 +658,7 @@ input[type=file]#cfi{display:none}
                   <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden"><div id="curr-import-bar" style="height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:2px;transition:width .3s;width:0%"></div></div>
                 </div>
                 <div style="display:flex;gap:10px">
-                  <button id="btn-curr-import" onclick="importCurr()" style="padding:9px 20px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">✅ Import into System</button>
+                  <button id="btn-curr-import" onclick="importCurr()" style="padding:10px 20px;background:var(--teal);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-check" style="vertical-align:-2px"></i> Import into system</button>
                   <button onclick="cancelCurrScan()" style="padding:9px 16px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.03);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">✕ Cancel</button>
                 </div>
               </div>
@@ -806,27 +806,26 @@ input[type=file]#cfi{display:none}
 
         <!-- Generated Exam Preview -->
         <div id="exam-preview" style="display:none">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-            <button onclick="backToExamForm()" style="padding:8px 14px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">← Back</button>
-            <div style="flex:1;font-size:16px;font-weight:700;color:var(--text)" id="exam-preview-title"></div>
-            <button onclick="saveExamToMemory()" style="padding:8px 16px;border-radius:var(--rs);background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">🗂️ Save</button>
-            <button onclick="assignExam()" id="btn-assign" style="padding:8px 16px;border-radius:var(--rs);background:linear-gradient(135deg,rgba(16,185,129,0.5),rgba(5,150,105,0.4));border:1px solid rgba(16,185,129,0.3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">📤 Assign to Students</button>
-            <button onclick="exportExamWord('student')" style="padding:8px 16px;border-radius:var(--rs);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:rgba(147,197,253,0.9);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">📄 Export Student</button>
-            <button onclick="exportExamWord('teacher')" style="padding:8px 16px;border-radius:var(--rs);background:rgba(0,180,166,0.1);border:1px solid rgba(0,180,166,0.2);color:rgba(30,27,75,0.7);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">🔑 Export Answer Key</button>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+            <button class="flow-back" style="margin:0" onclick="backToExamForm()"><i class="ti ti-arrow-left"></i> Back</button>
+            <div style="flex:1;font-size:16px;font-weight:600;color:var(--navy)" id="exam-preview-title"></div>
+            <button onclick="saveExamToMemory()" style="padding:8px 16px;border:0.5px solid #d5d9ec;background:#fff;color:#666;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-folder" style="vertical-align:-2px"></i> Save</button>
+            <button onclick="assignExam()" id="btn-assign" style="padding:8px 16px;background:var(--teal);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-send" style="vertical-align:-2px"></i> Assign</button>
+            <button onclick="exportExamWord('student')" style="padding:8px 16px;border:0.5px solid #d5d9ec;background:#fff;color:#666;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-file-text" style="vertical-align:-2px"></i> Student</button>
+            <button onclick="exportExamWord('teacher')" style="padding:8px 16px;border:0.5px solid #d5d9ec;background:#fff;color:#666;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-key" style="vertical-align:-2px"></i> Answer key</button>
           </div>
-          <!-- PRE-ASSIGN: Class selector + attempt limit -->
-          <div id="exam-pre-assign" style="background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:14px">
-            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">📤 Assign Exam to Students</div>
+          <div id="exam-pre-assign" style="background:#FAFBFF;border:0.5px solid #e8ebf7;padding:16px;margin-bottom:14px">
+            <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:14px"><i class="ti ti-send" style="color:var(--teal);vertical-align:-2px"></i> Assign exam to students</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
               <div>
-                <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Assign to Class</label>
-                <select id="assign-class-sel" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-family:var(--font);font-size:13px;outline:none">
+                <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Assign to class</label>
+                <select id="assign-class-sel" style="width:100%;padding:9px 12px;border:0.5px solid #d5d9ec;background:#fff;color:var(--navy);font-family:var(--font);font-size:13px;outline:none">
                   <option value="">Everyone with code</option>
                 </select>
               </div>
               <div>
-                <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Attempts allowed</label>
-                <select id="assign-attempts-sel" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-family:var(--font);font-size:13px;outline:none">
+                <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Attempts allowed</label>
+                <select id="assign-attempts-sel" style="width:100%;padding:9px 12px;border:0.5px solid #d5d9ec;background:#fff;color:var(--navy);font-family:var(--font);font-size:13px;outline:none">
                   <option value="1">1 attempt only</option>
                   <option value="2">2 attempts</option>
                   <option value="3">3 attempts</option>
@@ -834,22 +833,21 @@ input[type=file]#cfi{display:none}
                 </select>
               </div>
             </div>
-            <button id="btn-assign" onclick="assignExam()" style="padding:10px 20px;background:linear-gradient(135deg,rgba(16,185,129,0.7),rgba(5,150,105,0.6));border:1px solid rgba(16,185,129,0.3);border-radius:var(--rs);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">📤 Assign to Students</button>
+            <button id="btn-assign" onclick="assignExam()" style="padding:11px 22px;background:var(--teal);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-send" style="vertical-align:-2px"></i> Assign to students</button>
           </div>
-          <!-- POST-ASSIGN: Live code display -->
-          <div id="exam-assign-info" style="display:none;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--r);padding:16px;margin-bottom:14px">
-            <div style="font-size:13px;font-weight:700;color:rgba(110,231,183,0.9);margin-bottom:10px">✅ Exam is now LIVE!</div>
+          <div id="exam-assign-info" style="display:none;background:#E1F5EE;border:0.5px solid #9FE1CB;padding:16px;margin-bottom:14px">
+            <div style="font-size:13px;font-weight:600;color:#0F6E56;margin-bottom:10px"><i class="ti ti-circle-check" style="vertical-align:-2px"></i> Exam is now live</div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Share this code with your students:</div>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
-              <div id="exam-live-code" style="font-size:28px;font-weight:800;font-family:monospace;color:var(--primary);letter-spacing:4px;padding:10px 20px;background:rgba(0,180,166,0.1);border:2px solid rgba(0,180,166,0.3);border-radius:var(--rs)">—</div>
-              <button onclick="copyExamCode()" style="padding:10px 18px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">📋 Copy Code</button>
+              <div id="exam-live-code" style="font-size:28px;font-weight:800;font-family:monospace;color:var(--teal);letter-spacing:4px;padding:10px 20px;background:#fff;border:0.5px solid var(--teal)">—</div>
+              <button onclick="copyExamCode()" style="padding:10px 18px;background:var(--teal);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-copy" style="vertical-align:-2px"></i> Copy code</button>
             </div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Students go to <strong style="color:var(--text)">edubot-vietnam.onrender.com/exam</strong> and enter this code</div>
-            <div id="assigned-class-info" style="font-size:12px;color:rgba(110,231,183,0.7);margin-bottom:12px"></div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Students go to <strong style="color:var(--navy)">edubot-vietnam.onrender.com/exam</strong> and enter this code</div>
+            <div id="assigned-class-info" style="font-size:12px;color:#0F6E56;margin-bottom:12px"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button onclick="viewLiveResults()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.25);color:rgba(110,231,183,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📊 Live Results</button>
-              <button onclick="extendTime()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(123,140,222,0.1);border:1px solid rgba(123,140,222,0.2);color:rgba(180,83,9,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">⏱️ +5 min</button>
-              <button onclick="closeExam()" style="padding:7px 14px;border-radius:var(--rs);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:rgba(252,165,165,0.9);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🔒 Close Exam</button>
+              <button onclick="viewLiveResults()" style="padding:8px 14px;border:0.5px solid #9FE1CB;background:#fff;color:#0F6E56;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-chart-bar" style="vertical-align:-2px"></i> Live results</button>
+              <button onclick="extendTime()" style="padding:8px 14px;border:0.5px solid #d5d9ec;background:#fff;color:#666;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-clock-plus" style="vertical-align:-2px"></i> +5 min</button>
+              <button onclick="closeExam()" style="padding:8px 14px;border:0.5px solid #F7C1C1;background:#fff;color:#A32D2D;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-lock" style="vertical-align:-2px"></i> Close exam</button>
             </div>
           </div>
           <div id="exam-questions-preview"></div>
@@ -858,9 +856,9 @@ input[type=file]#cfi{display:none}
         <!-- Live Results -->
         <div id="exam-live-results" style="display:none">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-            <button onclick="backToExamPreview()" style="padding:8px 14px;border-radius:var(--rs);border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--font)">← Back to Exam</button>
-            <div style="font-size:16px;font-weight:700;color:var(--text)">📊 Live Results</div>
-            <button onclick="loadLiveResults()" style="margin-left:auto;padding:6px 14px;border-radius:var(--rs);background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted2);font-size:12px;cursor:pointer;font-family:var(--font)">🔄 Refresh</button>
+            <button class="flow-back" style="margin:0" onclick="backToExamPreview()"><i class="ti ti-arrow-left"></i> Back to exam</button>
+            <div style="font-size:16px;font-weight:600;color:var(--navy)">Live results</div>
+            <button onclick="loadLiveResults()" style="margin-left:auto;padding:7px 14px;border:0.5px solid #d5d9ec;background:#fff;color:#666;font-size:12px;cursor:pointer;font-family:var(--font)"><i class="ti ti-refresh" style="vertical-align:-2px"></i> Refresh</button>
           </div>
           <div id="live-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
           <div id="live-submissions"></div>
@@ -873,10 +871,10 @@ input[type=file]#cfi{display:none}
       <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
           <div>
-            <div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)" id="memory-title" id="memory-title">🗂️ Memory</div>
-            <div style="font-size:13px;color:var(--muted)" id="memory-sub" id="memory-sub">Your saved exams — recall, edit, assign or export</div>
+            <div style="font-size:20px;font-weight:900;margin-bottom:4px;color:var(--navy)" id="memory-title"><i class="ti ti-folder" style="color:var(--secondary);font-size:18px;vertical-align:-2px"></i> Memory</div>
+            <div style="font-size:13px;color:var(--muted)" id="memory-sub">Your saved exams — recall, edit, assign or export</div>
           </div>
-          <button onclick="showPanel(5)" style="padding:9px 18px;border-radius:var(--rs);background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">+ New Exam</button>
+          <button onclick="showPanel(5)" style="padding:9px 18px;background:var(--teal);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-plus" style="vertical-align:-2px"></i> New exam</button>
         </div>
         <div id="memory-list"><div class="ebox" id="memory-loading">Loading your exams...</div></div>
       </div>
@@ -941,7 +939,7 @@ input[type=file]#cfi{display:none}
           <div style="display:flex;gap:12px;align-items:center"><button onclick="flipPrev()" style="padding:10px 20px;border-radius:10px;border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--muted2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">← Trước</button><span style="font-size:13px;color:var(--muted)" id="flip-counter">1/10</span><button onclick="flipNext()" style="padding:10px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Tiếp →</button></div>
         </div>
         <div id="game-result" style="display:none;flex-direction:column;align-items:center;gap:16px;padding:20px 0">
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;text-align:center;width:100%;max-width:400px;backdrop-filter:var(--blur2)"><div style="font-size:44px;margin-bottom:8px" id="result-emoji">🏆</div><div style="font-size:18px;font-weight:800;margin-bottom:4px;color:var(--text)" id="result-title">Kết quả</div><div style="font-size:52px;font-weight:800;color:var(--primary);margin:8px 0" id="result-score">0</div><div style="font-size:16px;color:var(--muted);margin-bottom:20px" id="result-msg">Tốt lắm!</div><button onclick="backToMenu()" style="padding:12px 28px;border-radius:10px;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">🔄 Chơi lại</button></div>
+          <div style="background:var(--navy);padding:28px;text-align:center;width:100%;max-width:400px;position:relative;overflow:hidden"><canvas id="result-stars" style="position:absolute;inset:0;width:100%;height:100%;opacity:.4;pointer-events:none"></canvas><div style="position:relative"><div style="font-size:40px;margin-bottom:8px" id="result-emoji">🏆</div><div style="font-size:18px;font-weight:600;margin-bottom:4px;color:#fff" id="result-title">Kết quả</div><div style="font-size:52px;font-weight:800;color:var(--teal);margin:8px 0" id="result-score">0</div><div style="font-size:15px;color:#9da3c9;margin-bottom:20px" id="result-msg">Tốt lắm!</div><button onclick="backToMenu()" style="padding:12px 28px;background:var(--teal);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)"><i class="ti ti-refresh" style="vertical-align:-2px"></i> Chơi lại</button></div></div>
         </div>
       </div>
     </div>
@@ -977,8 +975,8 @@ input[type=file]#cfi{display:none}
     <button id="upgcls" onclick="closeUpgrade()">✕</button>
     <div style="text-align:center;margin-bottom:16px"><div style="font-size:28px;margin-bottom:8px">🚀</div><div style="font-size:18px;font-weight:800;color:var(--text)" id="upg-title">Nâng cấp StellaStride</div><div style="font-size:13px;color:var(--muted);margin-top:4px" id="upg-sub">Chọn gói phù hợp với bạn</div></div>
     <div style="display:flex;gap:4px;margin-bottom:16px;background:rgba(255,255,255,0.03);padding:4px;border-radius:var(--r);border:1px solid var(--border2)">
-      <button id="upg-tab0" onclick="showUpgTab(0)" style="flex:1;padding:8px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)">📦 Gói tháng</button>
-      <button id="upg-tab1" onclick="showUpgTab(1)" style="flex:1;padding:8px;border-radius:10px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)">⚡ Mua Credits</button>
+      <button id="upg-tab0" onclick="showUpgTab(0)" style="flex:1;padding:9px;border:none;background:var(--teal);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Gói tháng</button>
+      <button id="upg-tab1" onclick="showUpgTab(1)" style="flex:1;padding:9px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">Mua Credits</button>
     </div>
     <div id="upg-plans">
       <div class="plan-grid">
@@ -1325,7 +1323,7 @@ function applyLang(){
     document.getElementById('upg-title').textContent=L('upgtitle');
     document.getElementById('upg-sub').textContent=L('upgsub');
     document.getElementById('upg-credit-info').textContent=lang==='en'?'1 credit = 1 question · AI Image = 5 credits · Quiz = 5 · Exam = 10':'1 credit = 1 câu hỏi · Ảnh AI = 5 credits · Quiz = 5 · Exam = 10';
-    document.getElementById('upg-tab0').textContent=lang==='en'?'📦 Monthly Plans':'📦 Gói tháng';
+    document.getElementById('upg-tab0').textContent=lang==='en'?'Monthly Plans':'Gói tháng';
     document.getElementById('upg-tab1').textContent=lang==='en'?'⚡ Buy Credits':'⚡ Mua Credits';
 
     // Translate stella header
@@ -1967,9 +1965,9 @@ async function deleteFlashcard(id){try{await fetch(API+'/flashcards/'+id,{method
 function showUpgTab(n){
   document.getElementById('upg-plans').style.display=n===0?'block':'none';
   document.getElementById('upg-credits').style.display=n===1?'block':'none';
-  document.getElementById('upg-tab0').style.background=n===0?'linear-gradient(135deg,rgba(0,180,166,0.8),rgba(123,140,222,0.5))':'transparent';
+  document.getElementById('upg-tab0').style.background=n===0?'#00B4A6':'transparent';
   document.getElementById('upg-tab0').style.color=n===0?'#fff':'rgba(255,255,255,0.4)';
-  document.getElementById('upg-tab1').style.background=n===1?'linear-gradient(135deg,rgba(0,180,166,0.8),rgba(123,140,222,0.5))':'transparent';
+  document.getElementById('upg-tab1').style.background=n===1?'#00B4A6':'transparent';
   document.getElementById('upg-tab1').style.color=n===1?'#fff':'rgba(255,255,255,0.4)';
 }
 
@@ -2389,9 +2387,9 @@ async function loadClassroomExams(classId, containerEl){
       if(hasSub){h+='<div style="font-size:12px;font-weight:700;color:'+sc+';margin-top:4px">'+(isGraded?'&#x2705; Graded':'&#x1F4DD; Submitted')+' &middot; '+sub.total_score+'/'+sub.max_score+' ('+pct+'%)</div>';}
       h+='</div>';
       if(hasSub){
-        h+='<button data-sid="'+sub.id+'" data-et="'+esc(ex.title)+'" onclick="viewMyResult(this.dataset.sid,this.dataset.et)" style="padding:8px 14px;border-radius:4px;background:linear-gradient(135deg,rgba(16,185,129,0.7),rgba(5,150,105,0.6));border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">&#x1F4CA; View Results</button>';
+        h+='<button data-sid="'+sub.id+'" data-et="'+esc(ex.title)+'" onclick="viewMyResult(this.dataset.sid,this.dataset.et)" style="padding:8px 14px;background:var(--teal);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="ti ti-chart-bar" style="vertical-align:-2px"></i> View results</button>';
       }else if(!closed){
-        h+='<button data-ec="'+ex.code+'" onclick="goToExam(this.dataset.ec)" style="padding:8px 14px;border-radius:4px;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Start Exam &#x2192;</button>';
+        h+='<button data-ec="'+ex.code+'" onclick="goToExam(this.dataset.ec)" style="padding:8px 14px;background:var(--teal);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Start exam <i class="ti ti-arrow-right" style="vertical-align:-2px"></i></button>';
       }else{
         h+='<span style="font-size:11px;color:var(--muted);font-style:italic">Not attempted</span>';
       }
