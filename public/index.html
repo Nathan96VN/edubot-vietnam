@@ -647,17 +647,7 @@ function applyModalLang(){
 }
 
 function openModal(role){
-  if(role==='teacher'){
-    arole='teacher';
-    document.getElementById('rst').className='rb';
-    document.getElementById('rte').className='rb ton on';
-  } else {
-    arole='student';
-    document.getElementById('rst').className='rb on';
-    document.getElementById('rte').className='rb ton';
-  }
-  applyModalLang();
-  document.getElementById('overlay').className='on';
+  window.location.href = '/login?role=' + (role === 'teacher' ? 'teacher' : 'student');
 }
 
 function closeModal(){
