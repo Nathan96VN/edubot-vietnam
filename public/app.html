@@ -1569,13 +1569,26 @@ async function doSend(){
     var data=await res.json();
     var te=document.getElementById(tid);if(te)te.remove();
     if(!res.ok){
-      if(res.status===429){addMsg('a','<p>'+L('lim')+'</p>');document.getElementById('drem').textContent='0';openUpgrade();}
-      else addMsg('a','<p>'+(data.error||L('cerr'))+'</p>');
+      if(res.status===429||res.status===402||(data&&data.upgrade)){
+        addMsg('a','<p>'+(data&&data.error?data.error:L('lim'))+'</p>');
+        if(typeof updateCredits==='function') updateCredits(0);
+        openUpgrade();
+      } else {
+        addMsg('a','<p>'+((data&&data.error)||L('cerr'))+'</p>');
+      }
     } else {
       var cid=addMsg('a',data.reply||data.response);
       if(cid){lastAiContentId=cid;showExportBar();}
-      if(data.daily_count!=null){var rem=5-data.daily_count;document.getElementById('drem').textContent=rem<0?0:rem;}
-      if(data.credits!=null)updateCredits(data.credits);
+      // Update the header counter: admin = unlimited, paid = credits, free student = questions left
+      if(urole==='admin'){
+        if(typeof updateCredits==='function') updateCredits(0);
+      } else if(data.credits!=null && data.credits>0){
+        if(typeof updateCredits==='function') updateCredits(data.credits);
+      } else if(data.daily_count!=null){
+        var rem=5-data.daily_count; if(rem<0)rem=0;
+        var cc=document.getElementById('credit-count'); if(cc)cc.textContent=rem;
+        var cb=document.getElementById('credit-badge'); if(cb)cb.style.display='flex';
+      }
     }
   }catch(e){
     var te=document.getElementById(tid);if(te)te.remove();
