@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<title>International English Practice — StellaStride</title>
+<style>
+  :root{
+    --bg:#EEF2FF; --navy:#1E1B4B; --teal:#00B4A6; --peri:#7B8CDE;
+    --card:#ffffff; --border:#d8dcef; --muted:#888; --text:#1E1B4B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Poppins',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  .wrap{max-width:980px;margin:0 auto;padding:28px 20px 80px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+  .brand{font-weight:900;font-size:22px;color:var(--navy);}
+  .brand span{color:var(--teal);}
+  .back{font-size:13px;color:var(--peri);cursor:pointer;background:none;border:none;font-family:inherit;}
+  .back:hover{color:var(--teal);}
+  .eyebrow{font-size:11px;color:var(--peri);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;}
+  h1{font-size:24px;font-weight:900;color:var(--navy);margin-bottom:4px;}
+  .sub{font-size:13px;color:var(--muted);margin-bottom:22px;}
+  .panel{background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;}
+  .panel .lbl{font-size:12px;color:var(--navy);font-weight:700;margin-bottom:10px;}
+  .panel .lbl .opt{color:var(--muted);font-weight:400;}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{border:.5px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;color:#666;cursor:pointer;background:#fff;user-select:none;}
+  .chip.on{border:2px solid var(--teal);background:#E1F5EE;color:var(--navy);font-weight:600;padding:6px 13px;}
+  .lvl{min-width:54px;text-align:center;font-weight:700;}
+  input.topic{width:100%;border:.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);background:#fafbff;font-family:inherit;}
+  .row2{display:flex;gap:14px;}
+  @media(max-width:560px){.row2{flex-direction:column;}}
+  .row2 .panel{flex:1;margin-bottom:0;}
+  .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+  .btn{border-radius:8px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;}
+  .btn.sec{background:#fff;border:.5px solid var(--border);color:#666;}
+  .btn.pri{background:var(--teal);color:#fff;}
+  .btn.pri:disabled{opacity:.5;cursor:not-allowed;}
+  .result{background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:20px;margin-top:16px;}
+  .result h2{font-size:18px;color:var(--navy);margin-bottom:12px;}
+  .qitem{border-bottom:1px solid #eef;padding:12px 0;}
+  .qitem .qt{font-size:14px;color:var(--text);margin-bottom:6px;}
+  .qitem .qn{color:var(--teal);font-weight:700;}
+  .qitem .ans{font-size:12px;color:#1d7a4d;margin-top:4px;}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">Stella<span>Stride</span></div>
+    <button class="back" onclick="location.href='/app'">← Back to app</button>
+  </div>
+
+  <div class="eyebrow">International English Practice</div>
+  <h1>Set up your paper</h1>
+  <div class="sub">Generate CEFR-aligned English practice papers (A2–C2) with answer keys.</div>
+
+  <div class="panel">
+    <div class="lbl">LEVEL (CEFR)</div>
+    <div class="chips" id="level-chips">
+      <div class="chip lvl" data-level="A2" onclick="pickLevel(this,'A2')">A2</div>
+      <div class="chip lvl on" data-level="B1" onclick="pickLevel(this,'B1')">B1</div>
+      <div class="chip lvl" data-level="B2" onclick="pickLevel(this,'B2')">B2</div>
+      <div class="chip lvl" data-level="C1" onclick="pickLevel(this,'C1')">C1</div>
+      <div class="chip lvl" data-level="C2" onclick="pickLevel(this,'C2')">C2</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="lbl">SKILLS <span class="opt">(pick one or more)</span></div>
+    <div class="chips" id="skill-chips"></div>
+  </div>
+
+  <div class="panel">
+    <div class="lbl">TOPIC <span class="opt">(optional — leave blank for a mix)</span></div>
+    <input class="topic" id="topic" placeholder="e.g. Travel, Technology, Environment…"/>
+  </div>
+
+  <div class="row2">
+    <div class="panel">
+      <div class="lbl">NUMBER OF QUESTIONS</div>
+      <div class="chips" id="count-chips">
+        <div class="chip" data-count="10" onclick="pickCount(this,10)">10</div>
+        <div class="chip on" data-count="15" onclick="pickCount(this,15)">15</div>
+        <div class="chip" data-count="25" onclick="pickCount(this,25)">25</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn sec" onclick="location.href='/app'">Back</button>
+    <button class="btn pri" id="gen-btn" onclick="generate()">Generate Paper</button>
+  </div>
+
+  <div id="result-area"></div>
+</div>
+
+<script>
+var API = 'https://edubot-vietnam.onrender.com';
+var tok = localStorage.getItem('eb_tok') || '';
+
+var SKILLS = ['Reading','Grammar & Vocabulary','Writing'];
+var state = { level:'B1', skills:[], topic:'', questionCount:15 };
+
+(function initSkills(){
+  var box = document.getElementById('skill-chips');
+  SKILLS.forEach(function(sk){
+    var d = document.createElement('div');
+    d.className = 'chip'; d.textContent = sk;
+    d.onclick = function(){ toggleSkill(d, sk); };
+    box.appendChild(d);
+  });
+  // default-select Reading + Grammar
+  var chips = box.querySelectorAll('.chip');
+  toggleSkill(chips[0], SKILLS[0]);
+  toggleSkill(chips[1], SKILLS[1]);
+})();
+
+function pickLevel(el,v){ state.level=v; el.parentNode.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');}); el.classList.add('on'); }
+function pickCount(el,v){ state.questionCount=v; el.parentNode.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');}); el.classList.add('on'); }
+function toggleSkill(el, sk){
+  var i = state.skills.indexOf(sk);
+  if(i===-1){ state.skills.push(sk); el.classList.add('on'); }
+  else { state.skills.splice(i,1); el.classList.remove('on'); }
+}
+
+async function generate(){
+  state.topic = document.getElementById('topic').value.trim();
+  if(state.skills.length===0){ state.skills=['Reading','Grammar & Vocabulary']; }
+  var btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Generating…';
+  var area = document.getElementById('result-area'); area.innerHTML = '';
+  try{
+    var res = await fetch(API + '/international-english/generate', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+tok },
+      body: JSON.stringify(state)
+    });
+    var data = await res.json();
+    if(!res.ok){ throw new Error(data.error || 'Generation failed'); }
+    renderResult(data.examData, data.exam);
+  }catch(e){
+    area.innerHTML = '<div class="result" style="color:#b00020">Could not generate: '+esc(e.message)+'</div>';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Generate Paper';
+  }
+}
+
+function renderResult(examData, exam){
+  var area = document.getElementById('result-area');
+  var realTotal = 0;
+  (examData.sections||[]).forEach(function(sec){ (sec.questions||[]).forEach(function(q){ realTotal += (q.points||1); }); });
+  var html = '<div class="result"><h2>'+esc(examData.title||'International English Practice')+'</h2>';
+  html += '<div style="display:inline-block;background:#E1F5EE;color:#0F6E56;font-weight:700;font-size:13px;padding:5px 12px;border-radius:6px;margin-bottom:8px">Total: '+realTotal+' marks</div>';
+  if(examData.instructions){ html += '<div class="sub">'+esc(examData.instructions)+'</div>'; }
+  (examData.sections||[]).forEach(function(sec){
+    html += '<div style="margin-top:10px;font-weight:700;color:var(--peri)">'+esc(sec.label||sec.type)+'</div>';
+    (sec.questions||[]).forEach(function(q){
+      html += '<div class="qitem"><div class="qt"><span class="qn">'+(q.id)+'.</span> '+esc(q.question)+' <span style="color:#aaa;font-size:12px">('+(q.points||1)+' marks)</span></div>';
+      if(q.passage){ html += '<div style="font-size:13px;color:#444;background:#f7f8ff;padding:8px;border-radius:6px;margin:4px 0">'+esc(q.passage)+'</div>'; }
+      if(q.options){ q.options.forEach(function(o){ html += '<div style="font-size:13px;color:#444;padding:2px 0">'+esc(o)+'</div>'; }); }
+      if(q.answer){ html += '<div class="ans">✓ '+esc(q.answer)+'</div>'; }
+      if(q.explanation){ html += '<div style="font-size:11px;color:#b4690e;font-style:italic;margin-top:2px">'+esc(q.explanation)+'</div>'; }
+      html += '</div>';
+    });
+  });
+  html += '<div style="margin-top:14px;font-size:12px;color:var(--muted)">Saved to your exam Memory'+(exam&&exam.code?' · code '+esc(exam.code):'')+'. Open it in the Exam Generator to edit, assign, or export to Word.</div>';
+  html += '</div>';
+  area.innerHTML = html;
+  area.scrollIntoView({behavior:'smooth'});
+}
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+</script>
+</body>
+</html>
