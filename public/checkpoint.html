@@ -213,7 +213,11 @@ async function generate(){
 
 function renderResult(examData, exam){
   var area = document.getElementById('result-area');
+  // Compute the REAL total marks from the questions (don't trust the AI's instruction text)
+  var realTotal = 0;
+  (examData.sections||[]).forEach(function(sec){ (sec.questions||[]).forEach(function(q){ realTotal += (q.points||1); }); });
   var html = '<div class="result"><h2>'+esc(examData.title||'Checkpoint Paper')+'</h2>';
+  html += '<div style="display:inline-block;background:#E1F5EE;color:#0F6E56;font-weight:700;font-size:13px;padding:5px 12px;border-radius:6px;margin-bottom:8px">Total: '+realTotal+' marks</div>';
   if(examData.instructions){ html += '<div class="sub">'+esc(examData.instructions)+'</div>'; }
   (examData.sections||[]).forEach(function(sec){
     html += '<div style="margin-top:10px;font-weight:700;color:var(--peri)">'+esc(sec.label||sec.type)+'</div>';
