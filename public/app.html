@@ -422,6 +422,33 @@ input[type=file]#cfi{display:none}
 .dtile-white .dtile-l{color:var(--navy)}
 .dtile-spark{position:absolute;top:-6px;right:-6px;width:46px;height:46px;background:radial-gradient(circle at 70% 30%,rgba(0,180,166,0.35),transparent 60%);pointer-events:none}
 @media(max-width:760px){.tile-grid{grid-template-columns:1fr 1fr}}
+
+/* ── EXAM WIZARD (Step 3 build) ── */
+.exw{display:grid;grid-template-columns:180px 1fr;border:0.5px solid #e3e6f3;background:#fff;min-height:420px;border-radius:4px;overflow:hidden}
+.exw-rail{background:var(--navy);padding:22px 16px;display:flex;flex-direction:column;gap:18px;position:relative}
+.exw-title{color:#fff;font-weight:900;font-size:16px;margin-bottom:6px}
+.exw-step{display:flex;align-items:center;gap:10px;cursor:pointer;opacity:.55;transition:opacity .15s}
+.exw-step:hover{opacity:.85}
+.exw-step.on{opacity:1}
+.exw-step.done{opacity:.9}
+.exw-num{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.12);color:#9da3c9;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.exw-step.on .exw-num{background:var(--teal);color:#fff}
+.exw-step.done .exw-num{background:rgba(0,180,166,0.4);color:#fff}
+.exw-lbl{font-size:13px;color:#fff;font-weight:500}
+.exw-step:not(.on) .exw-lbl{color:#9da3c9;font-weight:400}
+.exw-body{padding:26px 28px;display:flex;flex-direction:column}
+.exw-head{font-size:11px;font-weight:600;color:var(--teal);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:18px}
+.exw-pane{display:none}
+.exw-pane.on{display:block;flex:1}
+.exw-nav{display:flex;justify-content:flex-end;gap:10px;border-top:0.5px solid #f0f0f0;padding-top:18px;margin-top:18px}
+.exw-back,.exw-next,.exw-gen{padding:11px 22px;font-family:var(--font);font-weight:600;font-size:13px;cursor:pointer;border-radius:4px;border:none}
+.exw-back{background:#fff;border:0.5px solid #d5d9ec;color:#888}
+.exw-back:hover{background:#fafbff}
+.exw-next{background:var(--teal);color:#fff}
+.exw-next:hover{background:#009488}
+.exw-gen{background:var(--teal);color:#fff}
+.exw-gen:hover{background:#009488}
+@media(max-width:760px){.exw{grid-template-columns:1fr}.exw-rail{flex-direction:row;flex-wrap:wrap;gap:10px;padding:14px}}
 </style>
 </head>
 <body>
@@ -640,13 +667,15 @@ input[type=file]#cfi{display:none}
     <div class="panel" id="p5">
       <div style="flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(0,180,166,0.2) transparent">
         <div id="exam-gen-form">
-          <div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)" id="exam-gen-title">📝 AI Exam Generator</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="exam-gen-sub">Create professional exams in seconds with AI</div>
-
-          <!-- Step 1: Context & Subject -->
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;backdrop-filter:var(--blur2)">
-            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px" id="exam-step1">Step 1 — Context & Subject</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="exw">
+            <div class="exw-rail">
+              <div class="exw-title">New exam</div>
+              <div class="exw-step" id="exw-step1" onclick="examGo(1)"><div class="exw-num">1</div><span class="exw-lbl">Context</span></div><div class="exw-step" id="exw-step2" onclick="examGo(2)"><div class="exw-num">2</div><span class="exw-lbl">Topics</span></div><div class="exw-step" id="exw-step3" onclick="examGo(3)"><div class="exw-num">3</div><span class="exw-lbl">Question types</span></div><div class="exw-step" id="exw-step4" onclick="examGo(4)"><div class="exw-num">4</div><span class="exw-lbl">Settings</span></div>
+            </div>
+            <div class="exw-body">
+              <div class="exw-pane on" id="exw-pane1">
+                <div class="exw-head">Context &amp; subject</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
               <div>
                 <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em" id="exam-context-label">Context</div>
                 <select id="exam-context" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)">
@@ -684,12 +713,10 @@ input[type=file]#cfi{display:none}
                 </select>
               </div>
             </div>
-          </div>
-
-          <!-- Step 2: Topics -->
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;backdrop-filter:var(--blur2)">
-            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 2 — Topics to Cover</div>
-            <textarea id="exam-topics" rows="3" placeholder="e.g. Fractions, decimals, percentages, ratio and proportion" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px;font-family:var(--font);resize:none;outline:none;line-height:1.5"></textarea>
+              </div>
+              <div class="exw-pane" id="exw-pane2">
+                <div class="exw-head">Topics to cover</div>
+                <textarea id="exam-topics" rows="3" placeholder="e.g. Fractions, decimals, percentages, ratio and proportion" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px;font-family:var(--font);resize:none;outline:none;line-height:1.5"></textarea>
             <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <button type="button" onclick="document.getElementById('ex-file-inp').click()" id="ex-upload-btn" style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1.5px dashed rgba(0,180,166,0.35);border-radius:var(--rs);cursor:pointer;font-size:13px;color:rgba(30,27,75,0.6);background:rgba(0,180,166,0.06);font-family:var(--font)">
                 📎 <span id="ex-upload-txt">Upload file for AI to scan (PDF, image, Word)</span>
@@ -701,12 +728,10 @@ input[type=file]#cfi{display:none}
               <input type="checkbox" id="exam-adapt" style="width:16px;height:16px;accent-color:var(--primary);flex-shrink:0"/>
               <label for="exam-adapt" style="font-size:13px;color:rgba(180,83,9,0.9);cursor:pointer;line-height:1.4">Adapt for underperforming students — simpler language, more scaffolding</label>
             </div>
-          </div>
-
-          <!-- Step 3: Question Types -->
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;backdrop-filter:var(--blur2)">
-            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 3 — Question Types</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              </div>
+              <div class="exw-pane" id="exw-pane3">
+                <div class="exw-head">Question types</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="mcq" class="qtype" checked style="accent-color:var(--primary)"/> Multiple Choice</label>
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="truefalse" class="qtype" checked style="accent-color:var(--primary)"/> True / False</label>
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="fillinblank" class="qtype" checked style="accent-color:var(--primary)"/> Fill in the Blank</label>
@@ -716,12 +741,10 @@ input[type=file]#cfi{display:none}
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="ordering" class="qtype" style="accent-color:var(--primary)"/> Ordering / Sequencing</label>
               <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--muted)"><input type="checkbox" value="comprehension" class="qtype" style="accent-color:var(--primary)"/> Reading Comprehension</label>
             </div>
-          </div>
-
-          <!-- Step 4: Settings -->
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px;backdrop-filter:var(--blur2)">
-            <div style="font-size:12px;font-weight:700;color:rgba(0,180,166,0.7);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Step 4 — Settings</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+              </div>
+              <div class="exw-pane" id="exw-pane4">
+                <div class="exw-head">Settings</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
               <div>
                 <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Questions</div>
                 <select id="exam-count" style="width:100%;padding:9px 12px;border-radius:var(--rs);border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);font-size:13px;outline:none;font-family:var(--font)">
@@ -745,10 +768,15 @@ input[type=file]#cfi{display:none}
               <input type="checkbox" id="exam-show-answers" style="width:16px;height:16px;accent-color:var(--primary);flex-shrink:0"/>
               <label for="exam-show-answers" style="font-size:13px;color:var(--muted);cursor:pointer">Allow students to see correct answers after grading</label>
             </div>
+              </div>
+              <div class="exw-nav">
+                <button class="exw-back" id="exw-back" onclick="examPrev()">Back</button>
+                <button class="exw-next" id="exw-next" onclick="examNext()">Next: Topics</button>
+                <button class="exw-gen" id="btn-gen-exam" onclick="generateExam()" style="display:none">⚡ Generate exam with AI</button>
+              </div>
+              <div id="exam-gen-status" style="text-align:center;margin-top:10px;font-size:13px;color:var(--muted);min-height:20px"></div>
+            </div>
           </div>
-
-          <button id="btn-gen-exam" onclick="generateExam()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--primary-glass),var(--secondary-glass));border:1px solid var(--border3);border-radius:var(--r);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">⚡ Generate Exam with AI</button>
-          <div id="exam-gen-status" style="text-align:center;margin-top:10px;font-size:13px;color:var(--muted);min-height:20px"></div>
         </div>
 
         <!-- Generated Exam Preview -->
@@ -1195,7 +1223,7 @@ function showPanel(n){
   if(n===2)loadTClasses();
   if(n===1){if(urole==='student'||urole==='admin')loadSClasses();}
   if(n===6)loadMemory();
-  if(n===5) loadClassesIntoSelector();
+  if(n===5){ loadClassesIntoSelector(); examStep=1; if(typeof examRender==="function") examRender(); }
 }
 
 function applyLang(){
@@ -2185,6 +2213,7 @@ function updatePoints(qId, newPts, examData){
 }
 
 function backToExamForm(){
+  examStep=1; if(typeof examRender==="function") examRender();
   document.getElementById('exam-gen-form').style.display = 'block';
   document.getElementById('exam-preview').style.display = 'none';
   document.getElementById('exam-live-results').style.display = 'none';
@@ -2475,6 +2504,26 @@ async function deleteExamFromMemory(id){
 var currentExamId = null;
 var currentExamCode = null;
 var liveResultsInterval = null;
+
+var examStep=1;
+function examRender(){
+  for(var k=1;k<=4;k++){
+    var pane=document.getElementById('exw-pane'+k);
+    var rail=document.getElementById('exw-step'+k);
+    if(pane) pane.className='exw-pane'+(k===examStep?' on':'');
+    if(rail){ rail.className='exw-step'+(k===examStep?' on':(k<examStep?' done':'')); }
+  }
+  var labels=['','Topics','Question types','Settings'];
+  var back=document.getElementById('exw-back');
+  var next=document.getElementById('exw-next');
+  var gen=document.getElementById('btn-gen-exam');
+  if(back) back.style.display=examStep===1?'none':'inline-block';
+  if(examStep<4){ if(next){next.style.display='inline-block';next.textContent='Next: '+labels[examStep];} if(gen)gen.style.display='none'; }
+  else { if(next)next.style.display='none'; if(gen)gen.style.display='inline-block'; }
+}
+function examGo(n){ if(n>=1&&n<=4){examStep=n;examRender();} }
+function examNext(){ if(examStep<4){examStep++;examRender();} }
+function examPrev(){ if(examStep>1){examStep--;examRender();} }
 
 async function generateExam(){
   if(!tok){openModal();return;}
