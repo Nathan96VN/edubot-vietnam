@@ -156,6 +156,43 @@ const pool = new Pool({
 pool.on('error', (e) => console.error('PG pool error:', e.message)); // don't crash on idle client errors
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// Safely parse AI JSON output, recovering from truncation (long papers can hit token limits).
+function salvageJSON(rawText) {
+  let text = (rawText || '').replace(/```json|```/g, '').trim();
+  try { return JSON.parse(text); } catch (e) {}
+  // Recovery: walk the text tracking open brackets/strings, cut at the last point
+  // where we had a complete value, then close open structures in correct nesting order.
+  const lastBrace = text.lastIndexOf('}');
+  if (lastBrace < 0) return null;
+  let candidate = text.slice(0, lastBrace + 1);
+  for (let tries = 0; tries < 8; tries++) {
+    const stack = [];
+    let inStr = false, esc = false, ok = true;
+    for (let i = 0; i < candidate.length; i++) {
+      const c = candidate[i];
+      if (inStr) {
+        if (esc) esc = false;
+        else if (c === '\\') esc = true;
+        else if (c === '"') inStr = false;
+      } else {
+        if (c === '"') inStr = true;
+        else if (c === '{') stack.push('}');
+        else if (c === '[') stack.push(']');
+        else if (c === '}' || c === ']') { if (stack.pop() !== c) { ok = false; break; } }
+      }
+    }
+    if (ok && !inStr) {
+      const closed = candidate + stack.reverse().join('');
+      try { return JSON.parse(closed); } catch (e2) {}
+    }
+    // trim back to the previous complete object and retry
+    const cut = candidate.lastIndexOf('},');
+    if (cut === -1) break;
+    candidate = candidate.slice(0, cut + 1);
+  }
+  return null;
+}
+
 // ─── Pricing config ───────────────────────────────────────────────────────────
 const PLANS = {
   student_basic: { vnd: 79000,  usd_cents: 320,  label: 'Student Basic', plan: 'basic'       },
@@ -2388,6 +2425,164 @@ Respond ONLY with valid JSON, no markdown:
     console.error('International English generate error:', e.message);
     res.status(500).json({ error: e.message });
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACADEMIC ENGLISH PRACTICE (TOEFL-style: reading + writing)
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/academic-english', (req, res) => res.sendFile(__dirname + '/public/academic-english.html'));
+
+app.post('/academic-english/generate', authenticate, aiLimiter, async (req, res) => {
+  try {
+    const { skills, topic, questionCount } = req.body;
+    const userId = req.user.id;
+    const user = await pool.query('SELECT * FROM users WHERE id=$1', [userId]);
+    if (!user.rows[0] || (user.rows[0].role !== 'teacher' && user.rows[0].role !== 'admin')) {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
+    const skillLabel = (skills && skills.length) ? skills.join(', ') : 'Reading, Writing';
+    const count = Math.min(Math.max(parseInt(questionCount) || 12, 5), 40);
+
+    const prompt = `You are an expert academic-English assessment writer creating an advanced academic English practice paper (independent practice material, not an official exam). This is for university-bound students and tests academic reading and writing at an advanced level (CEFR B2-C1).
+Skills to cover: ${skillLabel}.
+${topic ? 'Theme the content around: ' + topic + '.' : 'Use academic topics (science, history, social studies, environment).'}
+Create approximately ${count} questions. Provide a complete answer key with a brief explanation for every question.
+
+Guidance per skill:
+- Reading: include an academic passage (250-350 words) in a formal register, then comprehension questions testing main idea, inference, vocabulary-in-context, and detail (use "comprehension" type, plus mcq referencing the passage).
+- Writing: use shortanswer type — an integrated/independent academic essay task with a clear prompt, plus a model answer and marking notes in the answer/explanation. Academic writing tasks should ask students to state and support an opinion, or summarize and respond to a passage.
+
+Use these question "type" codes: mcq, truefalse, fillinblank, shortanswer, comprehension, matching.
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "title": "Academic English Practice",
+  "instructions": "brief instructions for students",
+  "sections": [
+    { "type": "comprehension", "label": "Reading", "questions": [ { "id": 1, "question": "...", "passage": "the academic passage text", "options": ["A ...","B ..."], "answer": "A ...", "points": 1, "explanation": "why" } ] }
+  ]
+}`;
+
+    const response = await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 8000, messages: [{ role: 'user', content: prompt }] });
+    let examData = salvageJSON(response.content[0].text);
+    if (!examData || !Array.isArray(examData.sections)) return res.status(502).json({ error: 'Generation failed. Try fewer questions or one skill.' });
+
+    let totalPoints = 0;
+    examData.sections.forEach(s => (s.questions || []).forEach(q => { totalPoints += q.points || 1; }));
+    const code = 'AE-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+    const result = await pool.query(
+      `INSERT INTO exams (teacher_id, title, subject, grade, context, purpose, difficulty, adapted_for_weak, time_limit, show_answers, questions, total_points, code, status)
+       VALUES ($1,$2,'English',null,'international','exam','standard',false,60,true,$3,$4,$5,'draft') RETURNING *`,
+      [userId, examData.title, JSON.stringify(examData), totalPoints, code]
+    );
+    res.json({ exam: result.rows[0], examData });
+  } catch (e) { console.error('Academic English error:', e.message); res.status(500).json({ error: e.message }); }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUSINESS ENGLISH PRACTICE (TOEIC-style: reading + grammar)
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/business-english', (req, res) => res.sendFile(__dirname + '/public/business-english.html'));
+
+app.post('/business-english/generate', authenticate, aiLimiter, async (req, res) => {
+  try {
+    const { skills, topic, questionCount } = req.body;
+    const userId = req.user.id;
+    const user = await pool.query('SELECT * FROM users WHERE id=$1', [userId]);
+    if (!user.rows[0] || (user.rows[0].role !== 'teacher' && user.rows[0].role !== 'admin')) {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
+    const skillLabel = (skills && skills.length) ? skills.join(', ') : 'Reading, Grammar & Vocabulary';
+    const count = Math.min(Math.max(parseInt(questionCount) || 15, 5), 40);
+
+    const prompt = `You are an expert business-English assessment writer creating a workplace English practice paper (independent practice material, not an official exam). It tests English used in professional/workplace contexts (emails, memos, meetings, reports) at CEFR A2-B2.
+Skills to cover: ${skillLabel}.
+${topic ? 'Theme the content around: ' + topic + '.' : 'Use realistic workplace contexts: emails, schedules, advertisements, memos, business news.'}
+Create approximately ${count} questions. Provide a complete answer key with a brief explanation for every question.
+
+Guidance per skill:
+- Reading: include short business texts (an email, a notice, a memo, an advertisement) then comprehension questions about purpose, detail, and inference.
+- Grammar & Vocabulary: use mcq, fillinblank, errorcorrection, and dropdown (cloze) — focus on business vocabulary, prepositions, verb tenses, and formal register common in workplace English.
+
+Use these question "type" codes: mcq, truefalse, fillinblank, comprehension, errorcorrection, dropdown, matching.
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "title": "Business English Practice",
+  "instructions": "brief instructions",
+  "sections": [
+    { "type": "mcq", "label": "Reading", "questions": [ { "id": 1, "question": "...", "passage": "the business text", "options": ["A ...","B ..."], "answer": "A ...", "points": 1, "explanation": "why" } ] }
+  ]
+}`;
+
+    const response = await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 8000, messages: [{ role: 'user', content: prompt }] });
+    let examData = salvageJSON(response.content[0].text);
+    if (!examData || !Array.isArray(examData.sections)) return res.status(502).json({ error: 'Generation failed. Try fewer questions or one skill.' });
+
+    let totalPoints = 0;
+    examData.sections.forEach(s => (s.questions || []).forEach(q => { totalPoints += q.points || 1; }));
+    const code = 'BE-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+    const result = await pool.query(
+      `INSERT INTO exams (teacher_id, title, subject, grade, context, purpose, difficulty, adapted_for_weak, time_limit, show_answers, questions, total_points, code, status)
+       VALUES ($1,$2,'English',null,'international','exam','standard',false,60,true,$3,$4,$5,'draft') RETURNING *`,
+      [userId, examData.title, JSON.stringify(examData), totalPoints, code]
+    );
+    res.json({ exam: result.rows[0], examData });
+  } catch (e) { console.error('Business English error:', e.message); res.status(500).json({ error: e.message }); }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UNIVERSITY ENTRANCE PRACTICE (SAT/ACT-style: reading + writing + maths)
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/university-entrance', (req, res) => res.sendFile(__dirname + '/public/university-entrance.html'));
+
+app.post('/university-entrance/generate', authenticate, aiLimiter, async (req, res) => {
+  try {
+    const { sections: chosenSections, topic, questionCount } = req.body;
+    const userId = req.user.id;
+    const user = await pool.query('SELECT * FROM users WHERE id=$1', [userId]);
+    if (!user.rows[0] || (user.rows[0].role !== 'teacher' && user.rows[0].role !== 'admin')) {
+      return res.status(403).json({ error: 'Teachers only' });
+    }
+    const sectionLabel = (chosenSections && chosenSections.length) ? chosenSections.join(', ') : 'Reading, Writing, Maths';
+    const count = Math.min(Math.max(parseInt(questionCount) || 15, 5), 40);
+    const includeMaths = /math/i.test(sectionLabel);
+
+    const prompt = `You are an expert university-entrance test writer creating a college-entrance practice paper (independent practice material, not an official exam). It tests skills needed for university admission: evidence-based reading, writing & language, and mathematics. Difficulty: advanced high-school (CEFR B2-C1 for English; pre-calculus level for maths).
+Sections to cover: ${sectionLabel}.
+${topic ? 'Theme English content around: ' + topic + '.' : ''}
+Create approximately ${count} questions total, distributed across the chosen sections. Provide a complete answer key with a brief explanation for every question.
+
+Guidance per section:
+- Reading: an evidence-based reading passage (250-350 words) with questions on main idea, inference, author's purpose, and command of evidence.
+- Writing & Language: error-correction and improvement questions on a short passage (grammar, punctuation, word choice, conciseness) — use errorcorrection, mcq, dropdown.
+- Maths: ${includeMaths ? 'numeric and multiple-choice maths problems (algebra, functions, geometry, data analysis, word problems). Use the "numeric" type for exact answers and "mcq" for others. Where a problem needs a figure (graph/triangle/geometry), add a "visual" field using kinds like quadratic, linear, triangle, coordshape, bar.' : 'not included.'}
+
+Use these question "type" codes: mcq, truefalse, fillinblank, shortanswer, comprehension, errorcorrection, dropdown, numeric.
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "title": "University Entrance Practice",
+  "instructions": "brief instructions",
+  "sections": [
+    { "type": "comprehension", "label": "Reading", "questions": [ { "id": 1, "question": "...", "passage": "...", "options": ["A ...","B ..."], "answer": "A ...", "points": 1, "explanation": "why" } ] }
+  ]
+}`;
+
+    const response = await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 8000, messages: [{ role: 'user', content: prompt }] });
+    let examData = salvageJSON(response.content[0].text);
+    if (!examData || !Array.isArray(examData.sections)) return res.status(502).json({ error: 'Generation failed. Try fewer questions or fewer sections.' });
+
+    let totalPoints = 0;
+    examData.sections.forEach(s => (s.questions || []).forEach(q => { totalPoints += q.points || 1; }));
+    const code = 'UE-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+    const result = await pool.query(
+      `INSERT INTO exams (teacher_id, title, subject, grade, context, purpose, difficulty, adapted_for_weak, time_limit, show_answers, questions, total_points, code, status)
+       VALUES ($1,$2,'Mixed',null,'international','exam','standard',false,60,true,$3,$4,$5,'draft') RETURNING *`,
+      [userId, examData.title, JSON.stringify(examData), totalPoints, code]
+    );
+    res.json({ exam: result.rows[0], examData });
+  } catch (e) { console.error('University Entrance error:', e.message); res.status(500).json({ error: e.message }); }
 });
 
 // Get teacher's exams (Memory)
