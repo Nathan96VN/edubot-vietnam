@@ -657,6 +657,16 @@ app.post('/classroom/join', authenticate, async (req, res) => {
 
 app.get('/classroom/:id/students', authenticate, async (req, res) => {
   try {
+    // Only the teacher who owns this classroom (or admin) may see the student list.
+    // This protects children's names and emails from any other logged-in user.
+    const owns = await pool.query(
+      `SELECT 1 FROM classrooms WHERE id::text=$1::text AND teacher_id=$2`,
+      [req.params.id, req.user.id]
+    );
+    if (!owns.rows[0] && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorised to view this classroom' });
+    }
+
     const result = await pool.query(
       `SELECT u.id, u.name, u.email, u.grade FROM users u
        JOIN classroom_students cs ON cs.student_id = u.id
@@ -2396,7 +2406,11 @@ app.get('/exam/my', authenticate, async (req, res) => {
 // Get single exam by ID (teacher)
 app.get('/exam/:id', authenticate, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM exams WHERE id=$1', [req.params.id]);
+    // Teachers/admin may only fetch their OWN exam (admin can fetch any).
+    const isAdmin = req.user.role === 'admin';
+    const result = isAdmin
+      ? await pool.query('SELECT * FROM exams WHERE id=$1', [req.params.id])
+      : await pool.query('SELECT * FROM exams WHERE id=$1 AND teacher_id=$2', [req.params.id, req.user.id]);
     if (!result.rows[0]) return res.status(404).json({ error: 'Exam not found' });
     res.json({ exam: result.rows[0] });
   } catch (e) {
@@ -2450,6 +2464,16 @@ app.post('/exam/:id/assign', authenticate, async (req, res) => {
 // Get active exams for a classroom (student view)
 app.get('/exam/classroom/:classId', authenticate, async (req, res) => {
   try {
+    // Verify the requester is a member of this classroom (or its teacher, or admin).
+    const member = await pool.query(
+      `SELECT 1 FROM classroom_students WHERE classroom_id::text=$1::text AND student_id=$2
+       UNION SELECT 1 FROM classrooms WHERE id::text=$1::text AND teacher_id=$2`,
+      [req.params.classId, req.user.id]
+    );
+    if (!member.rows[0] && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Not a member of this classroom' });
+    }
+
     const examsResult = await pool.query(
       `SELECT id, title, subject, grade, time_limit, total_points, code, status, max_attempts
        FROM exams WHERE classroom_id::text=$1::text AND (status='active' OR status='closed') ORDER BY created_at DESC`,
@@ -2547,6 +2571,13 @@ app.post('/exam/:id/close', authenticate, async (req, res) => {
 app.post('/exam/:id/extend', authenticate, async (req, res) => {
   try {
     const { minutes } = req.body;
+    // Only the owning teacher (or admin) may extend time on this exam.
+    const own = await pool.query(
+      `SELECT id FROM exams WHERE id=$1 AND ($2 = 'admin' OR teacher_id=$3)`,
+      [req.params.id, req.user.role, req.user.id]
+    );
+    if (!own.rows[0]) return res.status(403).json({ error: 'Not authorised for this exam' });
+
     await pool.query(
       `UPDATE exam_submissions SET time_extended=time_extended+$1 WHERE exam_id=$2 AND status='in_progress'`,
       [minutes || 5, req.params.id]
@@ -2635,6 +2666,24 @@ app.post('/exam/submission/:id/submit', async (req, res) => {
     const subResult = await pool.query('SELECT * FROM exam_submissions WHERE id=$1', [req.params.id]);
     if (!subResult.rows[0]) return res.status(404).json({ error: 'Submission not found' });
     const sub = subResult.rows[0];
+
+    // Only an in-progress submission can be submitted. This stops anyone from
+    // overwriting a submission that is already submitted/graded, or tampering
+    // with a finished one by guessing its ID.
+    if (sub.status && sub.status !== 'in_progress') {
+      return res.status(409).json({ error: 'This exam has already been submitted.' });
+    }
+    // If the submission belongs to a registered student, require that same student.
+    if (sub.student_id) {
+      const authHeader = req.headers.authorization;
+      let requesterId = null;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try { requesterId = require('jsonwebtoken').verify(authHeader.split(' ')[1], process.env.JWT_SECRET).id; } catch(e) {}
+      }
+      if (requesterId !== sub.student_id) {
+        return res.status(403).json({ error: 'Not authorised to submit this attempt.' });
+      }
+    }
 
     const examResult = await pool.query('SELECT * FROM exams WHERE id=$1', [sub.exam_id]);
     const exam = examResult.rows[0];
@@ -2729,6 +2778,14 @@ app.post('/exam/submission/:id/submit', async (req, res) => {
 app.put('/exam/submission/:id/grade', authenticate, async (req, res) => {
   try {
     const { finalScores } = req.body;
+    // Verify this submission belongs to an exam owned by THIS teacher (admin may grade any).
+    const own = await pool.query(
+      `SELECT s.id FROM exam_submissions s JOIN exams e ON e.id = s.exam_id
+       WHERE s.id=$1 AND ($2 = 'admin' OR e.teacher_id=$3)`,
+      [req.params.id, req.user.role, req.user.id]
+    );
+    if (!own.rows[0]) return res.status(403).json({ error: 'Not authorised to grade this submission' });
+
     const total = finalScores.reduce((sum, s) => sum + (s.score || 0), 0);
     await pool.query(
       `UPDATE exam_submissions SET final_scores=$1, total_score=$2, status='graded' WHERE id=$3`,
