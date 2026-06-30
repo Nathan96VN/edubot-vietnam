@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<title>University Entrance Practice — StellaStride</title>
+<style>
+  :root{--bg:#EEF2FF;--navy:#1E1B4B;--teal:#00B4A6;--peri:#7B8CDE;--card:#fff;--border:#d8dcef;--muted:#888;--text:#1E1B4B;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Poppins',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  .wrap{max-width:980px;margin:0 auto;padding:28px 20px 80px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+  .brand{font-weight:900;font-size:22px;color:var(--navy);} .brand span{color:var(--teal);}
+  .back{font-size:13px;color:var(--peri);cursor:pointer;background:none;border:none;font-family:inherit;}
+  .back:hover{color:var(--teal);}
+  .eyebrow{font-size:11px;color:var(--peri);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;}
+  h1{font-size:24px;font-weight:900;color:var(--navy);margin-bottom:4px;}
+  .sub{font-size:13px;color:var(--muted);margin-bottom:22px;}
+  .panel{background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;}
+  .panel .lbl{font-size:12px;color:var(--navy);font-weight:700;margin-bottom:10px;}
+  .panel .lbl .opt{color:var(--muted);font-weight:400;}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{border:.5px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;color:#666;cursor:pointer;background:#fff;user-select:none;}
+  .chip.on{border:2px solid var(--teal);background:#E1F5EE;color:var(--navy);font-weight:600;padding:6px 13px;}
+  input.topic{width:100%;border:.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);background:#fafbff;font-family:inherit;}
+  .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+  .btn{border-radius:8px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;}
+  .btn.sec{background:#fff;border:.5px solid var(--border);color:#666;}
+  .btn.pri{background:var(--teal);color:#fff;} .btn.pri:disabled{opacity:.5;cursor:not-allowed;}
+  .result{background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:20px;margin-top:16px;}
+  .result h2{font-size:18px;color:var(--navy);margin-bottom:12px;}
+  .qitem{border-bottom:1px solid #eef;padding:12px 0;}
+  .qitem .qt{font-size:14px;color:var(--text);margin-bottom:6px;} .qitem .qn{color:var(--teal);font-weight:700;}
+  .qitem .ans{font-size:12px;color:#1d7a4d;margin-top:4px;}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">Stella<span>Stride</span></div>
+    <button class="back" onclick="location.href='/app'">← Back to app</button>
+  </div>
+  <div class="eyebrow">University Entrance Practice</div>
+  <h1>Set up your paper</h1>
+  <div class="sub">Generate university-entrance practice (reading, writing &amp; maths) with answer keys.</div>
+
+  <div class="panel">
+    <div class="lbl">SECTIONS <span class="opt">(pick one or more)</span></div>
+    <div class="chips" id="skill-chips"></div>
+  </div>
+  <div class="panel">
+    <div class="lbl">TOPIC <span class="opt">(optional — leave blank for academic mix)</span></div>
+    <input class="topic" id="topic" placeholder="e.g. for the reading section theme…"/>
+  </div>
+  <div class="panel">
+    <div class="lbl">NUMBER OF QUESTIONS</div>
+    <div class="chips" id="count-chips">
+      <div class="chip" onclick="pickCount(this,10)">10</div>
+      <div class="chip on" onclick="pickCount(this,15)">15</div>
+      <div class="chip" onclick="pickCount(this,25)">25</div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn sec" onclick="location.href='/app'">Back</button>
+    <button class="btn pri" id="gen-btn" onclick="generate()">Generate Paper</button>
+  </div>
+  <div id="result-area"></div>
+</div>
+
+<script>
+var API='https://edubot-vietnam.onrender.com';
+var tok=localStorage.getItem('eb_tok')||'';
+var SKILLS=['Reading','Writing','Maths'];
+var state={sections:[],topic:'',questionCount:15};
+(function(){var box=document.getElementById('skill-chips');SKILLS.forEach(function(sk){var d=document.createElement('div');d.className='chip';d.textContent=sk;d.onclick=function(){toggleSkill(d,sk);};box.appendChild(d);});var c=box.querySelectorAll('.chip');toggleSkill(c[0],SKILLS[0]);toggleSkill(c[1],SKILLS[1]);})();
+function pickCount(el,v){state.questionCount=v;el.parentNode.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});el.classList.add('on');}
+function toggleSkill(el,sk){var i=state.sections.indexOf(sk);if(i===-1){state.sections.push(sk);el.classList.add('on');}else{state.sections.splice(i,1);el.classList.remove('on');}}
+async function generate(){
+  state.topic=document.getElementById('topic').value.trim();
+  if(state.sections.length===0){state.sections=['Reading','Writing','Maths'];}
+  var btn=document.getElementById('gen-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Generating…';
+  var area=document.getElementById('result-area');area.innerHTML='';
+  try{
+    var res=await fetch(API+'/university-entrance/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify(state)});
+    var data=await res.json();
+    if(!res.ok){throw new Error(data.error||'Generation failed');}
+    renderResult(data.examData,data.exam);
+  }catch(e){area.innerHTML='<div class="result" style="color:#b00020">Could not generate: '+esc(e.message)+'</div>';}
+  finally{btn.disabled=false;btn.textContent='Generate Paper';}
+}
+function renderResult(examData,exam){
+  var area=document.getElementById('result-area');
+  var realTotal=0;(examData.sections||[]).forEach(function(sec){(sec.questions||[]).forEach(function(q){realTotal+=(q.points||1);});});
+  var html='<div class="result"><h2>'+esc(examData.title||'University Entrance Practice')+'</h2>';
+  html+='<div style="display:inline-block;background:#E1F5EE;color:#0F6E56;font-weight:700;font-size:13px;padding:5px 12px;border-radius:6px;margin-bottom:8px">Total: '+realTotal+' marks</div>';
+  if(examData.instructions){html+='<div class="sub">'+esc(examData.instructions)+'</div>';}
+  (examData.sections||[]).forEach(function(sec){
+    html+='<div style="margin-top:10px;font-weight:700;color:var(--peri)">'+esc(sec.label||sec.type)+'</div>';
+    (sec.questions||[]).forEach(function(q){
+      html+='<div class="qitem"><div class="qt"><span class="qn">'+(q.id)+'.</span> '+esc(q.question)+' <span style="color:#aaa;font-size:12px">('+(q.points||1)+' marks)</span></div>';
+      if(q.passage){html+='<div style="font-size:13px;color:#444;background:#f7f8ff;padding:8px;border-radius:6px;margin:4px 0">'+esc(q.passage)+'</div>';}
+      if(q.visual&&typeof renderMathVisual==='function'){var svg=renderMathVisual(q.visual);if(svg){html+='<div style="background:#fff;padding:8px;border:.5px solid #e3e6f3;margin:6px 0;max-width:420px">'+svg+'</div>';}}
+      if(q.options){q.options.forEach(function(o){html+='<div style="font-size:13px;color:#444;padding:2px 0">'+esc(o)+'</div>';});}
+      if(q.answer){html+='<div class="ans">✓ '+esc(q.answer)+'</div>';}
+      if(q.explanation){html+='<div style="font-size:11px;color:#b4690e;font-style:italic;margin-top:2px">'+esc(q.explanation)+'</div>';}
+      html+='</div>';
+    });
+  });
+  html+='<div style="margin-top:14px;font-size:12px;color:var(--muted)">Saved to your exam Memory'+(exam&&exam.code?' · code '+esc(exam.code):'')+'. Open it in the Exam Generator to edit, assign, or export.</div></div>';
+  area.innerHTML=html;area.scrollIntoView({behavior:'smooth'});
+}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+</script>
+<script>
+/* maths visual renderer (shared with exam.html) */
+function renderMathVisual(spec){
+  if(!spec || !spec.kind) return '';
+  var K=spec.kind;
+  // shared palette
+  var INK='#1a1a1a', GRID='#e6e6e6', FRAME='#c8c8c8';
+  // Router
+  if(K==='quadratic'||K==='linear'||K==='cubic'||K==='reciprocal'||K==='exponential'||K==='absolute'||K==='simultaneous'||K==='inequality')
+    return _mvGraph(spec, INK, GRID, FRAME);
+  if(K==='trig') return _mvTrig(spec, INK, GRID, FRAME);
+  if(K==='numberline') return _mvNumberLine(spec, INK);
+  if(K==='bar') return _mvBar(spec, INK, GRID);
+  if(K==='pie') return _mvPie(spec, INK);
+  if(K==='scatter') return _mvScatter(spec, INK, GRID);
+  if(K==='boxplot') return _mvBox(spec, INK);
+  if(K==='triangle') return _mvTriangle(spec, INK);
+  if(K==='sector') return _mvSector(spec, INK);
+  if(K==='angleline') return _mvAngleLine(spec, INK);
+  if(K==='coordshape') return _mvCoordShape(spec, INK, GRID, FRAME);
+  if(K==='circuit') return _mvCircuit(spec, INK);
+  if(K==='foodchain') return _mvFoodChain(spec, INK);
+  if(K==='forces') return _mvForces(spec, INK);
+  if(K==='cell') return _mvCell(spec, INK);
+  if(K==='apparatus') return _mvApparatus(spec, INK);
+  return '';
+}
+function _mvR(n){ return Math.round(n*100)/100; }
+
+// ---------- Science diagram renderers (Checkpoint, black-and-white exam style) ----------
+// circuit: spec.components = ordered array of {type:'cell'|'bulb'|'switch'|'resistor'|'ammeter'|'voltmeter', label?}
+function _mvCircuit(spec, INK){
+  var W=340,H=220, L=40,R=250,T=40,B=180;
+  var comps = spec.components || [{type:'cell'},{type:'bulb'},{type:'switch'}];
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  // rectangular wire loop
+  s+='<rect x="'+L+'" y="'+T+'" width="'+(R-L)+'" height="'+(B-T)+'" fill="none" stroke="'+INK+'" stroke-width="1.5"/>';
+  // place components: top edge gets first, bottom edge gets rest spread; keep simple: top-mid + each side
+  // We position up to 4 components: top, right, bottom, left midpoints
+  var positions=[{x:(L+R)/2,y:T,edge:'top'},{x:R,y:(T+B)/2,edge:'right'},{x:(L+R)/2,y:B,edge:'bottom'},{x:L,y:(T+B)/2,edge:'left'}];
+  comps.slice(0,4).forEach(function(c,i){
+    var p=positions[i];
+    s+=_mvComponent(c, p, INK);
+  });
+  s+='</svg>'; return s;
+}
+function _mvComponent(c, p, INK){
+  var out='';
+  var horiz = (p.edge==='top'||p.edge==='bottom');
+  // white gap to "break" the wire where the component sits
+  if(horiz){ out+='<rect x="'+(p.x-16)+'" y="'+(p.y-12)+'" width="32" height="24" fill="#ffffff"/>'; }
+  else { out+='<rect x="'+(p.x-12)+'" y="'+(p.y-16)+'" width="24" height="32" fill="#ffffff"/>'; }
+  if(c.type==='cell'){
+    if(horiz){ out+='<line x1="'+(p.x-4)+'" y1="'+(p.y-10)+'" x2="'+(p.x-4)+'" y2="'+(p.y+10)+'" stroke="'+INK+'" stroke-width="2.5"/>'+'<line x1="'+(p.x+4)+'" y1="'+(p.y-5)+'" x2="'+(p.x+4)+'" y2="'+(p.y+5)+'" stroke="'+INK+'" stroke-width="1.3"/>'; }
+    else { out+='<line x1="'+(p.x-10)+'" y1="'+(p.y-4)+'" x2="'+(p.x+10)+'" y2="'+(p.y-4)+'" stroke="'+INK+'" stroke-width="2.5"/>'+'<line x1="'+(p.x-5)+'" y1="'+(p.y+4)+'" x2="'+(p.x+5)+'" y2="'+(p.y+4)+'" stroke="'+INK+'" stroke-width="1.3"/>'; }
+  } else if(c.type==='bulb'){
+    out+='<circle cx="'+p.x+'" cy="'+p.y+'" r="11" fill="#fff" stroke="'+INK+'" stroke-width="1.4"/>'+'<line x1="'+(p.x-8)+'" y1="'+(p.y-8)+'" x2="'+(p.x+8)+'" y2="'+(p.y+8)+'" stroke="'+INK+'" stroke-width="1.1"/>'+'<line x1="'+(p.x+8)+'" y1="'+(p.y-8)+'" x2="'+(p.x-8)+'" y2="'+(p.y+8)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  } else if(c.type==='switch'){
+    out+='<circle cx="'+(p.x-10)+'" cy="'+p.y+'" r="2" fill="'+INK+'"/>'+'<circle cx="'+(p.x+10)+'" cy="'+p.y+'" r="2" fill="'+INK+'"/>'+'<line x1="'+(p.x-10)+'" y1="'+p.y+'" x2="'+(p.x+8)+'" y2="'+(p.y-9)+'" stroke="'+INK+'" stroke-width="1.4"/>';
+  } else if(c.type==='resistor'){
+    out+='<rect x="'+(p.x-13)+'" y="'+(p.y-6)+'" width="26" height="12" fill="#fff" stroke="'+INK+'" stroke-width="1.4"/>';
+  } else if(c.type==='ammeter'||c.type==='voltmeter'){
+    out+='<circle cx="'+p.x+'" cy="'+p.y+'" r="11" fill="#fff" stroke="'+INK+'" stroke-width="1.4"/>'+'<text x="'+p.x+'" y="'+(p.y+4)+'" font-size="12" text-anchor="middle">'+(c.type==='ammeter'?'A':'V')+'</text>';
+  }
+  // label outside, away from loop centre
+  if(c.label){
+    var lx=p.x, ly=p.y, anchor='middle';
+    if(p.edge==='top'){ ly=p.y-16; }
+    else if(p.edge==='bottom'){ ly=p.y+24; }
+    else if(p.edge==='left'){ lx=p.x-16; anchor='end'; ly=p.y+4; }
+    else { lx=p.x+16; anchor='start'; ly=p.y+4; }
+    out+='<text x="'+lx+'" y="'+ly+'" font-size="11" fill="'+INK+'" text-anchor="'+anchor+'">'+c.label+'</text>';
+  }
+  return out;
+}
+
+// foodchain: spec.organisms = ["grass","grasshopper",...]; arrows = energy flow
+function _mvFoodChain(spec, INK){
+  var orgs = spec.organisms || ['grass','insect','bird'];
+  var n=orgs.length;
+  var boxW=84, boxH=34, gap=30;
+  var perRow = Math.min(n, 3);
+  var W=Math.max(280, perRow*boxW + (perRow-1)*gap + 40);
+  var rows = Math.ceil(n/3);
+  var H = rows*(boxH+40) + 30;
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  var positions=[];
+  for(var i=0;i<n;i++){
+    var row=Math.floor(i/3), col=i%3;
+    var itemsInRow = Math.min(3, n - row*3);
+    // Even rows go L→R, odd rows go R→L (snake), so the first item of a new row
+    // sits directly under the last item of the previous row → clean vertical arrow.
+    var realCol = (row%2===0) ? col : (3 - 1 - col);
+    var x=20 + realCol*(boxW+gap);
+    var y=20 + row*(boxH+40);
+    positions.push({x:x,y:y});
+  }
+  // arrows between consecutive
+  for(var j=0;j<n-1;j++){
+    var a=positions[j], b=positions[j+1];
+    if(a.y===b.y){ // horizontal
+      var x1=Math.min(a.x,b.x)+boxW, x2=Math.max(a.x,b.x); 
+      var ya=a.y+boxH/2;
+      if(b.x>a.x){ s+='<line x1="'+(a.x+boxW)+'" y1="'+ya+'" x2="'+(b.x-6)+'" y2="'+ya+'" stroke="'+INK+'" stroke-width="1.2"/><polygon points="'+(b.x)+','+ya+' '+(b.x-7)+','+(ya-4)+' '+(b.x-7)+','+(ya+4)+'" fill="'+INK+'"/>'; }
+      else { s+='<line x1="'+(a.x)+'" y1="'+ya+'" x2="'+(b.x+boxW+6)+'" y2="'+ya+'" stroke="'+INK+'" stroke-width="1.2"/><polygon points="'+(b.x+boxW)+','+ya+' '+(b.x+boxW+7)+','+(ya-4)+' '+(b.x+boxW+7)+','+(ya+4)+'" fill="'+INK+'"/>'; }
+    } else { // vertical drop to next row
+      var xc=a.x+boxW/2;
+      s+='<line x1="'+xc+'" y1="'+(a.y+boxH)+'" x2="'+xc+'" y2="'+(b.y-6)+'" stroke="'+INK+'" stroke-width="1.2"/><polygon points="'+xc+','+(b.y)+' '+(xc-4)+','+(b.y-7)+' '+(xc+4)+','+(b.y-7)+'" fill="'+INK+'"/>';
+    }
+  }
+  // boxes
+  positions.forEach(function(p,i){
+    s+='<rect x="'+p.x+'" y="'+p.y+'" width="'+boxW+'" height="'+boxH+'" fill="#fff" stroke="'+INK+'" stroke-width="1.3"/>';
+    s+='<text x="'+(p.x+boxW/2)+'" y="'+(p.y+boxH/2+4)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+_mvFit(orgs[i],boxW)+'</text>';
+  });
+  s+='</svg>'; return s;
+}
+function _mvFit(t,w){ return t.length>12 ? t.slice(0,11)+'…' : t; }
+
+// forces: spec.forces = [{dir:'up'|'down'|'left'|'right', label}]
+function _mvForces(spec, INK){
+  var W=280,H=210, cx=140, cy=105;
+  var bw=64, bh=44;
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<rect x="'+(cx-bw/2)+'" y="'+(cy-bh/2)+'" width="'+bw+'" height="'+bh+'" fill="none" stroke="'+INK+'" stroke-width="1.5"/>';
+  if(spec.objectLabel) s+='<text x="'+cx+'" y="'+(cy+4)+'" font-size="10" fill="'+INK+'" text-anchor="middle">'+spec.objectLabel+'</text>';
+  (spec.forces||[]).forEach(function(f){
+    var L=46;
+    if(f.dir==='up'){ s+='<line x1="'+cx+'" y1="'+(cy-bh/2)+'" x2="'+cx+'" y2="'+(cy-bh/2-L)+'" stroke="'+INK+'" stroke-width="1.6"/><polygon points="'+cx+','+(cy-bh/2-L-4)+' '+(cx-5)+','+(cy-bh/2-L+5)+' '+(cx+5)+','+(cy-bh/2-L+5)+'" fill="'+INK+'"/>'+(f.label?'<text x="'+(cx+8)+'" y="'+(cy-bh/2-L+8)+'" font-size="11" fill="'+INK+'">'+f.label+'</text>':''); }
+    else if(f.dir==='down'){ s+='<line x1="'+cx+'" y1="'+(cy+bh/2)+'" x2="'+cx+'" y2="'+(cy+bh/2+L)+'" stroke="'+INK+'" stroke-width="1.6"/><polygon points="'+cx+','+(cy+bh/2+L+4)+' '+(cx-5)+','+(cy+bh/2+L-5)+' '+(cx+5)+','+(cy+bh/2+L-5)+'" fill="'+INK+'"/>'+(f.label?'<text x="'+(cx+8)+'" y="'+(cy+bh/2+L)+'" font-size="11" fill="'+INK+'">'+f.label+'</text>':''); }
+    else if(f.dir==='left'){ s+='<line x1="'+(cx-bw/2)+'" y1="'+cy+'" x2="'+(cx-bw/2-L)+'" y2="'+cy+'" stroke="'+INK+'" stroke-width="1.6"/><polygon points="'+(cx-bw/2-L-4)+','+cy+' '+(cx-bw/2-L+5)+','+(cy-5)+' '+(cx-bw/2-L+5)+','+(cy+5)+'" fill="'+INK+'"/>'+(f.label?'<text x="'+(cx-bw/2-L)+'" y="'+(cy-8)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+f.label+'</text>':''); }
+    else if(f.dir==='right'){ s+='<line x1="'+(cx+bw/2)+'" y1="'+cy+'" x2="'+(cx+bw/2+L)+'" y2="'+cy+'" stroke="'+INK+'" stroke-width="1.6"/><polygon points="'+(cx+bw/2+L+4)+','+cy+' '+(cx+bw/2+L-5)+','+(cy-5)+' '+(cx+bw/2+L-5)+','+(cy+5)+'" fill="'+INK+'"/>'+(f.label?'<text x="'+(cx+bw/2+L)+'" y="'+(cy-8)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+f.label+'</text>':''); }
+  });
+  s+='</svg>'; return s;
+}
+
+// cell: spec.cellType='animal'|'plant'; labels handled generically
+function _mvCell(spec, INK){
+  var W=300,H=220, cx=130, cy=105;
+  var plant = spec.cellType==='plant';
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  if(plant){
+    s+='<rect x="'+(cx-85)+'" y="'+(cy-58)+'" width="170" height="116" rx="6" fill="none" stroke="'+INK+'" stroke-width="2.5"/>';
+    s+='<rect x="'+(cx-79)+'" y="'+(cy-52)+'" width="158" height="104" rx="4" fill="none" stroke="'+INK+'" stroke-width="1"/>';
+    s+='<ellipse cx="'+(cx+30)+'" cy="'+(cy+20)+'" rx="42" ry="26" fill="none" stroke="'+INK+'" stroke-width="0.9"/>';
+    s+='<text x="'+(cx+30)+'" y="'+(cy+23)+'" font-size="8" text-anchor="middle" font-style="italic">vacuole</text>';
+    s+='<ellipse cx="'+(cx-45)+'" cy="'+(cy+30)+'" rx="11" ry="6" fill="none" stroke="'+INK+'" stroke-width="0.9"/>';
+  } else {
+    s+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="88" ry="60" fill="none" stroke="'+INK+'" stroke-width="1.8"/>';
+  }
+  // nucleus
+  s+='<circle cx="'+(cx-20)+'" cy="'+(cy-8)+'" r="24" fill="none" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<circle cx="'+(cx-20)+'" cy="'+(cy-8)+'" r="7" fill="'+INK+'"/>';
+  // labels with leader lines to the right margin (collision-free)
+  var labels = spec.labels || (plant ? ['cell wall','cell membrane','nucleus','cytoplasm','vacuole','chloroplast'] : ['cell membrane','nucleus','cytoplasm']);
+  // anchor points for common labels
+  var anchors = {
+    'nucleus':[cx-20,cy-8], 'cell membrane':[cx+ (plant?79:88), cy-30], 'cell wall':[cx+85,cy-50],
+    'cytoplasm':[cx+40,cy+40], 'vacuole':[cx+30,cy+20], 'chloroplast':[cx-45,cy+30]
+  };
+  var ly = 28;
+  labels.forEach(function(lb,i){
+    var a = anchors[lb] || [cx, cy];
+    var tx = 250, ty = 24 + i*22;
+    s+='<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+(tx-2)+'" y2="'+ty+'" stroke="'+INK+'" stroke-width="0.5"/>';
+    s+='<text x="'+tx+'" y="'+(ty+3)+'" font-size="9.5" fill="'+INK+'">'+lb+'</text>';
+  });
+  s+='</svg>'; return s;
+}
+
+// apparatus: spec.setup='beaker_tripod'|'filtration' (preset lab setups)
+function _mvApparatus(spec, INK){
+  var W=280,H=210;
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  if(spec.setup==='filtration'){
+    s+='<path d="M100 40 L150 40 L130 76 L120 76 Z" fill="none" stroke="'+INK+'" stroke-width="1.3"/>';
+    s+='<line x1="120" y1="76" x2="120" y2="96" stroke="'+INK+'" stroke-width="1.3"/><line x1="130" y1="76" x2="130" y2="96" stroke="'+INK+'" stroke-width="1.3"/>';
+    s+='<line x1="103" y1="46" x2="147" y2="46" stroke="'+INK+'" stroke-width="0.7"/>';
+    s+='<text x="155" y="50" font-size="10" fill="'+INK+'">filter funnel</text>';
+    s+='<path d="M110 110 L110 122 L94 166 L156 166 L140 122 L140 110 Z" fill="none" stroke="'+INK+'" stroke-width="1.3"/>';
+    s+='<text x="160" y="150" font-size="10" fill="'+INK+'">conical flask</text>';
+  } else {
+    // beaker on tripod over bunsen
+    s+='<path d="M95 66 L100 118 L160 118 L165 66" fill="none" stroke="'+INK+'" stroke-width="1.5"/>';
+    s+='<line x1="92" y1="66" x2="168" y2="66" stroke="'+INK+'" stroke-width="1.5"/>';
+    s+='<text x="172" y="95" font-size="10" fill="'+INK+'">beaker</text>';
+    s+='<line x1="78" y1="124" x2="182" y2="124" stroke="'+INK+'" stroke-width="1.5"/>';
+    s+='<line x1="88" y1="124" x2="83" y2="166" stroke="'+INK+'" stroke-width="1.5"/><line x1="172" y1="124" x2="177" y2="166" stroke="'+INK+'" stroke-width="1.5"/>';
+    s+='<text x="186" y="135" font-size="10" fill="'+INK+'">tripod</text>';
+    s+='<path d="M120 166 Q 130 144, 140 166 Z" fill="none" stroke="'+INK+'" stroke-width="1"/>';
+    s+='<rect x="125" y="166" width="10" height="20" fill="none" stroke="'+INK+'" stroke-width="1.2"/>';
+    s+='<text x="140" y="184" font-size="10" fill="'+INK+'">Bunsen burner</text>';
+  }
+  s+='</svg>'; return s;
+}
+
+
+// ---------- Core coordinate-graph renderer ----------
+function _mvGraph(spec, INK, GRID, FRAME){
+  var W=440, H=400;
+  // margins: generous left (y-numbers) and bottom (x-numbers) so labels sit OUTSIDE the plot
+  var mL=48, mR=26, mT=26, mB=46;
+  var xr=spec.xRange||[-6,6], yr=spec.yRange||[-6,6];
+  var x0=xr[0],x1=xr[1],y0=yr[0],y1=yr[1];
+  var pW=W-mL-mR, pH=H-mT-mB;
+  function sx(x){ return mL + (x-x0)/(x1-x0)*pW; }
+  function sy(y){ return mT + (y1-y)/(y1-y0)*pH; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+
+  // grid
+  var xStep=spec.xStep||_mvNiceStep(x0,x1), yStep=spec.yStep||_mvNiceStep(y0,y1);
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var gx=Math.ceil(x0/xStep)*xStep; gx<=x1+1e-9; gx+=xStep){ if(Math.abs(gx)<1e-9)continue; s+='<line x1="'+sx(gx).toFixed(1)+'" y1="'+mT+'" x2="'+sx(gx).toFixed(1)+'" y2="'+(H-mB)+'"/>'; }
+  for(var gy=Math.ceil(y0/yStep)*yStep; gy<=y1+1e-9; gy+=yStep){ if(Math.abs(gy)<1e-9)continue; s+='<line x1="'+mL+'" y1="'+sy(gy).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(gy).toFixed(1)+'"/>'; }
+  s+='</g>';
+  // frame
+  s+='<rect x="'+mL+'" y="'+mT+'" width="'+pW+'" height="'+pH+'" fill="none" stroke="'+FRAME+'" stroke-width="0.7"/>';
+
+  // axes (only if 0 in range)
+  var hasY=x0<=0&&x1>=0, hasX=y0<=0&&y1>=0;
+  if(hasY){ var ax=sx(0); s+='<line x1="'+ax.toFixed(1)+'" y1="'+mT+'" x2="'+ax.toFixed(1)+'" y2="'+(H-mB)+'" stroke="'+INK+'" stroke-width="1.1"/>'+'<polygon points="'+ax.toFixed(1)+','+(mT-6)+' '+(ax-4).toFixed(1)+','+(mT+3)+' '+(ax+4).toFixed(1)+','+(mT+3)+'" fill="'+INK+'"/>'+'<text x="'+(ax+7).toFixed(1)+'" y="'+(mT+2)+'" font-style="italic" font-size="14" fill="'+INK+'">y</text>'; }
+  if(hasX){ var ay=sy(0); s+='<line x1="'+mL+'" y1="'+ay.toFixed(1)+'" x2="'+(W-mR)+'" y2="'+ay.toFixed(1)+'" stroke="'+INK+'" stroke-width="1.1"/>'+'<polygon points="'+(W-mR+6)+','+ay.toFixed(1)+' '+(W-mR-3)+','+(ay-4).toFixed(1)+' '+(W-mR-3)+','+(ay+4).toFixed(1)+'" fill="'+INK+'"/>'+'<text x="'+(W-mR+2)+'" y="'+(ay-6).toFixed(1)+'" font-style="italic" font-size="14" fill="'+INK+'">x</text>'; }
+
+  // collect ink segments (for label collision avoidance)
+  var inkBoxes=[];
+  function fval(x){
+    switch(spec.kind){
+      case 'quadratic': return spec.a*x*x+spec.b*x+spec.c;
+      case 'linear': return spec.m*x+spec.c;
+      case 'cubic': return spec.a*x*x*x+spec.b*x*x+spec.c*x+spec.d;
+      case 'reciprocal': return x===0?null:(spec.a||1)/x;
+      case 'exponential': return Math.pow(spec.base||2,x)*(spec.a||1);
+      case 'absolute': return (spec.a||1)*Math.abs(x-(spec.h||0))+(spec.k||0);
+      default: return null;
+    }
+  }
+  // shading for inequality (drawn before curve)
+  if(spec.kind==='inequality' && spec.m!=null){
+    // region relative to line y=mx+c
+    var above = spec.region!=='below';
+    var pts=[];
+    pts.push([mL, above?mT:H-mB]);
+    for(var px=0;px<=pW;px+=6){ var xv=x0+(px/pW)*(x1-x0); var yv=spec.m*xv+spec.c; var yy=sy(Math.max(y0,Math.min(y1,yv))); pts.push([sx(xv),yy]); }
+    pts.push([W-mR, above?mT:H-mB]);
+    var dd='M'+pts.map(function(p){return p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' L ')+' Z';
+    s+='<defs><pattern id="mvhatch'+(spec._id||'')+'" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="#bdbdbd" stroke-width="0.6"/></pattern></defs>';
+    s+='<clipPath id="mvclip'+(spec._id||'')+'"><rect x="'+mL+'" y="'+mT+'" width="'+pW+'" height="'+pH+'"/></clipPath>';
+    s+='<path d="'+dd+'" fill="url(#mvhatch'+(spec._id||'')+')" clip-path="url(#mvclip'+(spec._id||'')+')"/>';
+  }
+
+  // draw curve(s)
+  function drawCurve(fn,store){
+    var d='',started=false;
+    for(var px=0;px<=pW;px+=1.5){ var xv=x0+(px/pW)*(x1-x0); var yv=fn(xv); if(yv==null||!isFinite(yv)||yv<y0-2||yv>y1+2){started=false;continue;} var X=sx(xv),Y=sy(yv); d+=(started?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' '; if(store)inkBoxes.push([X-3,Y-3,X+3,Y+3]); started=true; }
+    return '<path d="'+d.trim()+'" fill="none" stroke="'+INK+'" stroke-width="1.6"/>';
+  }
+  if(spec.kind==='simultaneous'){
+    s+=drawCurve(function(x){return spec.m1*x+spec.c1;},true);
+    s+=drawCurve(function(x){return spec.m2*x+spec.c2;},true);
+    // intersection
+    if(spec.m1!==spec.m2){ var ix=(spec.c2-spec.c1)/(spec.m1-spec.m2); var iy=spec.m1*ix+spec.c1; if(ix>=x0&&ix<=x1&&iy>=y0&&iy<=y1){ s+='<circle cx="'+sx(ix).toFixed(1)+'" cy="'+sy(iy).toFixed(1)+'" r="3.5" fill="'+INK+'"/>'; } }
+  } else if(spec.kind==='inequality'){
+    s+=drawCurve(function(x){return spec.m*x+spec.c;},true);
+  } else {
+    s+=drawCurve(fval,true);
+  }
+
+  // marks (vertex/roots/points) - dot + coordinate label placed clear of curve
+  var labelBoxes=[];
+  (spec.marks||[]).forEach(function(m){
+    var pts=[];
+    if(m.type==='vertex'&&spec.kind==='quadratic'){ var vx=-spec.b/(2*spec.a),vy=fval(vx); pts.push([vx,vy]); }
+    else if(m.type==='roots'&&spec.kind==='quadratic'){ var disc=spec.b*spec.b-4*spec.a*spec.c; if(disc>=0){ pts.push([(-spec.b-Math.sqrt(disc))/(2*spec.a),0]); pts.push([(-spec.b+Math.sqrt(disc))/(2*spec.a),0]); } }
+    else if(m.type==='point'&&m.x!=null){ pts.push([m.x, m.y!=null?m.y:fval(m.x)]); }
+    pts.forEach(function(p){
+      if(p[0]<x0||p[0]>x1||p[1]==null) return;
+      var cx=sx(p[0]),cy=sy(p[1]);
+      s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="3.5" fill="'+INK+'"/>';
+      var txt='('+_mvR(p[0])+', '+_mvR(p[1])+')';
+      var place=_mvPlaceLabel(cx,cy,txt.length*6.5+6,16,inkBoxes.concat(labelBoxes),mL,mT,W-mR,H-mB);
+      if(place){ labelBoxes.push(place.box); s+='<text x="'+place.x.toFixed(1)+'" y="'+place.y.toFixed(1)+'" font-size="12.5" fill="'+INK+'" text-anchor="middle">'+txt+'</text>'; }
+    });
+  });
+
+  // equation label - collision-checked, placed in clearest top corner/gap
+  if(spec.label){
+    var lw=spec.label.length*7+8;
+    var place=_mvPlaceLabel((mL+W-mR)/2, mT+14, lw, 18, inkBoxes.concat(labelBoxes), mL+4, mT+4, W-mR-4, H-mB-4);
+    if(place){ s+='<text x="'+place.x.toFixed(1)+'" y="'+place.y.toFixed(1)+'" font-style="italic" font-size="14" fill="'+INK+'" text-anchor="middle">'+spec.label+'</text>'; }
+  }
+
+  // AXIS NUMBERS in the MARGIN (never on the plot)
+  s+='<g font-size="12" fill="'+INK+'">';
+  if(hasX){ var ny=sy(0); var belowOK = ny < H-mB-14; // if x-axis near bottom, put nums just under axis; else in bottom margin
+    var numY = H-mB+15;
+    for(var lx=Math.ceil(x0/xStep)*xStep; lx<=x1+1e-9; lx+=xStep){ if(Math.abs(lx)<1e-9)continue; s+='<text x="'+sx(lx).toFixed(1)+'" y="'+numY.toFixed(1)+'" text-anchor="middle">'+_mvR(lx)+'</text>'; }
+  }
+  if(hasY){ var numX = mL-8;
+    for(var ly=Math.ceil(y0/yStep)*yStep; ly<=y1+1e-9; ly+=yStep){ if(Math.abs(ly)<1e-9)continue; s+='<text x="'+numX.toFixed(1)+'" y="'+(sy(ly)+4).toFixed(1)+'" text-anchor="end">'+_mvR(ly)+'</text>'; }
+  }
+  s+='</g>';
+  s+='</svg>';
+  return s;
+}
+
+// choose a "nice" step so we show ~6-10 gridlines
+function _mvNiceStep(a,b){ var span=Math.abs(b-a); var raw=span/8; var pow=Math.pow(10,Math.floor(Math.log10(raw))); var n=raw/pow; var step= n<1.5?1: n<3?2: n<7?5:10; return step*pow; }
+
+// collision-aware label placement: try candidate spots, return first clear one
+function _mvPlaceLabel(cx,cy,w,h,boxes,minX,minY,maxX,maxY){
+  // candidate anchor points (x is CENTER, y is BASELINE)
+  var cands=[
+    [cx, cy+18],            // just below point
+    [cx, cy-10],            // just above point
+    [cx+w/2+8, cy+5],       // right of point
+    [cx-w/2-8, cy+5],       // left of point
+    [cx, cy+30],            // a bit further below
+    [cx, cy-22],            // a bit further above
+    [cx+w/2+8, cy+18],      // lower-right
+    [cx-w/2-8, cy+18],      // lower-left
+    [cx+w/2+8, cy-8],       // upper-right
+    [cx-w/2-8, cy-8],       // upper-left
+    [(minX+maxX)/2, minY+14],// fallback: top center
+    [maxX-w/2-4, minY+14],  // fallback: top right
+    [minX+w/2+4, minY+14]   // fallback: top left
+  ];
+  for(var i=0;i<cands.length;i++){
+    var lx=cands[i][0], by=cands[i][1];
+    var bx0=lx-w/2, by0=by-h+3, bx1=lx+w/2, by1=by+3;
+    if(bx0<minX||bx1>maxX||by0<minY||by1>maxY) continue;
+    var clash=false;
+    for(var k=0;k<boxes.length;k++){ var bb=boxes[k]; if(bx0<bb[2]&&bx1>bb[0]&&by0<bb[3]&&by1>bb[1]){clash=true;break;} }
+    if(!clash) return {x:lx,y:by,box:[bx0,by0,bx1,by1]};
+  }
+  return null; // no clear spot -> omit rather than overlap
+}
+
+// ---------- Trig ----------
+function _mvTrig(spec, INK, GRID, FRAME){
+  var W=520,H=260, mL=46,mR=30,mT=24,mB=44;
+  var pW=W-mL-mR,pH=H-mT-mB;
+  var maxDeg=spec.maxDeg||360, amp=spec.amp||1;
+  var midY=mT+pH/2;
+  function sx(d){ return mL+(d/maxDeg)*pW; }
+  function sy(v){ return midY-(v/(amp*1.1))*(pH/2); }
+  var fn = spec.fn==='cos'?Math.cos:(spec.fn==='tan'?Math.tan:Math.sin);
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  // grid verticals every 90
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var d=90; d<maxDeg; d+=90){ s+='<line x1="'+sx(d).toFixed(1)+'" y1="'+mT+'" x2="'+sx(d).toFixed(1)+'" y2="'+(H-mB)+'"/>'; }
+  s+='<line x1="'+mL+'" y1="'+sy(amp).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(amp).toFixed(1)+'"/>';
+  s+='<line x1="'+mL+'" y1="'+sy(-amp).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(-amp).toFixed(1)+'"/></g>';
+  // axes
+  s+='<line x1="'+mL+'" y1="'+mT+'" x2="'+mL+'" y2="'+(H-mB)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<line x1="'+mL+'" y1="'+midY.toFixed(1)+'" x2="'+(W-mR)+'" y2="'+midY.toFixed(1)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<polygon points="'+(W-mR+6)+','+midY.toFixed(1)+' '+(W-mR-3)+','+(midY-4).toFixed(1)+' '+(W-mR-3)+','+(midY+4).toFixed(1)+'" fill="'+INK+'"/>';
+  s+='<text x="'+(W-mR+2)+'" y="'+(midY-6).toFixed(1)+'" font-style="italic" font-size="13" fill="'+INK+'">x</text>';
+  // curve
+  var dpath='',started=false;
+  for(var px=0;px<=pW;px+=1.2){ var deg=(px/pW)*maxDeg; var v=fn(deg*Math.PI/180); if(spec.fn==='tan'&&Math.abs(v)>amp*1.2){started=false;continue;} var X=sx(deg),Y=sy(v); dpath+=(started?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' '; started=true; }
+  s+='<path d="'+dpath.trim()+'" fill="none" stroke="'+INK+'" stroke-width="1.6"/>';
+  // x labels in margin
+  s+='<g font-size="12" fill="'+INK+'" text-anchor="middle">';
+  for(var dd2=90; dd2<=maxDeg; dd2+=90){ s+='<text x="'+sx(dd2).toFixed(1)+'" y="'+(H-mB+16)+'">'+dd2+'\u00b0</text>'; }
+  s+='</g>';
+  // y labels in margin
+  s+='<g font-size="12" fill="'+INK+'" text-anchor="end">';
+  s+='<text x="'+(mL-7)+'" y="'+(sy(amp)+4).toFixed(1)+'">'+amp+'</text>';
+  s+='<text x="'+(mL-7)+'" y="'+(sy(-amp)+4).toFixed(1)+'">\u2212'+amp+'</text>';
+  s+='</g>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Number line ----------
+function _mvNumberLine(spec, INK){
+  var W=520,H=96, mX=40, y=46;
+  var lo=spec.min!=null?spec.min:-3, hi=spec.max!=null?spec.max:3;
+  var pW=W-2*mX;
+  function sx(v){ return mX+((v-lo)/(hi-lo))*pW; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<line x1="'+mX+'" y1="'+y+'" x2="'+(W-mX)+'" y2="'+y+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<polygon points="'+(W-mX+8)+','+y+' '+(W-mX-2)+','+(y-5)+' '+(W-mX-2)+','+(y+5)+'" fill="'+INK+'"/>';
+  s+='<polygon points="'+(mX-8)+','+y+' '+(mX+2)+','+(y-5)+' '+(mX+2)+','+(y+5)+'" fill="'+INK+'"/>';
+  // ticks + numbers (below, in margin)
+  s+='<g font-size="13" fill="'+INK+'" text-anchor="middle">';
+  for(var v=lo; v<=hi+1e-9; v++){ var X=sx(v); s+='<line x1="'+X.toFixed(1)+'" y1="'+(y-6)+'" x2="'+X.toFixed(1)+'" y2="'+(y+6)+'" stroke="'+INK+'" stroke-width="1"/>'+'<text x="'+X.toFixed(1)+'" y="'+(y+24)+'">'+(v<0?'\u2212'+Math.abs(v):v)+'</text>'; }
+  s+='</g>';
+  // intervals: array of {from,to,fromClosed,toClosed} OR {at,closed} points
+  (spec.intervals||[]).forEach(function(iv){
+    var xa=sx(iv.from), xb=sx(iv.to);
+    s+='<line x1="'+xa.toFixed(1)+'" y1="'+y+'" x2="'+xb.toFixed(1)+'" y2="'+y+'" stroke="'+INK+'" stroke-width="3.5"/>';
+    s+=_mvDot(xa,y,iv.fromClosed,INK);
+    s+=_mvDot(xb,y,iv.toClosed,INK);
+  });
+  (spec.points||[]).forEach(function(pt){ s+=_mvDot(sx(pt.at),y,pt.closed,INK); });
+  s+='</svg>'; return s;
+}
+function _mvDot(x,y,closed,INK){ return closed? '<circle cx="'+x.toFixed(1)+'" cy="'+y+'" r="6.5" fill="'+INK+'"/>' : '<circle cx="'+x.toFixed(1)+'" cy="'+y+'" r="6.5" fill="#ffffff" stroke="'+INK+'" stroke-width="1.6"/>'; }
+
+// ---------- Bar chart ----------
+function _mvBar(spec, INK, GRID){
+  var W=440,H=320, mL=50,mR=24,mT=24,mB=70;
+  var pW=W-mL-mR,pH=H-mT-mB;
+  var bars=spec.bars||[]; var maxV=spec.maxY||Math.max.apply(null,bars.map(function(b){return b.value;}).concat([1]));
+  var step=_mvNiceStep(0,maxV); maxV=Math.ceil(maxV/step)*step;
+  function sy(v){ return mT+pH-(v/maxV)*pH; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  // gridlines + y numbers in margin
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var v=step; v<=maxV+1e-9; v+=step){ s+='<line x1="'+mL+'" y1="'+sy(v).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(v).toFixed(1)+'"/>'; }
+  s+='</g>';
+  s+='<line x1="'+mL+'" y1="'+mT+'" x2="'+mL+'" y2="'+(mT+pH)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<line x1="'+mL+'" y1="'+(mT+pH)+'" x2="'+(W-mR)+'" y2="'+(mT+pH)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  // bars
+  var n=bars.length, gap=pW/(n*1.6), bw=(pW-gap*(n+1))/n;
+  s+='<g font-size="11.5" fill="'+INK+'" text-anchor="middle">';
+  bars.forEach(function(b,i){ var x=mL+gap+(bw+gap)*i; var top=sy(b.value); s+='<rect x="'+x.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(mT+pH-top).toFixed(1)+'" fill="none" stroke="'+INK+'" stroke-width="1.3"/>'+'<text x="'+(x+bw/2).toFixed(1)+'" y="'+(mT+pH+16)+'">'+b.label+'</text>'; });
+  s+='</g>';
+  // y numbers margin
+  s+='<g font-size="11.5" fill="'+INK+'" text-anchor="end"><text x="'+(mL-7)+'" y="'+(mT+pH+4)+'">0</text>';
+  for(var v2=step; v2<=maxV+1e-9; v2+=step){ s+='<text x="'+(mL-7)+'" y="'+(sy(v2)+4).toFixed(1)+'">'+_mvR(v2)+'</text>'; }
+  s+='</g>';
+  if(spec.yLabel) s+='<text x="14" y="'+(mT+pH/2)+'" font-size="12" fill="'+INK+'" text-anchor="middle" transform="rotate(-90 14 '+(mT+pH/2)+')">'+spec.yLabel+'</text>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Pie chart ---------- (labels placed OUTSIDE slices, never on lines)
+function _mvPie(spec, INK){
+  var W=380,H=300, cx=150,cy=150,r=110;
+  var slices=spec.slices||[]; var total=slices.reduce(function(a,b){return a+b.value;},0)||1;
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+INK+'" stroke-width="1.4"/>';
+  var ang=-90; // start at top
+  slices.forEach(function(sl){
+    var a0=ang*Math.PI/180; var sweep=sl.value/total*360; var mid=(ang+sweep/2)*Math.PI/180; ang+=sweep;
+    // radius line
+    var lx=cx+r*Math.cos(a0), ly=cy+r*Math.sin(a0);
+    s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+lx.toFixed(1)+'" y2="'+ly.toFixed(1)+'" stroke="'+INK+'" stroke-width="1.2"/>';
+    // label OUTSIDE the circle along mid-angle
+    var L=r+24; var tx=cx+L*Math.cos(mid), ty=cy+L*Math.sin(mid);
+    var anchor = Math.cos(mid)>0.3?'start':(Math.cos(mid)<-0.3?'end':'middle');
+    var pct=Math.round(sl.value/total*100);
+    s+='<text x="'+tx.toFixed(1)+'" y="'+(ty+4).toFixed(1)+'" font-size="12.5" fill="'+INK+'" text-anchor="'+anchor+'">'+sl.label+' '+pct+'%</text>';
+  });
+  s+='</svg>'; return s;
+}
+
+// ---------- Scatter ----------
+function _mvScatter(spec, INK, GRID){
+  var W=440,H=320, mL=50,mR=24,mT=24,mB=50;
+  var pW=W-mL-mR,pH=H-mT-mB;
+  var pts=spec.points||[];
+  var xr=spec.xRange||[0,Math.max.apply(null,pts.map(function(p){return p.x;}).concat([10]))];
+  var yr=spec.yRange||[0,Math.max.apply(null,pts.map(function(p){return p.y;}).concat([10]))];
+  function sx(x){ return mL+(x-xr[0])/(xr[1]-xr[0])*pW; }
+  function sy(y){ return mT+pH-(y-yr[0])/(yr[1]-yr[0])*pH; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  var xStep=_mvNiceStep(xr[0],xr[1]), yStep=_mvNiceStep(yr[0],yr[1]);
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var gy=yr[0]+yStep; gy<=yr[1]+1e-9; gy+=yStep){ s+='<line x1="'+mL+'" y1="'+sy(gy).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(gy).toFixed(1)+'"/>'; }
+  s+='</g>';
+  s+='<line x1="'+mL+'" y1="'+mT+'" x2="'+mL+'" y2="'+(mT+pH)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<line x1="'+mL+'" y1="'+(mT+pH)+'" x2="'+(W-mR)+'" y2="'+(mT+pH)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  // line of best fit
+  if(spec.bestFit && pts.length>1){ var n=pts.length,sxx=0,sy_=0,sxy=0,sx_=0; pts.forEach(function(p){sx_+=p.x;sy_+=p.y;sxx+=p.x*p.x;sxy+=p.x*p.y;}); var m=(n*sxy-sx_*sy_)/(n*sxx-sx_*sx_); var b=(sy_-m*sx_)/n; s+='<line x1="'+sx(xr[0]).toFixed(1)+'" y1="'+sy(m*xr[0]+b).toFixed(1)+'" x2="'+sx(xr[1]).toFixed(1)+'" y2="'+sy(m*xr[1]+b).toFixed(1)+'" stroke="'+INK+'" stroke-width="1.1"/>'; }
+  pts.forEach(function(p){ s+='<circle cx="'+sx(p.x).toFixed(1)+'" cy="'+sy(p.y).toFixed(1)+'" r="2.8" fill="'+INK+'"/>'; });
+  // numbers in margin
+  s+='<g font-size="11.5" fill="'+INK+'" text-anchor="end"><text x="'+(mL-7)+'" y="'+(mT+pH+4)+'">'+yr[0]+'</text>';
+  for(var gy2=yr[0]+yStep; gy2<=yr[1]+1e-9; gy2+=yStep){ s+='<text x="'+(mL-7)+'" y="'+(sy(gy2)+4).toFixed(1)+'">'+_mvR(gy2)+'</text>'; }
+  s+='</g>';
+  if(spec.xLabel) s+='<text x="'+(mL+pW/2)+'" y="'+(H-12)+'" font-size="12" fill="'+INK+'" text-anchor="middle">'+spec.xLabel+'</text>';
+  if(spec.yLabel) s+='<text x="14" y="'+(mT+pH/2)+'" font-size="12" fill="'+INK+'" text-anchor="middle" transform="rotate(-90 14 '+(mT+pH/2)+')">'+spec.yLabel+'</text>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Box plot ----------
+function _mvBox(spec, INK){
+  var W=440,H=200, mX=44, axisY=150, boxY=70, boxH=46;
+  var lo=spec.min, q1=spec.q1, med=spec.median, q3=spec.q3, hi=spec.max;
+  var sLo=spec.scaleMin!=null?spec.scaleMin:lo, sHi=spec.scaleMax!=null?spec.scaleMax:hi;
+  var pad=(sHi-sLo)*0.1; sLo-=pad; sHi+=pad;
+  var pW=W-2*mX;
+  function sx(v){ return mX+((v-sLo)/(sHi-sLo))*pW; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  // scale axis
+  s+='<line x1="'+mX+'" y1="'+axisY+'" x2="'+(W-mX)+'" y2="'+axisY+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  var step=_mvNiceStep(sLo,sHi);
+  s+='<g font-size="11.5" fill="'+INK+'" text-anchor="middle">';
+  for(var v=Math.ceil(sLo/step)*step; v<=sHi+1e-9; v+=step){ var X=sx(v); s+='<line x1="'+X.toFixed(1)+'" y1="'+(axisY-5)+'" x2="'+X.toFixed(1)+'" y2="'+(axisY+5)+'" stroke="'+INK+'"/>'+'<text x="'+X.toFixed(1)+'" y="'+(axisY+20)+'">'+_mvR(v)+'</text>'; }
+  s+='</g>';
+  // whiskers + box
+  var cY=boxY+boxH/2;
+  s+='<line x1="'+sx(lo).toFixed(1)+'" y1="'+boxY+'" x2="'+sx(lo).toFixed(1)+'" y2="'+(boxY+boxH)+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<line x1="'+sx(hi).toFixed(1)+'" y1="'+boxY+'" x2="'+sx(hi).toFixed(1)+'" y2="'+(boxY+boxH)+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<line x1="'+sx(lo).toFixed(1)+'" y1="'+cY+'" x2="'+sx(q1).toFixed(1)+'" y2="'+cY+'" stroke="'+INK+'" stroke-width="1"/>';
+  s+='<line x1="'+sx(q3).toFixed(1)+'" y1="'+cY+'" x2="'+sx(hi).toFixed(1)+'" y2="'+cY+'" stroke="'+INK+'" stroke-width="1"/>';
+  s+='<rect x="'+sx(q1).toFixed(1)+'" y="'+boxY+'" width="'+(sx(q3)-sx(q1)).toFixed(1)+'" height="'+boxH+'" fill="none" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<line x1="'+sx(med).toFixed(1)+'" y1="'+boxY+'" x2="'+sx(med).toFixed(1)+'" y2="'+(boxY+boxH)+'" stroke="'+INK+'" stroke-width="1.5"/>';
+  // labels above (clear of each other)
+  s+='<g font-size="10" fill="'+INK+'" text-anchor="middle">';
+  [['min',lo],['Q1',q1],['med',med],['Q3',q3],['max',hi]].forEach(function(p){ s+='<text x="'+sx(p[1]).toFixed(1)+'" y="'+(boxY-6)+'">'+p[0]+'</text>'; });
+  s+='</g>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Geometry helpers ----------
+// arc that sits INSIDE the angle at vertex V between rays to A and B, radius rr
+function _mvAngleArc(V,A,B,rr,INK){
+  var a1=Math.atan2(A[1]-V[1],A[0]-V[0]);
+  var a2=Math.atan2(B[1]-V[1],B[0]-V[0]);
+  // ensure we sweep the smaller angle
+  var diff=a2-a1; while(diff<=-Math.PI)diff+=2*Math.PI; while(diff>Math.PI)diff-=2*Math.PI;
+  var start=[V[0]+rr*Math.cos(a1), V[1]+rr*Math.sin(a1)];
+  var end=[V[0]+rr*Math.cos(a1+diff), V[1]+rr*Math.sin(a1+diff)];
+  var sweepFlag = diff>0?1:0;
+  return {path:'<path d="M'+start[0].toFixed(1)+' '+start[1].toFixed(1)+' A '+rr+' '+rr+' 0 0 '+sweepFlag+' '+end[0].toFixed(1)+' '+end[1].toFixed(1)+'" fill="none" stroke="'+INK+'" stroke-width="1.1"/>', mid:[V[0]+(rr+12)*Math.cos(a1+diff/2), V[1]+(rr+12)*Math.sin(a1+diff/2)]};
+}
+
+// ---------- Triangle ---------- vertices A,B,C given as [x,y] in svg space via spec or default
+function _mvTriangle(spec, INK){
+  var W=320,H=260;
+  var A=spec.A||[55,200], B=spec.B||[265,200], C=spec.C||[110,60];
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<polygon points="'+A.join(',')+' '+B.join(',')+' '+C.join(',')+'" fill="none" stroke="'+INK+'" stroke-width="1.5"/>';
+  // angle arc at A if given
+  if(spec.angleA){ var ar=_mvAngleArc(A,B,C,26,INK); s+=ar.path; s+='<text x="'+ar.mid[0].toFixed(1)+'" y="'+(ar.mid[1]+4).toFixed(1)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+spec.angleA+'</text>'; }
+  // side labels: placed at midpoint, offset OUTWARD (away from centroid)
+  var cen=[(A[0]+B[0]+C[0])/3,(A[1]+B[1]+C[1])/3];
+  function sideLabel(P,Q,txt){ if(!txt)return''; var mx=(P[0]+Q[0])/2,my=(P[1]+Q[1])/2; var dx=mx-cen[0],dy=my-cen[1]; var L=Math.hypot(dx,dy)||1; var ox=mx+dx/L*16, oy=my+dy/L*16; return '<text x="'+ox.toFixed(1)+'" y="'+(oy+4).toFixed(1)+'" font-size="12" fill="'+INK+'" text-anchor="middle">'+txt+'</text>'; }
+  s+=sideLabel(A,B,spec.sideAB);
+  s+=sideLabel(A,C,spec.sideAC);
+  s+=sideLabel(B,C,spec.sideBC);
+  // vertex letters offset outward
+  function vlabel(P,name){ if(!name)return''; var dx=P[0]-cen[0],dy=P[1]-cen[1]; var L=Math.hypot(dx,dy)||1; var ox=P[0]+dx/L*14, oy=P[1]+dy/L*14; return '<text x="'+ox.toFixed(1)+'" y="'+(oy+4).toFixed(1)+'" font-size="12" font-weight="bold" fill="'+INK+'" text-anchor="middle">'+name+'</text>'; }
+  s+=vlabel(A,spec.labelA||'A'); s+=vlabel(B,spec.labelB||'B'); s+=vlabel(C,spec.labelC||'C');
+  s+='</svg>'; return s;
+}
+
+// ---------- Sector ----------
+function _mvSector(spec, INK){
+  var W=320,H=250, cx=140,cy=120, r=85;
+  var ang=spec.angle||60; // degrees, sector opening from 0 (east) going CCW up
+  var a0=0, a1=-ang*Math.PI/180; // negative = upward in svg
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+INK+'" stroke-width="1.5"/>';
+  var p0=[cx+r*Math.cos(a0),cy+r*Math.sin(a0)], p1=[cx+r*Math.cos(a1),cy+r*Math.sin(a1)];
+  s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p0[0].toFixed(1)+'" y2="'+p0[1].toFixed(1)+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p1[0].toFixed(1)+'" y2="'+p1[1].toFixed(1)+'" stroke="'+INK+'" stroke-width="1.3"/>';
+  // angle arc inside opening
+  var ar=_mvAngleArc([cx,cy],p0,p1,28,INK); s+=ar.path;
+  s+='<text x="'+ar.mid[0].toFixed(1)+'" y="'+(ar.mid[1]+4).toFixed(1)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+ang+'\u00b0</text>';
+  // radius label below the horizontal radius, clear space
+  if(spec.radiusLabel){ s+='<text x="'+(cx+r/2).toFixed(1)+'" y="'+(cy+16)+'" font-size="11.5" fill="'+INK+'" text-anchor="middle">'+spec.radiusLabel+'</text>'; }
+  s+='</svg>'; return s;
+}
+
+// ---------- Angles on a straight line ----------
+function _mvAngleLine(spec, INK){
+  var W=320,H=240, V=[150,160];
+  var left=[40,160], right=[260,160];
+  var rayAng=spec.rayAngle||52; // degrees above horizontal, toward upper-right
+  var ray=[V[0]+110*Math.cos(-rayAng*Math.PI/180), V[1]+110*Math.sin(-rayAng*Math.PI/180)];
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  s+='<line x1="'+left[0]+'" y1="'+left[1]+'" x2="'+right[0]+'" y2="'+right[1]+'" stroke="'+INK+'" stroke-width="1.5"/>';
+  s+='<line x1="'+V[0]+'" y1="'+V[1]+'" x2="'+ray[0].toFixed(1)+'" y2="'+ray[1].toFixed(1)+'" stroke="'+INK+'" stroke-width="1.5"/>';
+  // right angle (between ray and right side) and left angle
+  var arR=_mvAngleArc(V,right,ray,32,INK); s+=arR.path; s+='<text x="'+arR.mid[0].toFixed(1)+'" y="'+(arR.mid[1]+4).toFixed(1)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+(spec.rightLabel||'x')+'</text>';
+  var arL=_mvAngleArc(V,ray,left,38,INK); s+=arL.path; s+='<text x="'+arL.mid[0].toFixed(1)+'" y="'+(arL.mid[1]+4).toFixed(1)+'" font-size="11" fill="'+INK+'" text-anchor="middle">'+(spec.leftLabel||'130\u00b0')+'</text>';
+  s+='<circle cx="'+V[0]+'" cy="'+V[1]+'" r="2.2" fill="'+INK+'"/>';
+  s+='</svg>'; return s;
+}
+
+// ---------- Coordinate shape ----------
+function _mvCoordShape(spec, INK, GRID, FRAME){
+  var W=320,H=300, mL=42,mR=20,mT=18,mB=40;
+  var xr=spec.xRange||[-4,4], yr=spec.yRange||[-4,4];
+  var pW=W-mL-mR,pH=H-mT-mB;
+  function sx(x){ return mL+(x-xr[0])/(xr[1]-xr[0])*pW; }
+  function sy(y){ return mT+(yr[1]-y)/(yr[1]-yr[0])*pH; }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">';
+  var xStep=_mvNiceStep(xr[0],xr[1]),yStep=_mvNiceStep(yr[0],yr[1]);
+  s+='<g stroke="'+GRID+'" stroke-width="0.5">';
+  for(var gx=Math.ceil(xr[0]/xStep)*xStep; gx<=xr[1]+1e-9; gx+=xStep){ if(Math.abs(gx)<1e-9)continue; s+='<line x1="'+sx(gx).toFixed(1)+'" y1="'+mT+'" x2="'+sx(gx).toFixed(1)+'" y2="'+(H-mB)+'"/>'; }
+  for(var gy=Math.ceil(yr[0]/yStep)*yStep; gy<=yr[1]+1e-9; gy+=yStep){ if(Math.abs(gy)<1e-9)continue; s+='<line x1="'+mL+'" y1="'+sy(gy).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(gy).toFixed(1)+'"/>'; }
+  s+='</g>';
+  s+='<line x1="'+sx(0).toFixed(1)+'" y1="'+mT+'" x2="'+sx(0).toFixed(1)+'" y2="'+(H-mB)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  s+='<line x1="'+mL+'" y1="'+sy(0).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+sy(0).toFixed(1)+'" stroke="'+INK+'" stroke-width="1.1"/>';
+  // shape
+  var verts=spec.vertices||[];
+  if(verts.length){ s+='<polygon points="'+verts.map(function(v){return sx(v[0]).toFixed(1)+','+sy(v[1]).toFixed(1);}).join(' ')+'" fill="none" stroke="'+INK+'" stroke-width="1.5"/>'; }
+  // vertex dots + coordinate labels (offset outward from shape centroid, clear of edges)
+  if(verts.length){
+    var cx=verts.reduce(function(a,v){return a+v[0];},0)/verts.length, cy=verts.reduce(function(a,v){return a+v[1];},0)/verts.length;
+    verts.forEach(function(v){ var X=sx(v[0]),Y=sy(v[1]); s+='<circle cx="'+X.toFixed(1)+'" cy="'+Y.toFixed(1)+'" r="2.8" fill="'+INK+'"/>';
+      var dx=v[0]-cx, dy=v[1]-cy; var L=Math.hypot(dx,dy)||1; var ox=X+(dx/L)*4 + (dx>=0?6:-6), oy=Y-(dy/L)*4 + (dy>=0?-6:14);
+      var anchor= dx>0.2?'start':(dx<-0.2?'end':'middle');
+      s+='<text x="'+ox.toFixed(1)+'" y="'+oy.toFixed(1)+'" font-size="10.5" fill="'+INK+'" text-anchor="'+anchor+'">('+v[0]+', '+v[1]+')</text>'; });
+  }
+  s+='</svg>'; return s;
+}
+
+</script>
+</body>
+</html>
