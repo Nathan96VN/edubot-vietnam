@@ -1227,6 +1227,9 @@ function buildSidebar(){
   var ielts='<a href="/ielts" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-certificate"></i></span><span class="sl">English Proficiency Practice</span></a>';
   var checkpoint='<a href="/checkpoint" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-list-check"></i></span><span class="sl">Lower Secondary Practice</span></a>';
   var intenglish='<a href="/international-english" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-language"></i></span><span class="sl">International English Practice</span></a>';
+  var academic='<a href="/academic-english" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-book"></i></span><span class="sl">Academic English Practice</span></a>';
+  var business='<a href="/business-english" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-briefcase"></i></span><span class="sl">Business English Practice</span></a>';
+  var university='<a href="/university-entrance" class="sideitem" style="text-decoration:none;display:flex"><span class="si"><i class="ti ti-school"></i></span><span class="sl">University Entrance Practice</span></a>';
   var d=lang==='en'
     ?{t0:'Ask Stella',t1:'Classroom',t2:'Dashboard',t3:'Flashcards',t4:'Games',t5:'Exam Generator',t6:'Memory'}
     :{t0:'Ask Stella',t1:'Lớp học',t2:'Bảng điều khiển',t3:'Flashcards',t4:'Trò chơi',t5:'Tạo đề thi',t6:'Bộ nhớ'};
@@ -1242,6 +1245,9 @@ function buildSidebar(){
     html+=ielts;
     html+=checkpoint;
     html+=intenglish;
+    html+=academic;
+    html+=business;
+    html+=university;
   } else {
     html+=row('ti-layout-dashboard',d.t0,0);
     html+=row('ti-cards',d.t3,3);
@@ -1250,6 +1256,9 @@ function buildSidebar(){
     html+=ielts;
     html+=checkpoint;
     html+=intenglish;
+    html+=academic;
+    html+=business;
+    html+=university;
   }
   nav.innerHTML=html;
   document.getElementById('side-uname').textContent=uname;
