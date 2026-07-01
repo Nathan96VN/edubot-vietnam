@@ -91,14 +91,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;height:60px;d
 .sec-title{font-size:36px;font-weight:900;color:var(--navy);margin-bottom:10px;letter-spacing:-0.5px}
 .sec-sub{font-size:15px;color:var(--muted);max-width:500px;line-height:1.7;margin-bottom:52px;font-weight:500}
 
-/* ── FEATURES ── */
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:0.5px solid var(--border);background:var(--border)}
-.feat-card{background:var(--lavender);padding:28px;transition:background .2s}
-.feat-card:hover{background:#fff}
-.feat-card.soon{background:rgba(238,242,255,0.5)}
-.feat-num{font-size:11px;font-weight:700;color:var(--teal);letter-spacing:1px;margin-bottom:16px}
-.feat-title{font-size:17px;font-weight:700;margin-bottom:8px;color:var(--navy)}
-.feat-text{font-size:13px;color:var(--muted);line-height:1.7}
+/* ── FEATURES (A+C: numbered clean cells) ── */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;border:1px solid var(--border);background:var(--border)}
+.feat-card{background:#fff;padding:28px 24px;transition:background .2s}
+.feat-card:hover{background:var(--lavender)}
+.feat-card.soon{background:rgba(238,242,255,0.6)}
+.feat-num{font-size:12px;font-weight:800;color:var(--teal);letter-spacing:1px;margin-bottom:14px}
+.feat-title{font-size:18px;font-weight:700;margin-bottom:8px;color:var(--navy)}
+.feat-text{font-size:13px;color:var(--muted);line-height:1.65}
 .soon-badge{display:inline-block;padding:2px 10px;font-size:10px;font-weight:700;background:rgba(79,70,229,0.08);border:0.5px solid var(--border);color:var(--periwinkle);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em}
 
 /* ── WHO ── */
@@ -121,22 +121,23 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;height:60px;d
 .exam-name{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:4px}
 .exam-sub{font-size:12px;color:var(--muted);line-height:1.5}
 
-/* ── PRICING ── */
-.price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:0.5px solid var(--border);background:var(--border)}
-.price-card{background:var(--lavender);padding:24px;transition:background .2s}
-.price-card:hover{background:#fff}
-.price-card.featured{background:#fff}
+/* ── PRICING (A+C: teal featured) ── */
+.price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;border:1px solid var(--border);background:var(--border)}
+.price-card{background:#fff;padding:24px 20px;transition:background .2s;position:relative}
+.price-card:hover{background:var(--lavender)}
+.price-card.featured{background:#fff;border:2px solid var(--teal)}
 .price-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px}
 .price-amount{font-size:32px;font-weight:900;color:var(--navy);letter-spacing:-1px;margin-bottom:4px}
 .price-period{font-size:12px;color:var(--muted);margin-bottom:20px;font-weight:500}
 .price-feats{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:24px;min-height:100px}
 .price-feats li{font-size:12px;color:var(--text2);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
 .price-feats li::before{content:'✓';color:var(--teal);font-weight:700;flex-shrink:0}
-.price-btn{width:100%;padding:10px;background:var(--navy);border:none;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+.price-btn{width:100%;padding:11px;background:var(--navy);border:none;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:var(--font);transition:opacity .15s}
 .price-btn:hover{opacity:0.85}
 .price-btn.outline{background:none;border:1.5px solid var(--navy);color:var(--navy)}
 .price-btn.outline:hover{background:var(--navy);color:#fff}
-.featured-badge{display:inline-block;background:var(--teal);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.price-card.featured .price-btn{background:var(--teal)}
+.featured-badge{display:inline-block;background:var(--teal);color:#fff;font-size:9px;font-weight:700;padding:3px 10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
 
 /* ── CTA BAND ── */
 .cta-band{position:relative;z-index:1;background:var(--navy);padding:64px 40px}
@@ -325,14 +326,14 @@ footer{position:relative;z-index:1;background:var(--lavender);border-top:0.5px s
     <div class="sec-title" id="et">Supports every exam</div>
     <p class="sec-sub" id="es">From national curriculum to international certificates — StellaStride prepares you.</p>
     <div class="exam-grid">
-      <div class="exam-card"><div class="exam-tag" id="et1tag">National</div><div class="exam-name" id="et1">National Curriculum</div><div class="exam-sub" id="et1s">Vietnamese & English · Math, Science, Literature</div></div>
-      <div class="exam-card"><div class="exam-tag" id="et2tag">International</div><div class="exam-name" id="et2">Cambridge A2-B2</div><div class="exam-sub" id="et2s">KET · PET · FCE · IGCSE</div></div>
-      <div class="exam-card"><div class="exam-tag" id="et3tag">Certificate</div><div class="exam-name" id="et3">SAT</div><div class="exam-sub" id="et3s">Reading · Writing · Math</div></div>
-      <div class="exam-card"><div class="exam-tag" id="et4tag">Certificate</div><div class="exam-name" id="et4">Academic English</div><div class="exam-sub" id="et4s">Reading · Writing · Speaking · Listening</div></div>
-      <div class="exam-card"><div class="exam-tag" id="et5tag">Digital</div><div class="exam-name" id="et5">TOEFL iBT</div><div class="exam-sub" id="et5s">Full simulation · Adaptive test</div></div>
-      <div class="exam-card"><div class="exam-tag" id="et6tag">University</div><div class="exam-name" id="et6">University Entrance</div><div class="exam-sub" id="et6s">Math & English · Practice papers</div></div>
-      <div class="exam-card"><div class="exam-tag" id="et7tag">National</div><div class="exam-name" id="et7">THPT Quốc gia</div><div class="exam-sub" id="et7s">All subjects · Graduation exam</div></div>
-      <div class="exam-card"><div class="exam-tag" id="et8tag">School</div><div class="exam-name" id="et8">School Exams</div><div class="exam-sub" id="et8s">Vietnamese & English · All subjects</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et1tag">Trong nước</div><div class="exam-name" id="et1">Chương trình Quốc gia</div><div class="exam-sub" id="et1s">Tiếng Việt & Tiếng Anh · Toán, Khoa học, Văn</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et2tag">Quốc tế</div><div class="exam-name" id="et2">Tiếng Anh Quốc tế</div><div class="exam-sub" id="et2s">International English A2–C2 Practice</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et3tag">Đại học</div><div class="exam-name" id="et3">Tuyển sinh Đại học</div><div class="exam-sub" id="et3s">University Entrance Practice</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et4tag">Học thuật</div><div class="exam-name" id="et4">Tiếng Anh Học thuật</div><div class="exam-sub" id="et4s">Academic English Practice</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et5tag">Công việc</div><div class="exam-name" id="et5">Tiếng Anh Thương mại</div><div class="exam-sub" id="et5s">Business English Practice</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et6tag">Đại học</div><div class="exam-name" id="et6">Tuyển sinh Đại học</div><div class="exam-sub" id="et6s">University Entrance Practice</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et7tag">THCS</div><div class="exam-name" id="et7">Trung học cơ sở</div><div class="exam-sub" id="et7s">Lower Secondary Practice</div></div>
+      <div class="exam-card"><div class="exam-tag" id="et8tag">THPT</div><div class="exam-name" id="et8">Ôn thi tốt nghiệp</div><div class="exam-sub" id="et8s">National Curriculum Practice</div></div>
     </div>
   </div>
 
@@ -544,12 +545,12 @@ var T={
     'wtb':'Dùng thử cho giáo viên →',
     'el':'Loại bài thi','et':'Hỗ trợ mọi kỳ thi','es':'Từ chương trình trong nước đến các chứng chỉ quốc tế — StellaStride chuẩn bị cho bạn mọi kỳ thi.',
     'et1tag':'Trong nước','et1':'Chương trình Quốc gia','et1s':'Tiếng Việt & Tiếng Anh · Toán, Khoa học, Văn',
-    'et2tag':'Quốc tế','et2':'Cambridge A2-B2','et2s':'KET · PET · FCE · IGCSE',
-    'et3tag':'Chứng chỉ','et3':'SAT','et3s':'Reading · Writing · Math',
-    'et4tag':'Chứng chỉ','et4':'Tiếng Anh Học thuật','et4s':'Reading · Writing · Speaking · Listening',
-    'et5tag':'Kỹ thuật số','et5':'TOEFL iBT','et5s':'Mô phỏng đầy đủ · Adaptive test',
+    'et2tag':'Quốc tế','et2':'Tiếng Anh Quốc tế','et2s':'International English A2–C2 Practice',
+    'et3tag':'Đại học','et3':'Tuyển sinh Đại học','et3s':'University Entrance Practice',
+    'et4tag':'Học thuật','et4':'Tiếng Anh Học thuật','et4s':'Academic English Practice',
+    'et5tag':'Công việc','et5':'Tiếng Anh Thương mại','et5s':'Business English Practice',
     'et6tag':'Đại học','et6':'Tuyển sinh Đại học','et6s':'Toán & Tiếng Anh · Luyện đề',
-    'et7tag':'Quốc gia','et7':'THPT Quốc gia','et7s':'Tất cả môn học · Thi tốt nghiệp',
+    'et7tag':'THCS','et7':'Trung học cơ sở','et7s':'Lower Secondary Practice',
     'et8tag':'Trường học','et8':'Thi học kỳ & Kiểm tra','et8s':'Tiếng Việt & Tiếng Anh · Tất cả môn học',
     'prl':'Bảng giá','prt':'Giá phù hợp với mọi học sinh','prs':'Bắt đầu miễn phí. Nâng cấp khi cần thêm tính năng.',
     'p0n':'Miễn phí','p0p':'Mãi mãi','p0f1':'Stella AI cơ bản','p0f2':'Flashcards','p0f3':'Games học tập','p0b':'Bắt đầu miễn phí',
@@ -588,12 +589,12 @@ var T={
     'wtb':'Try it for teachers →',
     'el':'Exam Types','et':'Supports every exam','es':'From national curriculum to international certificates — StellaStride prepares you.',
     'et1tag':'National','et1':'National Curriculum','et1s':'Vietnamese & English · Math, Science, Literature',
-    'et2tag':'International','et2':'Cambridge A2-B2','et2s':'KET · PET · FCE · IGCSE',
-    'et3tag':'Certificate','et3':'SAT','et3s':'Reading · Writing · Math',
-    'et4tag':'Certificate','et4':'Academic English','et4s':'Reading · Writing · Speaking · Listening',
-    'et5tag':'Digital','et5':'TOEFL iBT','et5s':'Full simulation · Adaptive test',
+    'et2tag':'International','et2':'International English','et2s':'International English A2–C2 Practice',
+    'et3tag':'University','et3':'University Entrance','et3s':'University Entrance Practice',
+    'et4tag':'Academic','et4':'Academic English','et4s':'Academic English Practice',
+    'et5tag':'Business','et5':'Business English','et5s':'Business English Practice',
     'et6tag':'University','et6':'University Entrance','et6s':'Math & English · Practice papers',
-    'et7tag':'National','et7':'THPT Quốc gia','et7s':'All subjects · Graduation exam',
+    'et7tag':'Lower Sec','et7':'Lower Secondary','et7s':'Lower Secondary Practice',
     'et8tag':'School','et8':'School Exams','et8s':'Vietnamese & English · All subjects',
     'prl':'Pricing','prt':'Affordable for every student','prs':'Start free. Upgrade when you need more.',
     'p0n':'Free','p0p':'Forever','p0f1':'Basic Ask Stella','p0f2':'Flashcards','p0f3':'Learning Games','p0b':'Start for free',
